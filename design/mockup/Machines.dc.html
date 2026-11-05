@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lobbers — Choose your machine</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&amp;family=Fredoka:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101522}
+*{box-sizing:border-box}
+a{color:#FFD166}a:hover{color:#FFE29A}
+.fd{font-family:'Lilita One',Fredoka,system-ui,sans-serif;letter-spacing:.5px;font-weight:400}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.btn{font-family:Fredoka,system-ui,sans-serif;font-weight:600;cursor:pointer;border:3px solid #0B0F1A;border-radius:10px;box-shadow:0 4px 0 #0B0F1A;transition:transform .08s,box-shadow .08s,filter .15s;color:#F5F1E8;background:#232B42;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{filter:brightness(1.12);transform:translateY(-2px);box-shadow:0 6px 0 #0B0F1A;color:#F5F1E8}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0B0F1A}
+.btn:focus-visible,.card:focus-visible{outline:3px solid #FFD166;outline-offset:3px}
+.dark{color:#101522}.dark:hover{color:#101522}
+.panel{background:#151B2B;border:3px solid #0B0F1A;border-radius:12px;box-shadow:0 5px 0 #0B0F1A,inset 0 2px 0 rgba(255,255,255,.05)}
+.bg{background-color:#101522;background-image:radial-gradient(rgba(255,255,255,.05) 1.5px,transparent 1.5px);background-size:22px 22px}
+.stripes{background-image:repeating-linear-gradient(135deg,rgba(0,0,0,.2) 0 10px,transparent 10px 20px)}
+.card{position:relative;cursor:pointer;border:4px solid #0B0F1A;border-radius:12px;background:#151B2B;box-shadow:0 5px 0 #0B0F1A;padding:0;overflow:hidden;color:#F5F1E8;font-family:Fredoka,sans-serif;text-align:left;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s}
+.card:hover{transform:translateY(-6px);box-shadow:0 11px 0 #0B0F1A}
+.card:hover .art{transform:scale(1.06)}
+.card.on{border-color:#FFD166;transform:translateY(-8px);box-shadow:0 13px 0 #0B0F1A,0 0 0 4px rgba(255,209,102,.35);animation:pick .35s cubic-bezier(.2,1.8,.4,1)}
+@keyframes pick{0%{transform:translateY(0) scale(.94)}100%{transform:translateY(-8px) scale(1)}}
+.art{transition:transform .2s}
+.enter{animation:enter .5s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes enter{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+.drop{animation:drop .6s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes drop{from{opacity:0;transform:translateY(-80px) scale(.7)}to{opacity:1;transform:none}}
+.flash{animation:flash .5s ease-out both;pointer-events:none}
+@keyframes flash{from{opacity:.9}to{opacity:0}}
+.grow{animation:grow .7s .15s cubic-bezier(.3,1.2,.4,1) both;transform-origin:left}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.bob{animation:bob 2.6s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.spinr{animation:spinr 12s linear infinite;transform-origin:center}
+@keyframes spinr{to{transform:rotate(360deg)}}
+.stamp{animation:stamp .45s cubic-bezier(.2,1.8,.4,1) both}
+@keyframes stamp{from{opacity:0;transform:rotate(-12deg) scale(2.2)}to{opacity:1;transform:rotate(-8deg) scale(1)}}
+.tick{animation:tick 1s steps(1) infinite}
+</style>
+</helmet>
+<div class="bg" style="width:1440px;height:900px;position:relative;overflow:hidden;font-family:Fredoka,system-ui,sans-serif;color:#F5F1E8">
+  <header style="position:absolute;left:24px;top:20px;width:1392px;height:64px;display:flex;align-items:center;gap:16px">
+    <a href="Lobby.dc.html" class="btn" style="height:52px;padding:0 16px;font-size:16px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>Lobby</a>
+    <h1 class="fd" style="margin:0;font-size:42px;line-height:1">CHOOSE YOUR MACHINE</h1>
+    <span class="fd" style="background:#F45B55;color:#101522;border:3px solid #0B0F1A;border-radius:8px;padding:4px 12px;font-size:17px">TEAM RED</span>
+    <div style="flex:1"></div>
+    <button class="btn" onClick="{{random}}" style="height:52px;padding:0 16px;font-size:16px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"></rect><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"></circle><circle cx="15.5" cy="15.5" r="1.5" fill="currentColor"></circle><circle cx="15.5" cy="8.5" r="1.5" fill="currentColor"></circle><circle cx="8.5" cy="15.5" r="1.5" fill="currentColor"></circle></svg>Random</button>
+    <div class="panel" style="height:60px;display:flex;align-items:center;gap:10px;padding:0 14px">
+      <svg aria-hidden="true" width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="none" stroke="#2A3045" stroke-width="6"></circle><circle cx="20" cy="20" r="16" fill="none" stroke="{{timerCol}}" stroke-width="6" stroke-dasharray="100.5" stroke-dashoffset="{{timerOff}}" transform="rotate(-90 20 20)" style="transition:stroke-dashoffset 1s linear"></circle></svg>
+      <span style="display:flex;flex-direction:column"><span style="font-size:11px;letter-spacing:1.5px;color:#A9B3CC;font-weight:700">LOCK-IN</span><span class="mono" style="font-size:22px;font-weight:700;color:{{timerCol}}">0:{{timerTxt}}</span></span>
+    </div>
+  </header>
+
+  <div style="position:absolute;left:24px;top:108px;width:824px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px">
+    <sc-for list="{{machines}}" as="m" hint-placeholder-count="8">
+      <button class="{{m.cls}}" onClick="{{m.pick}}" aria-pressed="{{m.on}}" aria-label="{{m.aria}}" style="height:318px">
+        <div class="stripes" style="height:168px;background-color:{{m.bgc}};border-bottom:4px solid #0B0F1A;display:flex;align-items:flex-end;justify-content:center;position:relative">
+          <span class="mono" style="position:absolute;left:8px;top:8px;font-size:12px;font-weight:700;background:#101522;border:2px solid #0B0F1A;border-radius:5px;padding:0 5px;color:#A9B3CC">{{m.key}}</span>
+          <div class="art" style="margin-bottom:4px"><dc-import name="Machine" kind="{{m.id}}" tint="#F45B55" size="{{ 168 }}" aim="{{ 20 }}" hint-size="168px,140px"></dc-import></div>
+          <sc-if value="{{m.on}}" hint-placeholder-val="{{ false }}"><span class="fd" style="position:absolute;right:8px;top:8px;background:#FFD166;color:#101522;border:2px solid #0B0F1A;border-radius:6px;padding:0 8px;font-size:13px">SELECTED</span></sc-if>
+          <sc-if value="{{m.taken}}" hint-placeholder-val="{{ false }}"><span style="position:absolute;right:8px;top:8px;background:#101522;color:#F5F1E8;border:2px solid #0B0F1A;border-radius:6px;padding:0 8px;font-size:12px;font-weight:600">Picked by {{m.takenBy}}</span></sc-if>
+        </div>
+        <div style="padding:10px 12px;display:flex;flex-direction:column;gap:6px;flex:1">
+          <span class="fd" style="font-size:24px;line-height:1">{{m.n}}</span>
+          <span style="font-size:13px;color:{{m.col}};font-weight:700">{{m.role}}</span>
+          <div style="display:grid;grid-template-columns:28px 1fr;gap:3px 6px;align-items:center;font-size:10px;font-weight:700;color:#A9B3CC;margin-top:auto">
+            <span>HP</span><span style="height:6px;background:#0E1320;border-radius:3px;overflow:hidden;display:block"><span style="display:block;height:100%;width:{{m.hpP}}%;background:#5ACB91"></span></span>
+            <span>ATK</span><span style="height:6px;background:#0E1320;border-radius:3px;overflow:hidden;display:block"><span style="display:block;height:100%;width:{{m.atkP}}%;background:#F45B55"></span></span>
+            <span>DEF</span><span style="height:6px;background:#0E1320;border-radius:3px;overflow:hidden;display:block"><span style="display:block;height:100%;width:{{m.defP}}%;background:#4C9AFF"></span></span>
+            <span>MOB</span><span style="height:6px;background:#0E1320;border-radius:3px;overflow:hidden;display:block"><span style="display:block;height:100%;width:{{m.mobP}}%;background:#FFD166"></span></span>
+          </div>
+        </div>
+      </button>
+    </sc-for>
+  </div>
+
+  <section aria-label="Selected machine" class="panel" style="position:absolute;left:872px;top:108px;width:544px;height:668px;overflow:hidden;padding:0">
+    <sc-if value="{{show}}" hint-placeholder-val="{{ true }}">
+      <div style="position:absolute;inset:0">
+        <div class="stripes" style="position:absolute;left:0;top:0;width:100%;height:318px;background-color:{{sel.bgc}}"></div>
+        <svg aria-hidden="true" width="538" height="318" viewBox="0 0 538 318" style="position:absolute;left:0;top:0">
+          <path d="M210 0 L328 0 L470 318 L68 318 Z" fill="#fff" opacity=".08"></path>
+          <g class="spinr" style="transform-box:fill-box"><circle cx="269" cy="160" r="130" fill="none" stroke="{{sel.col}}" stroke-width="5" stroke-dasharray="4 18" opacity=".7"></circle></g>
+          <ellipse cx="269" cy="292" rx="190" ry="24" fill="#0B0F1A" opacity=".55"></ellipse>
+          <ellipse cx="269" cy="282" rx="176" ry="22" fill="#2E3856" stroke="#0B0F1A" stroke-width="4"></ellipse>
+          <ellipse cx="269" cy="280" rx="130" ry="13" fill="none" stroke="{{sel.col}}" stroke-width="4"></ellipse>
+        </svg>
+        <div class="drop" style="position:absolute;left:89px;top:-4px"><div class="bob"><dc-import name="Machine" kind="{{sel.id}}" tint="#F45B55" size="{{ 360 }}" aim="{{ 34 }}" hint-size="360px,300px"></dc-import></div></div>
+        <div class="flash" style="position:absolute;left:0;top:0;width:100%;height:318px;background:#fff"></div>
+        <sc-if value="{{locked}}" hint-placeholder-val="{{ false }}">
+          <span class="fd stamp" style="position:absolute;right:18px;top:18px;font-size:30px;color:#5ACB91;border:5px solid #5ACB91;border-radius:10px;padding:2px 14px;background:rgba(16,21,34,.85)">LOCKED IN</span>
+        </sc-if>
+        <div class="enter" style="position:absolute;left:0;top:318px;width:100%;padding:16px 22px;display:flex;flex-direction:column;gap:12px;border-top:4px solid #0B0F1A">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:13px;font-weight:700;letter-spacing:2px;color:{{sel.col}}">{{sel.roleUp}}</span>
+              <h2 class="fd" style="margin:0;font-size:52px;line-height:.95">{{sel.n}}</h2>
+            </div>
+            <p style="margin:0;font-size:14px;line-height:1.4;color:#C9D1E0;max-width:270px">{{sel.desc}}</p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 20px">
+            <sc-for list="{{sel.stats}}" as="st" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:64px 1fr 30px;align-items:center;gap:8px">
+                <span style="font-size:12px;font-weight:700;color:#A9B3CC;letter-spacing:1px">{{st.k}}</span>
+                <span style="height:14px;background:#0E1320;border:2px solid #0B0F1A;border-radius:7px;overflow:hidden;display:block"><span class="grow" style="display:block;height:100%;width:{{st.p}}%;background:{{st.c}}"></span></span>
+                <span class="mono" style="font-size:14px;font-weight:700">{{st.v}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+            <sc-for list="{{sel.weps}}" as="w" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:8px;background:#1C2338;border:3px solid #0B0F1A;border-radius:10px;padding:6px 8px">
+                <dc-import name="WeaponIcon" cat="{{w.cat}}" col="{{w.col}}" size="{{ 36 }}" hint-size="36px,36px"></dc-import>
+                <span style="display:flex;flex-direction:column;min-width:0"><span style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{w.n}}</span><span class="mono" style="font-size:11px;color:#A9B3CC">{{w.dmg}} dmg</span></span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center;background:#241F14;border:3px solid #FFD166;border-radius:10px;padding:8px 12px">
+            <span style="width:40px;height:40px;flex:none;border-radius:50%;background:#FFD166;border:3px solid #0B0F1A;display:flex;align-items:center;justify-content:center"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="#101522"><path d="M12 2l2.8 6.6L22 9.3l-5.4 4.8L18 21l-6-3.6L6 21l1.4-6.9L2 9.3l7.2-.7z"></path></svg></span>
+            <span style="display:flex;flex-direction:column;gap:1px"><span style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:#FFD166">SPECIAL · {{sel.spCd}}</span><span style="font-size:16px;font-weight:700">{{sel.sp}}</span><span style="font-size:13px;color:#C9D1E0">{{sel.spd}}</span></span>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </section>
+
+  <footer class="panel" style="position:absolute;left:24px;top:796px;width:1392px;height:84px;display:flex;align-items:center;gap:14px;padding:0 14px">
+    <span style="font-size:12px;font-weight:700;letter-spacing:2px;color:#A9B3CC">TEAM PICKS</span>
+    <sc-for list="{{picks}}" as="p" hint-placeholder-count="3">
+      <div style="display:flex;align-items:center;gap:8px;background:#1C2338;border:3px solid #0B0F1A;border-radius:10px;padding:4px 12px 4px 4px;height:58px">
+        <span style="width:48px;height:46px;background:#3A2230;border-radius:7px;display:flex;align-items:center;justify-content:center"><dc-import name="Machine" kind="{{p.kind}}" tint="#F45B55" size="{{ 44 }}" hint-size="44px,37px"></dc-import></span>
+        <span style="display:flex;flex-direction:column"><span style="font-size:14px;font-weight:700">{{p.n}}</span><span style="font-size:12px;color:{{p.sc}}">{{p.st}}</span></span>
+      </div>
+    </sc-for>
+    <span style="font-size:13px;color:#C9D1E0;margin-left:8px;max-width:260px;line-height:1.3">{{hint}}</span>
+    <div style="flex:1"></div>
+    <a href="Inventory.dc.html" class="btn" style="height:58px;padding:0 18px;font-size:16px">Skins for {{sel.n}}</a>
+    <sc-if value="{{notLocked}}" hint-placeholder-val="{{ true }}">
+      <button class="btn dark" onClick="{{lock}}" style="height:62px;width:230px;background:#FFD166;font-size:28px"><span class="fd">LOCK IN</span></button>
+    </sc-if>
+    <sc-if value="{{locked}}" hint-placeholder-val="{{ false }}">
+      <a href="Lobby.dc.html" class="btn dark" style="height:62px;width:230px;background:#5ACB91;font-size:22px"><span class="fd">BACK TO LOBBY</span></a>
+    </sc-if>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sel: 0, show: true, locked: false, t: 24 }; }
+  componentDidMount() { this.iv = setInterval(() => { if (this.state.t > 0 && !this.state.locked) this.setState({ t: this.state.t - 1 }); }, 1000); }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.to); }
+  pick(i) { if (this.state.locked) return; this.setState({ sel: i, show: false }); clearTimeout(this.to); this.to = setTimeout(() => this.setState({ show: true }), 20); }
+  renderVals() {
+    const s = this.state;
+    const W = { 'Heavy Mortar': ['Explosive', '#FFB547', 260], 'Basic Shell': ['Explosive', '#F5F1E8', 150], 'Mole Drill': ['Special', '#5ACB91', 230], 'Icicle Spear': ['Ice', '#9FE3FF', 170], 'Scatterpop': ['Cluster', '#FF7EB6', '5×60'], 'Frost Nova': ['Ice', '#9FE3FF', 100], 'Homing Hornet': ['Guided', '#B07CF2', 180], 'Arc Bolt': ['Electric', '#FFE45E', 140], 'Storm Coil': ['Electric', '#8FE3FF', 200], 'Napalm Blob': ['Fire', '#FF6B3D', 120], 'Magma Lob': ['Fire', '#FF8A3D', 200], 'Fireworks Crate': ['Cluster', '#FFD166', '8×35'] };
+    const M = [
+      { id: 'thumper', n: 'Thumper', role: 'Heavy Artillery', col: '#F28C38', bgc: '#4A2E1E', hp: 9, atk: 9, def: 7, mob: 3, desc: 'A walking siege mortar. Slow to reposition, devastating once it digs in.', sp: 'Bunker Buster', spCd: '3 TURN COOLDOWN', spd: 'Next shot deals 1.6× damage and carves a 50% wider crater.', w: ['Heavy Mortar', 'Basic Shell', 'Mole Drill'] },
+      { id: 'sprocket', n: 'Sprocket', role: 'Scout', col: '#5ACB91', bgc: '#1E3E33', hp: 5, atk: 6, def: 4, mob: 10, desc: 'Twitchy dune buggy with a spring-loaded antenna and twice the fuel of anything else.', sp: 'Nitro Hop', spCd: '2 TURN COOLDOWN', spd: 'Leap 200 px in any direction without spending fuel.', w: ['Icicle Spear', 'Scatterpop', 'Basic Shell'] },
+      { id: 'mollusk', n: 'Mollusk', role: 'Defender', col: '#B07CF2', bgc: '#33264E', hp: 10, atk: 5, def: 10, mob: 2, desc: 'Retreats into a tungsten spiral shell. Teammates love hiding behind it.', sp: 'Shell Up', spCd: '4 TURN COOLDOWN', spd: 'Halve damage taken by you and adjacent allies for one round.', w: ['Basic Shell', 'Frost Nova', 'Heavy Mortar'] },
+      { id: 'whirligig', n: 'Whirligig', role: 'Aerial Support', col: '#4CC3D9', bgc: '#1B3A48', hp: 6, atk: 6, def: 4, mob: 8, desc: 'Hovers over craters and gaps. Ignores slopes, hates crosswinds.', sp: 'Updraft', spCd: '3 TURN COOLDOWN', spd: 'Cancels wind for your shot this turn.', w: ['Homing Hornet', 'Arc Bolt', 'Basic Shell'] },
+      { id: 'voltaic', n: 'Voltaic', role: 'Electric Control', col: '#FFD166', bgc: '#3E3820', hp: 6, atk: 8, def: 5, mob: 5, desc: 'A rolling tesla tower. Its bolts arc between machines standing close together.', sp: 'Overcharge', spCd: '3 TURN COOLDOWN', spd: 'Electric weapons chain to one extra target.', w: ['Arc Bolt', 'Storm Coil', 'Basic Shell'] },
+      { id: 'cinder', n: 'Cinder', role: 'Fire Brawler', col: '#FF6B3D', bgc: '#4A221C', hp: 7, atk: 9, def: 5, mob: 6, desc: 'A two-legged furnace that leaves the ground burning for two turns.', sp: 'Scorched Earth', spCd: '4 TURN COOLDOWN', spd: 'Impact zones burn for 40 damage per turn for 2 turns.', w: ['Napalm Blob', 'Magma Lob', 'Basic Shell'] },
+      { id: 'frostbite', n: 'Frostbite', role: 'Ice Control', col: '#9FE3FF', bgc: '#1E3A50', hp: 7, atk: 6, def: 7, mob: 5, desc: 'An igloo turret on skis. Freezes targets in place and slicks the terrain.', sp: 'Deep Freeze', spCd: '3 TURN COOLDOWN', spd: 'Targets you hit lose their next move phase.', w: ['Frost Nova', 'Icicle Spear', 'Basic Shell'] },
+      { id: 'boomba', n: 'Boomba', role: 'Demolition', col: '#FF7EB6', bgc: '#4A2440', hp: 6, atk: 10, def: 3, mob: 6, desc: 'A grinning bomb on a unicycle. Every shot is a little bit personal.', sp: 'Big Fuse', spCd: '5 TURN COOLDOWN', spd: 'Your next shot leaves a crater three times the normal size.', w: ['Scatterpop', 'Fireworks Crate', 'Heavy Mortar'] }
+    ];
+    const taken = { voltaic: 'PicklePounder', cinder: 'Mara.Vex' };
+    const machines = M.map((m, i) => ({ ...m, key: String(i + 1), on: s.sel === i, cls: 'card' + (s.sel === i ? ' on' : ''), aria: m.n + ', ' + m.role, hpP: m.hp * 10, atkP: m.atk * 10, defP: m.def * 10, mobP: m.mob * 10, taken: !!taken[m.id] && s.sel !== i, takenBy: taken[m.id] || '', pick: () => this.pick(i) }));
+    const m = M[s.sel];
+    const sel = { ...m, roleUp: m.role.toUpperCase(),
+      stats: [{ k: 'HEALTH', v: m.hp * 100 + 100, p: m.hp * 10, c: '#5ACB91' }, { k: 'ATTACK', v: m.atk, p: m.atk * 10, c: '#F45B55' }, { k: 'DEFENSE', v: m.def, p: m.def * 10, c: '#4C9AFF' }, { k: 'MOBILITY', v: m.mob, p: m.mob * 10, c: '#FFD166' }],
+      weps: m.w.map((n) => ({ n, cat: W[n][0], col: W[n][1], dmg: W[n][2] })) };
+    const t = s.t;
+    const hasDef = m.id === 'mollusk';
+    return {
+      machines, sel, show: s.show, locked: s.locked, notLocked: !s.locked,
+      lock: () => this.setState({ locked: true }),
+      random: () => this.pick(Math.floor(Math.random() * 8)),
+      timerTxt: String(t).padStart(2, '0'), timerOff: (100.5 * (1 - t / 30)).toFixed(1), timerCol: t <= 10 ? '#F45B55' : '#FFD166',
+      picks: [{ n: 'PicklePounder', kind: 'voltaic', st: 'Locked · Voltaic', sc: '#5ACB91' }, { n: 'nightowl_ph', kind: 'sprocket', st: 'Picking…', sc: '#FFD166' }, { n: 'Mara.Vex', kind: 'cinder', st: 'Locked · Cinder', sc: '#5ACB91' }],
+      hint: hasDef ? 'Nice — a Defender gives your team a wall to hide behind.' : 'Your team has no Defender yet. Mollusk would round out the squad.'
+    };
+  }
+}
+</script>
+</body>
+</html>

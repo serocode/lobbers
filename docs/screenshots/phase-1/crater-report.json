@@ -1,0 +1,16 @@
+{
+  "before": {
+    "id": "blue-3",
+    "hp": 700,
+    "alive": true,
+    "x": 1520,
+    "y": 644
+  },
+  "after": {
+    "id": "blue-3",
+    "hp": 246,
+    "alive": true,
+    "x": 1693,
+    "y": 677
+  }
+}

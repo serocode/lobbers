@@ -1,0 +1,10 @@
+{
+  "tabletDiffVs04f": 7.65,
+  "phoneDiffVs04g": 8.32,
+  "skyreachDiffVs04i": 4.56,
+  "fpsWith8Units": {
+    "tablet-turn": 60,
+    "phone-turn": 60,
+    "desktop-skyreach": 60
+  }
+}

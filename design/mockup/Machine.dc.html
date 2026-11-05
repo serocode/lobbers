@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Machine art</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&amp;family=Fredoka:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div role="img" aria-label="{{label}}" style="width:{{w}}px;height:{{h}}px;position:relative;font-family:Fredoka,system-ui,sans-serif;color:#F5F1E8;filter:{{filt}};transform:{{tilt}}">
+<svg width="100%" height="100%" viewBox="0 0 120 100" style="display:block;overflow:visible" aria-hidden="true">
+<ellipse cx="60" cy="95" rx="44" ry="4.5" fill="#000" opacity=".28"></ellipse>
+<g transform="{{flipT}}">
+
+<sc-if value="{{isThumper}}" hint-placeholder-val="{{ true }}">
+<g stroke="#151B2B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+  <line x1="40" y1="34" x2="33" y2="10" fill="none"></line>
+  <path d="M33 10 L19 14 L34 20 Z" fill="{{tint}}"><animate attributeName="d" values="M33 10 L19 14 L34 20 Z;M33 10 L20 17 L34 20 Z;M33 10 L19 14 L34 20 Z" dur="1.2s" repeatCount="indefinite"></animate></path>
+  <g transform="rotate({{rot}} 64 44)">
+    <rect x="62" y="36" width="44" height="15" rx="3" fill="#5B6378"></rect>
+    <rect x="98" y="33" width="13" height="21" rx="3" fill="#3B4257"></rect>
+    <rect x="70" y="39" width="22" height="3" fill="#fff" opacity=".3" stroke="none"></rect>
+  </g>
+  <path d="M36 58 Q38 28 64 28 Q88 28 90 58 Z" fill="{{body}}"></path>
+  <path d="M42 50 Q46 34 60 32" fill="none" stroke="#fff" stroke-width="3" opacity=".35"></path>
+  <rect x="50" y="37" width="28" height="13" rx="6.5" fill="#151B2B"></rect>
+  <ellipse cx="59" cy="43.5" rx="3" ry="3.6" fill="#FFD166" stroke="none"><animate attributeName="ry" values="3.6;3.6;.4;3.6" keyTimes="0;.92;.96;1" dur="4.2s" repeatCount="indefinite"></animate></ellipse>
+  <ellipse cx="69" cy="43.5" rx="3" ry="3.6" fill="#FFD166" stroke="none"><animate attributeName="ry" values="3.6;3.6;.4;3.6" keyTimes="0;.92;.96;1" dur="4.2s" repeatCount="indefinite"></animate></ellipse>
+  <path d="M16 58 L104 58 L95 75 L25 75 Z" fill="{{body}}"></path>
+  <path d="M25 75 L95 75 L98 69 L22 69 Z" fill="#000" opacity=".2" stroke="none"></path>
+  <rect x="30" y="61" width="60" height="5" rx="2" fill="{{tint}}"></rect>
+  <rect x="14" y="72" width="92" height="21" rx="10.5" fill="#2A3045"></rect>
+  <circle cx="26" cy="82.5" r="6" fill="#8A93A8"></circle><circle cx="43" cy="82.5" r="6" fill="#8A93A8"></circle><circle cx="60" cy="82.5" r="6" fill="#8A93A8"></circle><circle cx="77" cy="82.5" r="6" fill="#8A93A8"></circle><circle cx="94" cy="82.5" r="6" fill="#8A93A8"></circle>
+  <circle cx="26" cy="82.5" r="1.6" fill="#151B2B" stroke="none"></circle><circle cx="43" cy="82.5" r="1.6" fill="#151B2B" stroke="none"></circle><circle cx="60" cy="82.5" r="1.6" fill="#151B2B" stroke="none"></circle><circle cx="77" cy="82.5" r="1.6" fill="#151B2B" stroke="none"></circle><circle cx="94" cy="82.5" r="1.6" fill="#151B2B" stroke="none"></circle>
+</g>
+</sc-if>
+
+<sc-if value="{{isSprocket}}" hint-placeholder-val="{{ false }}">
+<g stroke="#151B2B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+  <g><animateTransform attributeName="transform" type="rotate" values="-7 30 60;7 30 60;-7 30 60" dur="1.3s" repeatCount="indefinite"></animateTransform>
+    <polyline points="30,60 25,52 33,46 25,40 33,34 27,26" fill="none" stroke="#8A93A8"></polyline>
+    <circle cx="27" cy="23" r="4.5" fill="{{tint}}"></circle>
+  </g>
+  <g transform="rotate({{rot}} 78 54)">
+    <rect x="76" y="50" width="38" height="8" rx="3" fill="#5B6378"></rect>
+    <rect x="109" y="47" width="7" height="14" rx="2" fill="#3B4257"></rect>
+  </g>
+  <path d="M42 58 Q46 34 64 34 Q80 36 82 58 Z" fill="#D7F3FF"></path>
+  <path d="M48 52 Q50 40 60 38" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"></path>
+  <ellipse cx="60" cy="48" rx="3.2" ry="4" fill="#151B2B" stroke="none"><animate attributeName="ry" values="4;4;.4;4" keyTimes="0;.9;.95;1" dur="3.4s" repeatCount="indefinite"></animate></ellipse>
+  <ellipse cx="70" cy="48" rx="3.2" ry="4" fill="#151B2B" stroke="none"><animate attributeName="ry" values="4;4;.4;4" keyTimes="0;.9;.95;1" dur="3.4s" repeatCount="indefinite"></animate></ellipse>
+  <path d="M18 76 Q20 60 38 57 L86 55 Q104 58 104 76 Z" fill="{{body}}"></path>
+  <path d="M20 76 L104 76 L103 70 L20 70 Z" fill="#000" opacity=".2" stroke="none"></path>
+  <rect x="44" y="62" width="40" height="5" rx="2" fill="{{tint}}"></rect>
+  <path d="M8 70 L18 68" stroke="#3B4257" stroke-width="4"></path>
+  <circle cx="34" cy="80" r="14" fill="#2A3045"></circle><circle cx="34" cy="80" r="6" fill="#C9D1E0"></circle>
+  <circle cx="88" cy="80" r="14" fill="#2A3045"></circle><circle cx="88" cy="80" r="6" fill="#C9D1E0"></circle>
+  <path d="M34 68 V74 M34 86 V92 M22 80 H28 M40 80 H46" stroke="#5B6378" stroke-width="2"></path>
+  <path d="M88 68 V74 M88 86 V92 M76 80 H82 M94 80 H100" stroke="#5B6378" stroke-width="2"></path>
+</g>
+</sc-if>
+
+<sc-if value="{{isMollusk}}" hint-placeholder-val="{{ false }}">
+<g stroke="#151B2B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+  <g transform="rotate({{rot}} 60 32)">
+    <rect x="58" y="26" width="40" height="11" rx="3" fill="#5B6378"></rect>
+    <rect x="93" y="23" width="10" height="17" rx="3" fill="#3B4257"></rect>
+  </g>
+  <rect x="10" y="76" width="100" height="17" rx="8.5" fill="#2A3045"></rect>
+  <circle cx="22" cy="84.5" r="4.5" fill="#8A93A8"></circle><circle cx="40" cy="84.5" r="4.5" fill="#8A93A8"></circle><circle cx="58" cy="84.5" r="4.5" fill="#8A93A8"></circle><circle cx="76" cy="84.5" r="4.5" fill="#8A93A8"></circle><circle cx="96" cy="84.5" r="4.5" fill="#8A93A8"></circle>
+  <path d="M82 78 Q84 52 98 50 Q110 52 110 78 Z" fill="#C9D1E0"></path>
+  <g><animateTransform attributeName="transform" type="rotate" values="-6 98 52;5 98 52;-6 98 52" dur="2.2s" repeatCount="indefinite"></animateTransform>
+    <line x1="94" y1="52" x2="90" y2="36" fill="none"></line><line x1="103" y1="52" x2="107" y2="36" fill="none"></line>
+    <circle cx="90" cy="33" r="5.5" fill="#F5F1E8"></circle><circle cx="107" cy="33" r="5.5" fill="#F5F1E8"></circle>
+    <circle cx="91.5" cy="33.5" r="2.4" fill="#151B2B" stroke="none"></circle><circle cx="108.5" cy="33.5" r="2.4" fill="#151B2B" stroke="none"></circle>
+  </g>
+  <circle cx="54" cy="52" r="30" fill="{{body}}"></circle>
+  <path d="M54 52 m-4 0 a4 4 0 1 1 8 0 a9 9 0 1 1 -18 0 a15 15 0 1 1 30 0 a21 21 0 1 1 -42 0" fill="none" stroke="#151B2B" stroke-width="3" opacity=".45"></path>
+  <path d="M30 40 Q38 26 54 24" fill="none" stroke="#fff" stroke-width="3.5" opacity=".35"></path>
+  <path d="M26 64 Q54 82 82 64" fill="none" stroke="{{tint}}" stroke-width="5"></path>
+</g>
+</sc-if>
+
+<sc-if value="{{isWhirligig}}" hint-placeholder-val="{{ false }}">
+<g stroke="#151B2B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+  <animateTransform attributeName="transform" type="translate" values="0 0;0 -4;0 0" dur="2s" repeatCount="indefinite"></animateTransform>
+  <path d="M52 72 L70 72 L66 80 L56 80 Z" fill="#5B6378"></path>
+  <path d="M55 80 Q61 96 67 80 Z" fill="#FFD166" stroke="none"><animate attributeName="opacity" values=".5;1;.5" dur=".25s" repeatCount="indefinite"></animate></path>
+  <g transform="rotate({{rot}} 72 64)">
+    <rect x="70" y="60" width="36" height="8" rx="3" fill="#5B6378"></rect>
+    <rect x="102" y="57" width="7" height="14" rx="2" fill="#3B4257"></rect>
+  </g>
+  <path d="M30 46 L6 38 L4 46 L8 56 L30 58 Z" fill="{{body}}"></path>
+  <path d="M6 38 L2 26 L12 28 L14 41 Z" fill="{{tint}}"></path>
+  <ellipse cx="60" cy="50" rx="34" ry="23" fill="{{body}}"></ellipse>
+  <path d="M30 58 Q60 72 92 58" fill="none" stroke="{{tint}}" stroke-width="5"></path>
+  <circle cx="74" cy="45" r="12" fill="#D7F3FF"></circle>
+  <path d="M68 38 Q72 34 78 35" fill="none" stroke="#fff" stroke-width="2.5"></path>
+  <ellipse cx="72" cy="46" rx="2.6" ry="3.4" fill="#151B2B" stroke="none"><animate attributeName="ry" values="3.4;3.4;.3;3.4" keyTimes="0;.9;.95;1" dur="3.8s" repeatCount="indefinite"></animate></ellipse>
+  <ellipse cx="80" cy="46" rx="2.6" ry="3.4" fill="#151B2B" stroke="none"><animate attributeName="ry" values="3.4;3.4;.3;3.4" keyTimes="0;.9;.95;1" dur="3.8s" repeatCount="indefinite"></animate></ellipse>
+  <line x1="60" y1="27" x2="60" y2="16"></line>
+  <ellipse cx="60" cy="14" rx="46" ry="3.5" fill="#2A3045"><animate attributeName="rx" values="46;8;46" dur=".22s" repeatCount="indefinite"></animate></ellipse>
+  <circle cx="60" cy="14" r="3.5" fill="#8A93A8"></circle>
+</g>
+</sc-if>
+
+<sc-if value="{{isVoltaic}}" hint-placeholder-val="{{ false }}">
+<g stroke="#151B2B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+  <g transform="rotate({{rot}} 72 58)">
+    <rect x="70" y="54" width="36" height="9" rx="3" fill="#5B6378"></rect>
+    <rect x="80" y="51" width="5" height="15" rx="1.5" fill="#E8A23B"></rect><rect x="90" y="51" width="5" height="15" rx="1.5" fill="#E8A23B"></rect>
+    <circle cx="108" cy="58.5" r="4" fill="#8FE3FF"></circle>
+  </g>
+  <rect x="46" y="28" width="20" height="38" fill="#3B4257"></rect>
+  <ellipse cx="56" cy="36" rx="15" ry="4" fill="#E8A23B"></ellipse><ellipse cx="56" cy="45" rx="15" ry="4" fill="#E8A23B"></ellipse><ellipse cx="56" cy="54" rx="15" ry="4" fill="#E8A23B"></ellipse>
+  <circle cx="56" cy="21" r="9.5" fill="#8FE3FF"><animate attributeName="fill" values="#8FE3FF;#F5FDFF;#8FE3FF" dur="1.1s" repeatCount="indefinite"></animate></circle>
+  <polyline points="44,16 38,20 42,22 35,28" fill="none" stroke="#FFD166" stroke-width="2.5"><animate attributeName="opacity" values="1;0;0;1" dur=".9s" repeatCount="indefinite"></animate></polyline>
+  <polyline points="68,14 74,18 70,21 78,25" fill="none" stroke="#FFD166" stroke-width="2.5"><animate attributeName="opacity" values="0;1;0;0" dur=".7s" repeatCount="indefinite"></animate></polyline>
+  <path d="M20 78 L100 78 L92 60 L28 60 Z" fill="{{body}}"></path>
+  <path d="M22 78 L100 78 L97 71 L25 71 Z" fill="#000" opacity=".18" stroke="none"></path>
+  <rect x="31" y="63" width="25" height="10" rx="5" fill="#151B2B"></rect>
+  <ellipse cx="38" cy="68" rx="2.6" ry="3" fill="#8FE3FF" stroke="none"><animate attributeName="ry" values="3;3;.3;3" keyTimes="0;.9;.95;1" dur="5s" repeatCount="indefinite"></animate></ellipse>
+  <ellipse cx="48" cy="68" rx="2.6" ry="3" fill="#8FE3FF" stroke="none"><animate attributeName="ry" values="3;3;.3;3" keyTimes="0;.9;.95;1" dur="5s" repeatCount="indefinite"></animate></ellipse>
+  <rect x="62" y="64" width="24" height="5" rx="2" fill="{{tint}}"></rect>
+  <rect x="16" y="76" width="88" height="17" rx="8.5" fill="#2A3045"></rect>
+  <circle cx="27" cy="84.5" r="5" fill="#8A93A8"></circle><circle cx="45" cy="84.5" r="5" fill="#8A93A8"></circle><circle cx="63" cy="84.5" r="5" fill="#8A93A8"></circle><circle cx="81" cy="84.5" r="5" fill="#8A93A8"></circle><circle cx="96" cy="84.5" r="4" fill="#8A93A8"></circle>
+</g>
+</sc-if>
+
+<sc-if value="{{isCinder}}" hint-placeholder-val="{{ false }}">
+<g stroke="#151B2B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+  <circle cx="40" cy="6" r="4" fill="#5B6378" opacity=".7"><animate attributeName="cy" values="10;-6" dur="1.8s" repeatCount="indefinite"></animate><animate attributeName="r" values="3;7" dur="1.8s" repeatCount="indefinite"></animate><animate attributeName="opacity" values=".8;0" dur="1.8s" repeatCount="indefinite"></animate></circle>
+  <rect x="35" y="10" width="10" height="15" rx="2" fill="#3B4257"></rect>
+  <polyline points="46,68 36,80 44,90" fill="none" stroke="#151B2B" stroke-width="10"></polyline>
+  <polyline points="46,68 36,80 44,90" fill="none" stroke="#5B6378" stroke-width="5"></polyline>
+  <polyline points="76,68 86,80 78,90" fill="none" stroke="#151B2B" stroke-width="10"></polyline>
+  <polyline points="76,68 86,80 78,90" fill="none" stroke="#5B6378" stroke-width="5"></polyline>
+  <rect x="34" y="88" width="20" height="6" rx="3" fill="#2A3045"></rect><rect x="70" y="88" width="20" height="6" rx="3" fill="#2A3045"></rect>
+  <g transform="rotate({{rot}} 86 42)">
+    <rect x="84" y="37" width="24" height="10" rx="2" fill="#5B6378"></rect>
+    <path d="M106 34 L116 30 L116 54 L106 50 Z" fill="#3B4257"></path>
+  </g>
+  <path d="M28 30 Q28 20 40 20 L82 20 Q92 20 92 30 L92 62 Q92 72 82 72 L40 72 Q28 72 28 62 Z" fill="{{body}}"></path>
+  <path d="M28 60 L92 60 L92 62 Q92 72 82 72 L40 72 Q28 72 28 62 Z" fill="#000" opacity=".2" stroke="none"></path>
+  <path d="M34 34 Q36 25 46 24" fill="none" stroke="#fff" stroke-width="3" opacity=".35"></path>
+  <rect x="44" y="46" width="32" height="17" rx="3" fill="#151B2B"></rect>
+  <g stroke="#FFD166" stroke-width="3"><animate attributeName="opacity" values=".55;1;.7;1;.55" dur=".8s" repeatCount="indefinite"></animate><line x1="51" y1="50" x2="51" y2="59"></line><line x1="60" y1="50" x2="60" y2="59"></line><line x1="69" y1="50" x2="69" y2="59"></line></g>
+  <rect x="44" y="27" width="32" height="12" rx="6" fill="#151B2B"></rect>
+  <path d="M50 30 L57 33 L50 36 Z" fill="#FFD166" stroke="none"></path><path d="M70 30 L63 33 L70 36 Z" fill="#FFD166" stroke="none"></path>
+  <circle cx="30" cy="38" r="8" fill="{{tint}}"></circle>
+</g>
+</sc-if>
+
+<sc-if value="{{isFrostbite}}" hint-placeholder-val="{{ false }}">
+<g stroke="#151B2B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+  <g transform="rotate({{rot}} 78 48)">
+    <rect x="74" y="43" width="12" height="11" rx="2" fill="#5B6378"></rect>
+    <path d="M84 42 L118 48.5 L84 55 Z" fill="#D7F3FF"></path>
+    <path d="M88 46 L108 48.5" stroke="#fff" stroke-width="2"></path>
+  </g>
+  <path d="M10 92 L104 92 Q112 92 112 84" fill="none" stroke="#2A3045" stroke-width="4.5"></path>
+  <line x1="32" y1="86" x2="32" y2="92"></line><line x1="88" y1="86" x2="88" y2="92"></line>
+  <rect x="20" y="72" width="80" height="15" rx="5" fill="#5B6378"></rect>
+  <path d="M24 75 Q26 32 60 32 Q94 32 96 75 Z" fill="{{body}}"></path>
+  <path d="M30 60 Q60 54 90 60 M27 47 Q60 40 93 47 M44 34 L46 47 M74 34 L72 47 M36 48 L36 60 M60 41 L60 54 M84 48 L84 60" fill="none" stroke="#151B2B" stroke-width="1.6" opacity=".35"></path>
+  <path d="M34 50 Q38 38 50 35" fill="none" stroke="#fff" stroke-width="3.5" opacity=".6"></path>
+  <path d="M47 75 Q47 57 60 57 Q73 57 73 75 Z" fill="#151B2B"></path>
+  <ellipse cx="55" cy="66" rx="2.8" ry="3.4" fill="#9FE3FF" stroke="none"><animate attributeName="ry" values="3.4;3.4;.3;3.4" keyTimes="0;.9;.95;1" dur="4.6s" repeatCount="indefinite"></animate></ellipse>
+  <ellipse cx="65" cy="66" rx="2.8" ry="3.4" fill="#9FE3FF" stroke="none"><animate attributeName="ry" values="3.4;3.4;.3;3.4" keyTimes="0;.9;.95;1" dur="4.6s" repeatCount="indefinite"></animate></ellipse>
+  <path d="M28 70 Q60 82 92 70 L92 77 Q60 89 28 77 Z" fill="{{tint}}"></path>
+  <path d="M30 74 L16 82 L22 86 L33 78 Z" fill="{{tint}}"><animateTransform attributeName="transform" type="rotate" values="0 30 74;-10 30 74;0 30 74" dur="1.4s" repeatCount="indefinite"></animateTransform></path>
+</g>
+</sc-if>
+
+<sc-if value="{{isBoomba}}" hint-placeholder-val="{{ false }}">
+<g stroke="#151B2B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+  <path d="M72 26 Q80 12 92 15" fill="none" stroke="#C9A26B" stroke-width="3.5"></path>
+  <path d="M92 9 L94 13 L99 12 L95.5 15.5 L98 20 L93 17.5 L89 21 L90 16 L86 13 L91 13 Z" fill="#FFD166" stroke-width="1.5"><animateTransform attributeName="transform" type="rotate" values="0 92 15;180 92 15;360 92 15" dur=".6s" repeatCount="indefinite"></animateTransform></path>
+  <g transform="rotate({{rot}} 80 56)">
+    <rect x="78" y="49" width="28" height="13" rx="4" fill="#5B6378"></rect>
+    <rect x="102" y="46" width="8" height="19" rx="3" fill="#3B4257"></rect>
+  </g>
+  <path d="M52 70 L46 84 M68 70 L74 84" fill="none" stroke="#5B6378" stroke-width="4"></path>
+  <circle cx="60" cy="81" r="12" fill="#2A3045"></circle><circle cx="60" cy="81" r="4.5" fill="#C9D1E0"></circle>
+  <circle cx="60" cy="48" r="28" fill="{{body}}"></circle>
+  <rect x="66" y="18" width="12" height="9" rx="2" fill="#3B4257" transform="rotate(30 72 22)"></rect>
+  <path d="M38 36 Q44 24 56 21" fill="none" stroke="#fff" stroke-width="3.5" opacity=".45"></path>
+  <path d="M34 58 Q60 72 86 58" fill="none" stroke="{{tint}}" stroke-width="5.5"></path>
+  <circle cx="52" cy="44" r="7" fill="#F5F1E8"></circle><circle cx="68" cy="44" r="7" fill="#F5F1E8"></circle>
+  <circle cx="54" cy="45" r="3.2" fill="#151B2B" stroke="none"><animate attributeName="cx" values="54;50;54" dur="3s" repeatCount="indefinite"></animate></circle>
+  <circle cx="70" cy="45" r="3.2" fill="#151B2B" stroke="none"><animate attributeName="cx" values="70;66;70" dur="3s" repeatCount="indefinite"></animate></circle>
+  <path d="M50 54 Q60 61 70 54" fill="#151B2B"></path>
+</g>
+</sc-if>
+
+<sc-if value="{{victory}}" hint-placeholder-val="{{ false }}">
+<g fill="#FFD166" stroke="#151B2B" stroke-width="1.5">
+  <path d="M14 20 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z"><animate attributeName="opacity" values="0;1;0" dur="1.2s" repeatCount="indefinite"></animate></path>
+  <path d="M104 8 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z"><animate attributeName="opacity" values="1;0;1" dur="1.4s" repeatCount="indefinite"></animate></path>
+  <path d="M110 46 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5z"><animate attributeName="opacity" values="0;1;0" dur=".9s" repeatCount="indefinite"></animate></path>
+</g>
+</sc-if>
+</g>
+<sc-if value="{{wreck}}" hint-placeholder-val="{{ false }}">
+<g fill="#5B6378" stroke="none">
+  <circle cx="54" cy="40" r="6"><animate attributeName="cy" values="48;0" dur="2.2s" repeatCount="indefinite"></animate><animate attributeName="r" values="5;15" dur="2.2s" repeatCount="indefinite"></animate><animate attributeName="opacity" values=".8;0" dur="2.2s" repeatCount="indefinite"></animate></circle>
+  <circle cx="66" cy="40" r="6"><animate attributeName="cy" values="50;4" dur="2.6s" begin="1s" repeatCount="indefinite"></animate><animate attributeName="r" values="4;13" dur="2.6s" begin="1s" repeatCount="indefinite"></animate><animate attributeName="opacity" values=".7;0" dur="2.6s" begin="1s" repeatCount="indefinite"></animate></circle>
+</g>
+</sc-if>
+</svg>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"kind":{"editor":"enum","options":["thumper","sprocket","mollusk","whirligig","voltaic","cinder","frostbite","boomba"],"default":"thumper"},"tint":{"editor":"color","default":"#F45B55","options":["#F45B55","#4C9AFF","#FFD166"]},"paint":{"editor":"color","default":""},"size":{"editor":"int","default":240,"min":24,"max":600},"flip":{"editor":"boolean","default":false},"aim":{"editor":"range","default":30,"min":0,"max":90,"unit":"°"},"pose":{"editor":"enum","options":["idle","victory","wreck"],"default":"idle"},"$preview":{"width":240,"height":200}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const P = { thumper: '#F28C38', sprocket: '#5ACB91', mollusk: '#B07CF2', whirligig: '#4CC3D9', voltaic: '#FFD166', cinder: '#FF6B3D', frostbite: '#9FE3FF', boomba: '#FF7EB6' };
+    const N = { thumper: 'Thumper', sprocket: 'Sprocket', mollusk: 'Mollusk', whirligig: 'Whirligig', voltaic: 'Voltaic', cinder: 'Cinder', frostbite: 'Frostbite', boomba: 'Boomba' };
+    const k = P[this.props.kind] ? this.props.kind : 'thumper';
+    const size = Number(this.props.size ?? 240) || 240;
+    const pose = this.props.pose ?? 'idle';
+    const aim = Number(this.props.aim ?? 30);
+    const rot = -(pose === 'victory' ? 62 : pose === 'wreck' ? -18 : aim);
+    return {
+      label: N[k] + ' battle machine',
+      isThumper: k === 'thumper', isSprocket: k === 'sprocket', isMollusk: k === 'mollusk', isWhirligig: k === 'whirligig',
+      isVoltaic: k === 'voltaic', isCinder: k === 'cinder', isFrostbite: k === 'frostbite', isBoomba: k === 'boomba',
+      w: size, h: Math.round(size / 1.2),
+      body: this.props.paint || P[k], tint: this.props.tint || '#F45B55', rot,
+      flipT: this.props.flip ? 'translate(120 0) scale(-1 1)' : 'translate(0 0)',
+      victory: pose === 'victory', wreck: pose === 'wreck',
+      filt: pose === 'wreck' ? 'grayscale(.85) brightness(.65)' : 'none',
+      tilt: pose === 'wreck' ? 'rotate(9deg) translateY(6%)' : 'none'
+    };
+  }
+}
+</script>
+</body>
+</html>

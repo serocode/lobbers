@@ -1,0 +1,14 @@
+/* App-wide styles: design tokens + shared component classes straight from design/tokens (never copied). */
+@import '@design/tokens/tokens.css';
+@import '@design/tokens/components.css';
+
+html, body, #root { height: 100%; margin: 0; background: #101522; }
+* { box-sizing: border-box; }
+body { font-family: Fredoka, system-ui, sans-serif; color: #F5F1E8; -webkit-font-smoothing: antialiased; overflow: hidden; }
+a { color: #FFD166; }
+a:hover { color: #FFE29A; }
+button { font: inherit; }
+.root:focus { outline: none; }
+
+/* Reduced motion: decorative loops are switched off per component (shake, shine, idle bob, confetti),
+   state-change animations (banner, modal, damage numbers) stay — see DESIGN_SPEC § Motion. */

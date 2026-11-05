@@ -1,0 +1,46 @@
+/* Verbatim from design/mockup/Lobby.dc.html <helmet>. Source of truth for states & animations. */
+body{margin:0;background:#101522}
+*{box-sizing:border-box}
+a{color:#FFD166}a:hover{color:#FFE29A}
+.fd{font-family:'Lilita One',Fredoka,system-ui,sans-serif;letter-spacing:.5px;font-weight:400}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.btn{font-family:Fredoka,system-ui,sans-serif;font-weight:600;cursor:pointer;border:3px solid #0B0F1A;border-radius:10px;box-shadow:0 4px 0 #0B0F1A;transition:transform .08s,box-shadow .08s,filter .15s;color:#F5F1E8;background:#232B42;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{filter:brightness(1.12);transform:translateY(-2px);box-shadow:0 6px 0 #0B0F1A;color:#F5F1E8}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0B0F1A}
+.btn:disabled{filter:grayscale(.85) brightness(.65);cursor:not-allowed;transform:none;box-shadow:0 4px 0 #0B0F1A}
+.btn:focus-visible{outline:3px solid #FFD166;outline-offset:2px}
+.dark{color:#101522}.dark:hover{color:#101522}
+.panel{background:#151B2B;border:3px solid #0B0F1A;border-radius:12px;box-shadow:0 5px 0 #0B0F1A,inset 0 2px 0 rgba(255,255,255,.05)}
+.bg{background-color:#101522;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 14px,transparent 14px 28px)}
+.stripes{background-image:repeating-linear-gradient(135deg,rgba(0,0,0,.18) 0 8px,transparent 8px 16px)}
+.slot{transition:transform .2s}
+.slot:hover{transform:translateX(3px)}
+.join{animation:join .5s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes join{from{opacity:0;transform:scale(.8) translateY(14px)}to{opacity:1;transform:none}}
+.readyOn{animation:rdy .4s cubic-bezier(.2,1.6,.4,1) both, glow 2s ease-in-out .4s infinite}
+@keyframes rdy{from{transform:scale(.6)}to{transform:scale(1)}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(90,203,145,.0)}50%{box-shadow:0 0 0 5px rgba(90,203,145,.25)}}
+.wait{animation:wait 1.4s ease-in-out infinite}
+@keyframes wait{0%,100%{opacity:.55}50%{opacity:1}}
+.ping{animation:ping 2.4s ease-in-out infinite}
+@keyframes ping{0%,90%,100%{opacity:1}95%{opacity:.3}}
+.spin{animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dash{border:3px dashed #3B4257;background:rgba(21,27,43,.6)}
+.dash:hover{border-color:#FFD166;background:rgba(255,209,102,.06)}
+.bob{animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.scrim{position:absolute;inset:0;background:rgba(8,11,20,.78);display:flex;align-items:center;justify-content:center;z-index:50;animation:fade .2s both}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{animation:modal .32s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes modal{from{opacity:0;transform:translateY(24px) scale(.94)}to{opacity:1;transform:none}}
+.count{animation:count .9s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes count{0%{opacity:0;transform:scale(2.4)}30%{opacity:1;transform:scale(1)}85%{opacity:1}100%{opacity:0;transform:scale(.8)}}
+.load{animation:load 2.2s cubic-bezier(.4,0,.2,1) both}
+@keyframes load{from{width:0}to{width:100%}}
+.toast{animation:toast .3s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes toast{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.setb{flex-direction:column;align-items:flex-start;gap:2px;height:56px;padding:0 12px;text-align:left}
+.inp{height:42px;border:3px solid #0B0F1A;border-radius:10px;background:#0E1320;color:#F5F1E8;padding:0 12px;font-family:Fredoka,sans-serif;font-size:15px;flex:1;min-width:0}
+.inp:focus{outline:3px solid #4C9AFF}
+.msg{animation:join .3s ease-out both}

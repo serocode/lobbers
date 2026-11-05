@@ -1,0 +1,27 @@
+{
+  "name": "lobbers",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel --if-present dev",
+    "dev:client": "pnpm --filter @lobbers/client dev",
+    "dev:server": "pnpm --filter @lobbers/server dev",
+    "build": "pnpm -r --if-present build",
+    "test": "pnpm -r --if-present test",
+    "test:core": "node --experimental-strip-types --no-warnings --test packages/shared/test/*.test.ts",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "e2e": "pnpm --filter @lobbers/client e2e",
+    "db:up": "docker compose up -d postgres redis",
+    "db:migrate": "pnpm --filter @lobbers/server db:migrate"
+  },
+  "engines": {
+    "node": ">=22.6"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "msgpackr-extract"
+    ]
+  }
+}

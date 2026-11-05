@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+coverage
+playwright-report
+test-results
+
+# Agent prompt / handoff notes (local only)
+PROMPTS.md
+START_HERE.md
+docs/BRIEF.md
+docs/DESIGN_BRIEF.md
