@@ -1,7 +1,7 @@
 {
   "perf": {
     "carves": 13,
-    "maxCarveMs": 0.3
+    "maxCarveMs": 0.1
   },
   "turns": 13,
   "winner": "red",
@@ -11,5 +11,5 @@
     "min": 60,
     "avg": 60
   },
-  "diffVs04": 3.92
+  "diffVs04": 4.24
 }

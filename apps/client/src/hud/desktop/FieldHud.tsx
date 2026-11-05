@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CAMERA, MAPS, type MapId, type Terrain } from '@lobbers/shared';
 import { FocusIcon, LogIcon, OverviewIcon, SkullIcon } from '../../components';
+import { EmoteButton } from '../EmoteWheel';
 import { cameraBus, type CameraView } from '../../state/cameraBus';
 import { TEAM_COLOR, unitOf } from '../../state/matchStore';
 import { useBattleUi } from '../../state/uiStores';
@@ -112,11 +113,12 @@ export function LogToggle(): JSX.Element {
 
 export function CameraButtons({ top = 690 }: { top?: number }): JSX.Element {
   const cam = useCameraView();
-  const hint = cam.mode === 'follow' ? 'Camera following the shot' : cam.fit ? 'Overview · Z to zoom back in' : 'Drag to look around · F focus · Z overview';
+  const hint = cam.mode === 'follow' ? 'Camera following the shot' : cam.fit ? 'Overview · Z to zoom back in' : 'Drag to look around · F focus · Z overview · T emotes';
   return (
     <div style={{ position: 'absolute', left: 14, top, display: 'flex', gap: 8, alignItems: 'center' }}>
       <button type="button" className="btn" onClick={() => cameraBus.command({ t: 'focusActive' })} aria-label="Focus camera on the active machine (F)" title="Focus (F)" style={{ width: 46, height: 46 }}><FocusIcon /></button>
       <button type="button" className={`btn ${s.cam} ${cam.fit ? s.on : ''}`} onClick={() => cameraBus.command({ t: 'toggleOverview' })} aria-pressed={cam.fit} aria-label="Toggle whole-map overview (Z)" title="Overview (Z)" style={{ width: 46, height: 46 }}><OverviewIcon /></button>
+      <EmoteButton />
       <span className="hud" style={{ fontSize: 12, fontWeight: 600, padding: '6px 10px', borderRadius: 9, color: '#C9D1E0' }}>{hint}</span>
     </div>
   );

@@ -1,10 +1,11 @@
 // The battlefield (Phaser draws; @lobbers/shared decides). Builds the world from the start snapshot +
 // the client mirror, then plays the replay timeline every frame.
 import Phaser from 'phaser';
-import { MACHINES, MAPS, hitCenter, type MatchStartedMsg, type ShotModifier, type UnitState } from '@lobbers/shared';
+import { COSMETIC_BY_ID, EMOTE_RULES, MACHINES, MAPS, hitCenter, type MatchStartedMsg, type ShotModifier, type UnitCosmetics, type UnitState } from '@lobbers/shared';
 import type { ClientMatch } from '../../state/ClientMatch';
 import type { BattleControls } from '../../state/battleControls';
 import { cameraBus } from '../../state/cameraBus';
+import { mmss } from '../../state/format';
 import { canControl, unitOf, type MatchView } from '../../state/matchStore';
 import { useSettings, useBattleUi, type Settings } from '../../state/uiStores';
 import type { LayoutSpec } from '../layouts';
@@ -12,12 +13,13 @@ import { CameraDirector } from '../render/CameraDirector';
 import { Decorations } from '../render/Decorations';
 import { FieldInput } from '../render/FieldInput';
 import { Fx } from '../render/Fx';
+import { HazardView } from '../render/HazardView';
 import { Preview } from '../render/Preview';
 import { PropViews } from '../render/PropViews';
 import { ShotView } from '../render/ShotView';
 import { TerrainPainter } from '../render/TerrainPainter';
 import { UnitView } from '../render/UnitView';
-import { backgroundUrl, decorTextures, machineTextures, spriteTextures } from '../render/svgSources';
+import { backgroundUrl, decorTextures, machineTextures, spriteTextures, type TextureSource } from '../render/svgSources';
 import { createScenePresenter } from './scenePresenter';
 
 export interface BattleSceneData {
@@ -30,6 +32,8 @@ export interface BattleSceneData {
   /** Texture px per world px. */
   texScale: number;
   reducedMotion: boolean;
+  /** Skin bodies / weapon-skin shells (sizes are per texScale 1; scaled in preload). */
+  extraTextures: TextureSource[];
 }
 
 const D = { bg: 0, terrain: 10, deco: 12, flames: 14, preview: 16, props: 18, units: 30, shots: 40, fx: 50 } as const;
@@ -48,6 +52,7 @@ export class BattleScene extends Phaser.Scene {
   private preview!: Preview;
   private input2!: FieldInput;
   private bg!: Phaser.GameObjects.Image;
+  private hazard!: HazardView;
   private bgScale = 1;
   private terrainVersion = 0;
   private pendingVanish = new Set<string>();
@@ -57,10 +62,14 @@ export class BattleScene extends Phaser.Scene {
 
   init(d: BattleSceneData): void { this.d = d; this.layout = d.layout; }
 
+  /** Server-resolved cosmetics for a unit (skins, trail, explosion, shell colours, emotes). */
+  cosmetics(unitId: string): UnitCosmetics | undefined { return this.d.start.cosmetics?.[unitId]; }
+
   preload(): void {
     const { start, texScale: k } = this.d;
     const kinds = start.units.map((u) => u.machine), teams = start.units.map((u) => u.team);
     for (const t of [...machineTextures(kinds, teams, k), ...spriteTextures(k), ...decorTextures(start.mapId, k)]) this.load.svg(t.key, t.url, { width: t.width, height: t.height });
+    for (const t of this.d.extraTextures) this.load.svg(t.key, t.url, { width: Math.round(t.width * k), height: Math.round(t.height * k) });
     const map = MAPS[start.mapId];
     const gl = this.renderer as Phaser.Renderer.WebGL.WebGLRenderer;
     const max = typeof gl.getMaxTextureSize === 'function' ? gl.getMaxTextureSize() : 4096;
@@ -75,11 +84,12 @@ export class BattleScene extends Phaser.Scene {
     const map = MAPS[start.mapId];
     this.cameras.main.setBackgroundColor(map.palette.skyTop);
     this.bg = this.add.image(0, 0, 'bg').setOrigin(0, 0).setScale(1 / this.bgScale).setDepth(D.bg);
+    this.hazard = new HazardView(this, start.mapId, D.bg + 1, reducedMotion);
     this.terrain = new TerrainPainter(this, start.mapId, k, world.terrain, D.terrain);
     this.decos = new Decorations(this, start.mapId, k, D.deco, reducedMotion);
     this.props = new PropViews(this, world.props, k, D.props, reducedMotion);
     const res = density;
-    for (const u of this.view().units) this.unitViews.set(u.id, new UnitView(this, u, this.layout, k, D.units, res, reducedMotion));
+    for (const u of this.view().units) this.unitViews.set(u.id, new UnitView(this, u, this.layout, k, D.units, res, reducedMotion, start.cosmetics[u.id]?.paint ?? null));
     this.shots = new ShotView(this, D.shots, k);
     this.fx = new Fx(this, D.fx, res, k, reducedMotion);
     this.fx.syncBurnZones(this.view().burnZones, world.terrain);
@@ -94,6 +104,15 @@ export class BattleScene extends Phaser.Scene {
     });
     this.cleanups.push(match.addPresenter(createScenePresenter(this)));
     this.cleanups.push(match.store.subscribe((s, p) => { if (s.burnZones !== p.burnZones && match.world) this.fx.syncBurnZones(s.burnZones, match.world.terrain); }));
+    this.cleanups.push(match.store.subscribe((s, p) => {
+      if (s.emotes === p.emotes) return;
+      const seen = new Set(p.emotes.map((e) => e.id));
+      for (const e of s.emotes) {
+        if (seen.has(e.id)) continue;
+        const item = COSMETIC_BY_ID[e.emoteId];
+        if (item?.slot === 'emote') this.unitViews.get(e.unitId)?.say(item.text, density, EMOTE_RULES.bubbleMs, e.emoteId === 'e-boom');
+      }
+    }));
     this.cleanups.push(cameraBus.onCommand((c) => {
       const a = unitOf(this.view(), this.view().activeUnitId);
       if (c.t === 'focusActive' && a && !this.director.flying) { if (this.director.fit) this.director.toggleOverview({ x: a.x, y: a.y }); else this.director.focusOn(a.x, a.y); }
@@ -145,6 +164,7 @@ export class BattleScene extends Phaser.Scene {
     this.director.update(dt);
     const bp = this.director.backdropPos();
     this.bg.setPosition(bp.x, bp.y);
+    this.hazard.setPosition(bp.x, bp.y);
     this.updateUnits(v, tick, dt);
     this.updatePreview(v, dt);
     this.terrain.flush();
@@ -171,7 +191,9 @@ export class BattleScene extends Phaser.Scene {
       const angle = (v.localPlayerIds.includes(u.playerId) ? aim?.angle : remote?.angle) ?? aim?.angle ?? (u.facing > 0 ? 30 : 150);
       const c = hitCenter(u);
       const burning = v.burnZones.some((z) => Math.hypot(c.x - z.x, c.y - z.y) < z.radius);
-      view.update(u, { angle, active, you: !!mine && mine.id === u.id, ownTeam, burning });
+      const until = v.sync.offline[u.playerId];
+      const offline = until ? `OFFLINE ${mmss(until - this.d.match.transport.serverNow())}` : null;
+      view.update(u, { angle, active, you: !!mine && mine.id === u.id, ownTeam, burning, offline });
     }
     if (this.director.mode === 'focus') {
       const a = unitOf(v, v.activeUnitId), av = a ? this.unitViews.get(a.id) : undefined;

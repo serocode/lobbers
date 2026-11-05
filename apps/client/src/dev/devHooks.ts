@@ -1,15 +1,37 @@
 // DEV ONLY (stripped from production builds): lets Playwright drive a hot-seat match through the real
 // input path. `aimAtNearest()` picks an aim with the same preview the player sees, then sets it via
 // BattleControls; the test presses Space to fire. Nothing here touches authoritative state.
-import { MACHINES, WEAPONS, canUseWeapon, predictTrajectory, unitById, type WeaponId } from '@lobbers/shared';
+import { MACHINES, WEAPONS, canUseWeapon, predictTrajectory, unitById, type MatchIntent, type WeaponId } from '@lobbers/shared';
 import type { ClientMatch } from '../state/ClientMatch';
 import type { BattleControls } from '../state/battleControls';
 
-export interface DevApi { aimAtNearest(prefer?: WeaponId): boolean }
+export interface DevSnapshot {
+  turn: number; wind: number; phase: string; active: string | null; replaying: boolean; result: string | null; mine: boolean;
+  hash: { client: number; server: number; checks: number; mismatches: number };
+  units: Array<{ id: string; hp: number; alive: boolean; x: number; y: number }>;
+  offline: string[];
+}
+
+export interface DevApi {
+  aimAtNearest(prefer?: WeaponId): boolean;
+  /** Immediate view of what this client displays (multiplayer-e2e compares these across contexts). */
+  debug(): DevSnapshot;
+  /** Sends an intent straight through the transport (used to prove the server rejects forged/out-of-turn intents). */
+  sendRaw(intent: MatchIntent): void;
+}
 
 export function installDevHooks(match: ClientMatch, controls: BattleControls): () => void {
   if (!import.meta.env.DEV) return () => undefined;
   const api: DevApi = {
+    debug() {
+      const st = match.store.getState();
+      return {
+        turn: st.turnNumber, wind: st.wind, phase: st.sync.phase, active: st.activeUnitId, replaying: match.replay.busy, result: st.result?.winner ?? null,
+        mine: controls.enabled, hash: st.hash, offline: Object.keys(st.sync.offline),
+        units: st.units.map((u) => ({ id: u.id, hp: u.hp, alive: u.alive, x: Math.round(u.x), y: Math.round(u.y) })),
+      };
+    },
+    sendRaw(intent) { match.send(intent); },
     aimAtNearest(prefer) {
       const w = match.world, id = match.store.getState().activeUnitId;
       if (!w || !id || !controls.enabled) return false;

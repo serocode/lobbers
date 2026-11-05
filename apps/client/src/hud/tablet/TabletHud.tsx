@@ -1,8 +1,11 @@
 // Tablet battle HUD (BattleTablet.dc.html, 1024×768; field 1024×560 at zoom 0.8).
-import { MACHINES, MAPS, type TeamId } from '@lobbers/shared';
-import { FocusIcon, MachineArt, TimerRing, WeaponIcon } from '../../components';
+import { MACHINES, MAPS, type TeamId, type WeaponId } from '@lobbers/shared';
+import { FocusIcon, MachineArt, MoreIcon, TimerRing, WeaponIcon } from '../../components';
 import { cameraBus } from '../../state/cameraBus';
-import { TEAM_DARK, canControl, unitOf } from '../../state/matchStore';
+import { TEAM_DARK, arsenalOf, canControl, unitOf } from '../../state/matchStore';
+import { useBattleUi } from '../../state/uiStores';
+import { WeaponSheet } from '../phone/PhoneHud';
+import { EmoteButton, EmoteWheel } from '../EmoteWheel';
 import { useBattle, useCanControl, useDeckUnit, useMatch, useTurnSeconds, weaponInfo } from '../BattleContext';
 import { BattleToast, ElimRibbon, HurtVignette, TurnBanner } from '../Overlays';
 import { AbilityPair, MoveButtons, SHORT, useTeam } from '../compact';
@@ -59,12 +62,16 @@ function Controls(): JSX.Element {
   const u = useDeckUnit();
   const aim = useMatch((v) => (u ? v.aim[u.id] : undefined));
   const wind = useMatch((v) => v.wind);
+  const arsenal = useMatch((v) => (u ? arsenalOf(v, u).join(',') : '')).split(',').filter(Boolean) as WeaponId[];
+  // The mockup row holds 6 buttons: with the full arsenal (Items On) the 6th opens the weapon sheet.
+  const more = arsenal.length > 6;
+  const row = more ? arsenal.slice(0, 5) : arsenal;
   if (!u || !aim) return <section style={{ position: 'absolute', left: 0, top: 560, width: 1024, height: 208, background: '#151B2B', borderTop: '4px solid #0B0F1A' }} />;
   const abs = Math.abs(wind);
   return (
     <section aria-label="Combat controls" style={{ position: 'absolute', left: 0, top: 560, width: 1024, height: 208, background: '#151B2B', borderTop: '4px solid #0B0F1A', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'flex', gap: 8, height: 70 }}>
-        {MACHINES[u.machine].loadout.map((id) => {
+        {row.map((id) => {
           const w = weaponInfo(id, u), on = aim.weaponId === id;
           return (
             <button key={id} type="button" className={`btn ${s.wb} ${on ? s.on : ''}`} onClick={() => controls.selectWeapon(id)} aria-pressed={on} disabled={!mine || !controls.canUse(id)} style={{ flex: 1, height: 70, flexDirection: 'column', gap: 2, background: '#1C2338', padding: 2 }}>
@@ -73,6 +80,7 @@ function Controls(): JSX.Element {
             </button>
           );
         })}
+        {more && <button type="button" className={`btn ${s.wb}`} onClick={() => useBattleUi.getState().set({ sheetOpen: true })} aria-label="All weapons" style={{ flex: 1, height: 70, flexDirection: 'column', gap: 2, background: '#1C2338', padding: 2 }}><MoreIcon size={30} /><span style={{ fontSize: 13 }}>More <span className="mono" style={{ color: '#A9B3CC', fontSize: 11 }}>+{arsenal.length - row.length}</span></span></button>}
       </div>
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', height: 98 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
@@ -109,6 +117,7 @@ export function TabletHud(): JSX.Element {
     <>
       <HurtVignette />
       <button type="button" className="btn" onClick={() => cameraBus.command({ t: 'focusActive' })} aria-label="Focus camera on the active machine" style={{ position: 'absolute', left: 10, top: 498, width: 52, height: 52 }}><FocusIcon size={24} /></button>
+      <EmoteButton size={52} style={{ position: 'absolute', left: 10, top: 438 }} />
       <span className="hud" style={{ position: 'absolute', left: 72, top: 508, fontSize: 13, fontWeight: 600, padding: '6px 10px', borderRadius: 9, color: '#C9D1E0' }}>{cam.mode === 'follow' ? 'Camera following the shot' : 'Drag to look around'}</span>
       <div style={{ position: 'absolute', left: 10, top: 10, width: 1004, display: 'flex', gap: 10, alignItems: 'stretch' }}>
         <Strip team="red" />
@@ -120,6 +129,8 @@ export function TabletHud(): JSX.Element {
       <Controls />
       <BattleToast bottom={230} />
       <ArmoryModal />
+      <WeaponSheet />
+      <EmoteWheel layout="tablet" />
       <PauseMenu />
       <VictoryOverlay scale={0.75} />
     </>

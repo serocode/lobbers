@@ -1,0 +1,19 @@
+<svg width="240" height="200" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg"><ellipse cx="60" cy="95" rx="44" ry="4.5" fill="#000" opacity=".28"></ellipse><g transform="translate(0 0)"><g stroke="#151B2B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+  <line x1="40" y1="34" x2="33" y2="10" fill="none"></line>
+  <path d="M33 10 L19 14 L34 20 Z" fill="#4C9AFF"><animate attributeName="d" values="M33 10 L19 14 L34 20 Z;M33 10 L20 17 L34 20 Z;M33 10 L19 14 L34 20 Z" dur="1.2s" repeatCount="indefinite"></animate></path>
+  <g transform="rotate(0 64 44)">
+    <rect x="62" y="36" width="44" height="15" rx="3" fill="#5B6378"></rect>
+    <rect x="98" y="33" width="13" height="21" rx="3" fill="#3B4257"></rect>
+    <rect x="70" y="39" width="22" height="3" fill="#fff" opacity=".3" stroke="none"></rect>
+  </g>
+  <path d="M36 58 Q38 28 64 28 Q88 28 90 58 Z" fill="#F28C38"></path>
+  <path d="M42 50 Q46 34 60 32" fill="none" stroke="#fff" stroke-width="3" opacity=".35"></path>
+  <rect x="50" y="37" width="28" height="13" rx="6.5" fill="#151B2B"></rect>
+  <ellipse cx="59" cy="43.5" rx="3" ry="3.6" fill="#FFD166" stroke="none"><animate attributeName="ry" values="3.6;3.6;.4;3.6" keyTimes="0;.92;.96;1" dur="4.2s" repeatCount="indefinite"></animate></ellipse>
+  <ellipse cx="69" cy="43.5" rx="3" ry="3.6" fill="#FFD166" stroke="none"><animate attributeName="ry" values="3.6;3.6;.4;3.6" keyTimes="0;.92;.96;1" dur="4.2s" repeatCount="indefinite"></animate></ellipse>
+  <path d="M16 58 L104 58 L95 75 L25 75 Z" fill="#F28C38"></path>
+  <path d="M25 75 L95 75 L98 69 L22 69 Z" fill="#000" opacity=".2" stroke="none"></path>
+  <rect x="30" y="61" width="60" height="5" rx="2" fill="#4C9AFF"></rect>
+  <rect x="14" y="72" width="92" height="21" rx="10.5" fill="#2A3045"></rect>
+  <circle cx="26" cy="82.5" r="6" fill="#8A93A8"></circle><circle cx="43" cy="82.5" r="6" fill="#8A93A8"></circle><circle cx="60" cy="82.5" r="6" fill="#8A93A8"></circle><circle cx="77" cy="82.5" r="6" fill="#8A93A8"></circle><circle cx="94" cy="82.5" r="6" fill="#8A93A8"></circle>
+  <circle cx="26" cy="82.5" r="1.6" fill="#151B2B" stroke="none"></circle><circle cx="43" cy="82.5" r="1.6" fill="#151B2B" stroke="none"></circle><circle cx="60" cy="82.5" r="1.6" fill="#151B2B" stroke="none"></circle><circle cx="77" cy="82.5" r="1.6" fill="#151B2B" stroke="none"></circle><circle cx="94" cy="82.5" r="1.6" fill="#151B2B" stroke="none"></circle></g></g></svg>

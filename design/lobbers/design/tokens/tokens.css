@@ -1,0 +1,69 @@
+/* Lobbers design tokens — extracted from the approved mockup (design/mockup/*.dc.html).
+   Import once at the app root. Component classes live in design/tokens/components.css. */
+@import '@fontsource/lilita-one/400.css';
+@import '@fontsource/fredoka/400.css';
+@import '@fontsource/fredoka/500.css';
+@import '@fontsource/fredoka/600.css';
+@import '@fontsource/fredoka/700.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/700.css';
+
+:root {
+  /* Ground & surfaces */
+  --lb-bg: #101522;            /* page / dark background */
+  --lb-navy: #151B2B;          /* panels */
+  --lb-surface: #1C2338;       /* cards inside panels */
+  --lb-surface-2: #232B42;     /* default button face */
+  --lb-surface-3: #2E3856;     /* raised / pedestal */
+  --lb-well: #0E1320;          /* meters, inputs, tracks */
+  --lb-ink: #0B0F1A;           /* the chunky outline + hard shadow colour */
+  --lb-track: #2A3045;         /* empty bar / toggle off */
+  --lb-hairline: #3B4257;      /* dashed empty slots */
+
+  /* Text */
+  --lb-text: #F5F1E8;          /* warm off-white */
+  --lb-text-2: #C9D1E0;
+  --lb-text-muted: #A9B3CC;    /* labels, captions (passes 4.5:1 on navy) */
+  --lb-text-dim: #8A93A8;
+  --lb-text-on-color: #101522; /* ALWAYS dark text on red/blue/yellow/green fills */
+
+  /* Brand & teams */
+  --lb-red: #F45B55;
+  --lb-red-dark: #3A2230;      /* red team portrait/tag ground */
+  --lb-blue: #4C9AFF;
+  --lb-blue-dark: #1E2D4E;
+  --lb-yellow: #FFD166;        /* primary CTA, "you", active turn */
+  --lb-yellow-ground: #2A2A1E; /* selected-card ground */
+  --lb-green: #5ACB91;         /* ready, success, HP (own team), XP */
+  --lb-orange: #FFB547;
+  --lb-purple: #B07CF2;
+  --lb-pink: #FF7EB6;
+  --lb-cyan: #9FE3FF;
+
+  /* Rarity */
+  --lb-common: #A9B3CC; --lb-rare: #4C9AFF; --lb-epic: #B07CF2; --lb-legendary: #FFD166;
+
+  /* Type */
+  --lb-font-display: 'Lilita One', Fredoka, system-ui, sans-serif;  /* headings, big numbers on CTAs, banners */
+  --lb-font-ui: Fredoka, system-ui, sans-serif;                     /* everything else */
+  --lb-font-mono: 'JetBrains Mono', ui-monospace, monospace;        /* timers, HP, ammo, stats, codes */
+
+  /* Chunky cartoon geometry */
+  --lb-border: 3px solid var(--lb-ink);
+  --lb-border-heavy: 4px solid var(--lb-ink);
+  --lb-radius-sm: 6px; --lb-radius: 10px; --lb-radius-lg: 12px;
+  --lb-shadow: 0 4px 0 var(--lb-ink);
+  --lb-shadow-hover: 0 6px 0 var(--lb-ink);
+  --lb-shadow-press: 0 1px 0 var(--lb-ink);
+  --lb-shadow-panel: 0 5px 0 var(--lb-ink), inset 0 2px 0 rgba(255,255,255,.05);
+  --lb-text-stroke-display: 5px var(--lb-ink);   /* -webkit-text-stroke on display titles, with paint-order: stroke fill */
+
+  /* Motion */
+  --lb-ease-pop: cubic-bezier(.2, 1.4, .4, 1);
+  --lb-ease-overshoot: cubic-bezier(.2, 1.6, .4, 1);
+  --lb-dur-press: 80ms; --lb-dur-modal: 320ms;
+
+  /* Layout reference (desktop artboards are 1440×900) */
+  --lb-gutter: 24px;
+  --lb-battle-field-h: 750px;  /* world viewport; controls deck is the remaining 150px */
+}

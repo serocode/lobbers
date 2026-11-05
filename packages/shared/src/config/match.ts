@@ -21,6 +21,9 @@ export const CONNECTION_RULES = {
   maxConsecutiveTimeouts: 3,
 } as const;
 
+/** Emotes: one every this many ms per player (speech bubble stays EMOTE_BUBBLE_MS). */
+export const EMOTE_RULES = { cooldownMs: 2500, bubbleMs: 2600 } as const;
+
 export const TURN_RULES = {
   /** Seconds between shot resolution and the next turn (lets animations finish). */
   resolveGraceSec: 1.5,

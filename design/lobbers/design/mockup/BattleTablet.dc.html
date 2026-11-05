@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lobbers — Battlefield (tablet)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&amp;family=Fredoka:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101522}
+*{box-sizing:border-box}
+.fd{font-family:'Lilita One',Fredoka,system-ui,sans-serif;letter-spacing:.5px;font-weight:400}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.btn{font-family:Fredoka,system-ui,sans-serif;font-weight:600;cursor:pointer;border:3px solid #0B0F1A;border-radius:12px;box-shadow:0 4px 0 #0B0F1A;transition:transform .08s,box-shadow .08s,filter .15s;color:#F5F1E8;background:#232B42;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;touch-action:manipulation}
+.btn:hover{filter:brightness(1.12)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0B0F1A}
+.btn:disabled{filter:grayscale(.8) brightness(.6);cursor:not-allowed;transform:none}
+.btn:focus-visible{outline:3px solid #FFD166;outline-offset:2px}
+.hud{background:rgba(16,21,34,.86);border:3px solid #0B0F1A;border-radius:12px;box-shadow:0 4px 0 rgba(11,15,26,.9)}
+.wb.on{border-color:#FFD166;background:#2A2A1E;box-shadow:0 4px 0 #0B0F1A,0 0 0 3px rgba(255,209,102,.35)}
+.field{touch-action:none}
+.shake{animation:shake .45s}
+@keyframes shake{20%,80%{transform:translate(4px,-2px)}40%,60%{transform:translate(-6px,3px)}}
+.unit{position:absolute;width:100px;height:84px;transition:left .4s,top .5s cubic-bezier(.5,0,.8,.6)}
+.fb{position:absolute;border-radius:50%;animation:fb .7s cubic-bezier(.2,1,.3,1) forwards}
+@keyframes fb{0%{transform:scale(.1);opacity:1}100%{transform:scale(1.3);opacity:0}}
+.float{position:absolute;transform:translateX(-50%);animation:rise 1.3s cubic-bezier(.2,1.2,.4,1) forwards;pointer-events:none}
+@keyframes rise{0%{opacity:0;transform:translate(-50%,10px) scale(.4)}15%{opacity:1;transform:translate(-50%,-10px) scale(1.2)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-60px)}}
+.dnum{-webkit-text-stroke:5px #0B0F1A;paint-order:stroke fill}
+.arrow{animation:arrow .8s ease-in-out infinite}
+@keyframes arrow{50%{transform:translateY(-8px)}}
+.fire{width:150px;height:96px;border:none;background:#0B0F1A;clip-path:polygon(14% 0,86% 0,100% 50%,86% 100%,14% 100%,0 50%);cursor:pointer;padding:5px 5px 10px;touch-action:manipulation}
+.fire span{display:flex;width:100%;height:100%;align-items:center;justify-content:center;background:#F45B55;clip-path:polygon(13% 0,87% 0,100% 50%,87% 100%,13% 100%,0 50%);font-size:40px;color:#101522}
+.fire:active span{transform:translateY(4px)}
+.fire:disabled{filter:grayscale(1) brightness(.55)}
+.fire:focus-visible{outline:3px solid #FFD166}
+input[type=range].big{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:#0E1320;border:3px solid #0B0F1A;border-radius:14px}
+input[type=range].big::-webkit-slider-thumb{-webkit-appearance:none;width:40px;height:40px;border-radius:50%;background:#FFD166;border:4px solid #0B0F1A;cursor:pointer}
+input[type=range].big::-moz-range-thumb{width:34px;height:34px;border-radius:50%;background:#FFD166;border:4px solid #0B0F1A;cursor:pointer}
+input[type=range].big:focus-visible{outline:3px solid #4C9AFF}
+</style>
+</helmet>
+<div style="width:1024px;height:768px;position:relative;overflow:hidden;background:#101522;font-family:Fredoka,system-ui,sans-serif;color:#F5F1E8">
+  <div class="field" onPointerDown="{{onDown}}" onPointerMove="{{onMove}}" onPointerUp="{{onUp}}" onPointerCancel="{{onUp}}" style="position:absolute;left:0;top:0;width:1024px;height:560px;overflow:hidden;background:{{sky}}">
+    <div class="{{fieldCls}}" style="position:absolute;inset:0">
+      <div data-lb="{{lbWorld}}" style="position:absolute;left:0;top:0;width:{{W}}px;height:{{H}}px;transform-origin:0 0;transform:{{worldT}};transition:{{camTr}}">
+        <dc-import name="Scene" map="{{mapId}}" w="{{W}}" h="{{H}}" craters="{{craters}}" hint-size="100%,100%"></dc-import>
+        <sc-if value="{{showPrev}}" hint-placeholder-val="{{ true }}">
+          <svg aria-hidden="true" width="{{W}}" height="{{H}}" viewBox="{{vb}}" style="position:absolute;left:0;top:0"><polyline points="{{prevPts}}" fill="none" stroke="#0B0F1A" stroke-width="10" stroke-linecap="round" stroke-dasharray="1 18" opacity=".7"></polyline><polyline points="{{prevPts}}" fill="none" stroke="#F5F1E8" stroke-width="6" stroke-linecap="round" stroke-dasharray="1 18"></polyline></svg>
+        </sc-if>
+        <sc-for list="{{units}}" as="u" hint-placeholder-count="8">
+          <div class="unit" style="left:{{u.left}}px;top:{{u.top}}px">
+            <sc-if value="{{u.alive}}" hint-placeholder-val="{{ true }}">
+              <div style="position:absolute;left:50%;top:-40px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px">
+                <sc-if value="{{u.isYou}}" hint-placeholder-val="{{ false }}"><svg class="arrow" aria-hidden="true" width="28" height="22" viewBox="0 0 26 20" style="position:absolute;top:-30px"><path d="M2 2 H24 L13 18 Z" fill="#FFD166" stroke="#0B0F1A" stroke-width="3"></path></svg></sc-if>
+                <span style="font-size:15px;font-weight:700;white-space:nowrap;padding:1px 8px;border-radius:6px;border:2px solid {{u.bd}};background:{{u.bg}}">{{u.name}}</span>
+                <span style="width:84px;height:10px;border:2px solid #0B0F1A;border-radius:5px;background:#0E1320;overflow:hidden;display:block"><span style="display:block;height:100%;width:{{u.pct}}%;background:{{u.col}};transition:width .6s"></span></span>
+              </div>
+            </sc-if>
+            <dc-import name="Machine" kind="{{u.kind}}" tint="{{u.tint}}" size="{{ 100 }}" flip="{{u.flip}}" aim="{{u.aim}}" pose="{{u.pose}}" hint-size="100px,83px"></dc-import>
+          </div>
+        </sc-for>
+        <sc-if value="{{flying}}" hint-placeholder-val="{{ false }}">
+          <div data-lb="{{lbShell}}" style="position:absolute;left:0;top:0;transform:{{fly.t0}}"><svg aria-hidden="true" width="30" height="16" viewBox="0 0 30 16"><path d="M3 3 H19 Q28 8 19 13 H3 Z" fill="{{fly.col}}" stroke="#0B0F1A" stroke-width="2.5"></path></svg></div>
+        </sc-if>
+        <sc-for list="{{booms}}" as="b" hint-placeholder-count="0">
+          <div style="position:absolute;left:{{b.x}}px;top:{{b.y}}px">
+            <div class="fb" style="left:{{b.o}}px;top:{{b.o}}px;width:{{b.s}}px;height:{{b.s}}px;background:{{b.col}};border:4px solid #0B0F1A;animation-delay:{{b.dl}}s"></div>
+            <div class="fb" style="left:{{b.io}}px;top:{{b.io}}px;width:{{b.is}}px;height:{{b.is}}px;background:#FFF6D6;animation-duration:.45s;animation-delay:{{b.dl}}s"></div>
+          </div>
+        </sc-for>
+        <sc-for list="{{floaters}}" as="f" hint-placeholder-count="0">
+          <div class="float fd dnum" style="left:{{f.x}}px;top:{{f.y}}px;font-size:46px;color:{{f.col}}">{{f.t}}</div>
+        </sc-for>
+      </div>
+    </div>
+    <button class="btn" onClick="{{focus}}" aria-label="Focus camera on your machine" style="position:absolute;left:10px;bottom:10px;width:52px;height:52px"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2" fill="currentColor"></circle><path d="M12 1v4M12 19v4M1 12h4M19 12h4"></path></svg></button>
+    <span class="hud" style="position:absolute;left:72px;bottom:16px;font-size:13px;font-weight:600;padding:6px 10px;border-radius:9px;color:#C9D1E0">{{camHint}}</span>
+  </div>
+
+  <div style="position:absolute;left:10px;top:10px;width:1004px;display:flex;gap:10px;align-items:stretch">
+    <sc-for list="{{teams}}" as="t" hint-placeholder-count="1">
+      <section aria-label="{{t.label}}" class="hud" style="flex:1;padding:6px 10px;display:flex;flex-direction:column;gap:5px;order:{{t.order}}">
+        <div style="display:flex;align-items:center;gap:8px;flex-direction:{{t.dir}}">
+          <span class="fd" style="background:{{t.col}};color:#101522;border:2px solid #0B0F1A;border-radius:6px;padding:0 8px;font-size:15px">{{t.name}}</span>
+          <span class="mono" style="font-size:13px">{{t.alive}}/4</span>
+          <span style="flex:1;height:12px;border:2px solid #0B0F1A;border-radius:6px;background:#0E1320;overflow:hidden;display:flex;justify-content:{{t.just}}"><span style="display:block;height:100%;width:{{t.pct}}%;background:{{t.col}};transition:width .6s"></span></span>
+        </div>
+        <div style="display:flex;gap:5px;flex-direction:{{t.dir}}">
+          <sc-for list="{{t.members}}" as="m" hint-placeholder-count="4">
+            <span title="{{m.name}}" style="width:44px;height:36px;border-radius:7px;border:2px solid {{m.bd}};background:{{t.dark}};display:flex;align-items:center;justify-content:center;opacity:{{m.op}};filter:{{m.filt}}"><dc-import name="Machine" kind="{{m.kind}}" tint="{{t.col}}" size="{{ 36 }}" flip="{{t.flip}}" hint-size="36px,30px"></dc-import></span>
+          </sc-for>
+        </div>
+      </section>
+    </sc-for>
+    <section aria-label="Current turn" class="hud" style="width:230px;order:1;display:flex;align-items:center;gap:10px;padding:6px 10px">
+      <div style="flex:1;display:flex;flex-direction:column"><span class="mono" style="font-size:11px;color:#A9B3CC;font-weight:700">TURN {{turn}} · {{mapUp}}</span><span class="fd" style="font-size:22px;color:#FFD166;line-height:1.1">YOUR TURN</span></div>
+      <div style="position:relative;width:52px;height:52px"><svg aria-hidden="true" width="52" height="52" viewBox="0 0 60 60"><circle cx="30" cy="30" r="24" fill="#0E1320" stroke="#2A3045" stroke-width="6"></circle><circle cx="30" cy="30" r="24" fill="none" stroke="#5ACB91" stroke-width="6" stroke-dasharray="150.8" stroke-dashoffset="{{timerOff}}" transform="rotate(-90 30 30)"></circle></svg><span class="mono" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700">{{timer}}</span></div>
+    </section>
+  </div>
+
+  <section aria-label="Combat controls" style="position:absolute;left:0;top:560px;width:1024px;height:208px;background:#151B2B;border-top:4px solid #0B0F1A;padding:12px 14px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;gap:8px;height:70px">
+      <sc-for list="{{weps}}" as="w" hint-placeholder-count="6">
+        <button class="{{w.cls}}" onClick="{{w.pick}}" aria-pressed="{{w.on}}" style="flex:1;height:70px;flex-direction:column;gap:2px;background:#1C2338;padding:2px">
+          <dc-import name="WeaponIcon" cat="{{w.icon}}" col="{{w.col}}" size="{{ 34 }}" hint-size="34px,34px"></dc-import>
+          <span style="font-size:13px;white-space:nowrap">{{w.n}} <span class="mono" style="color:#FFD166;font-size:11px">{{w.ammo}}</span></span>
+        </button>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;height:98px">
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+        <div style="display:flex;gap:8px">
+          <button class="btn" aria-label="Move left" onClick="{{moveL}}" disabled="{{busy}}" style="width:60px;height:56px"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+          <button class="btn" aria-label="Move right" onClick="{{moveR}}" disabled="{{busy}}" style="width:60px;height:56px"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></button>
+        </div>
+        <span style="font-size:11px;font-weight:700;color:#A9B3CC">FUEL <span class="mono">{{fuel}}</span></span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:#1C2338;border:3px solid #0B0F1A;border-radius:12px;padding:6px 10px">
+        <span style="font-size:11px;font-weight:700;letter-spacing:1px;color:#A9B3CC">ANGLE</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn" aria-label="Lower angle" onClick="{{angDown}}" disabled="{{busy}}" style="width:48px;height:48px;font-size:24px">−</button>
+          <span class="mono" style="font-size:28px;font-weight:700;width:62px;text-align:center">{{angle}}°</span>
+          <button class="btn" aria-label="Raise angle" onClick="{{angUp}}" disabled="{{busy}}" style="width:48px;height:48px;font-size:24px">+</button>
+        </div>
+      </div>
+      <label style="flex:1;display:flex;flex-direction:column;gap:8px;background:#1C2338;border:3px solid #0B0F1A;border-radius:12px;padding:8px 14px">
+        <span style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;letter-spacing:1px;color:#A9B3CC">POWER<span class="mono" style="font-size:20px;color:#FFD166">{{power}}</span></span>
+        <input class="big" type="range" min="0" max="100" value="{{power}}" onChange="{{onPower}}" disabled="{{busy}}">
+      </label>
+      <div style="width:86px;display:flex;flex-direction:column;align-items:center;gap:2px" role="img" aria-label="{{windAria}}">
+        <span style="font-size:11px;font-weight:700;color:#A9B3CC">WIND</span>
+        <svg aria-hidden="true" width="56" height="28" viewBox="0 0 70 34" style="transform:scaleX({{windDir}})"><path d="M4 12 H46 V4 L66 17 L46 30 V22 H4 Z" fill="#FFD166" stroke="#0B0F1A" stroke-width="3"></path></svg>
+        <span class="mono" style="font-size:18px;font-weight:700">{{windAbs}}</span>
+      </div>
+      <button class="fire" onClick="{{fire}}" disabled="{{busy}}" aria-label="Fire"><span class="fd">FIRE</span></button>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1024,"height":768}}'>
+const MAPS = {
+  dunes: { n: 'Sunscar Dunes', W: 3000, H: 1000, base: 730, waves: [[55, 260, 0.5], [24, 90, 1.7], [6, 20, 0]], peaks: [[1500, 140, 260], [620, 70, 150], [2380, 80, 160]], chasms: [], thick: 0 }
+};
+const MAP_ID = 'dunes', SKY = '#3E7CC9';
+const SPAWN = { red: [260, 520, 860, 1100], blue: [2740, 2480, 2140, 1900] };
+const topY = (m, x) => { let y = m.base; for (const [a, p, ph] of m.waves) y += a * Math.sin(x / p + ph); for (const [px, h, w] of m.peaks) y -= h * Math.exp(-Math.pow((x - px) / w, 2)); return y; };
+const inChasm = (m, x) => m.chasms.some(([c, w]) => Math.abs(x - c) < w / 2);
+const edgeDist = (m, x) => { let d = Math.min(x, m.W - x); for (const [c, w] of m.chasms) d = Math.min(d, Math.abs(Math.abs(x - c) - w / 2)); return d; };
+const botY = (m, x) => { if (!m.thick) return m.H + 20; const k = Math.min(1, edgeDist(m, x) / 160); return topY(m, x) + 6 + (m.thick + 30 * Math.sin(x / 70)) * Math.sqrt(k); };
+const CL = (v, a, b) => Math.max(a, Math.min(b, v));
+const VW = 1024, VH = 560, Z = 0.8;
+const W6 = [
+  { id: 'rocket', n: 'Rocket', icon: 'Explosive', col: '#F5F1E8', dmg: 150, rad: 40, ammo: -1 },
+  { id: 'heavy', n: 'Heavy', icon: 'Explosive', col: '#FFB547', dmg: 260, rad: 58, ammo: 3 },
+  { id: 'cluster', n: 'Cluster', icon: 'Cluster', col: '#FF7EB6', dmg: 60, rad: 28, ammo: 2, n2: 5 },
+  { id: 'lightning', n: 'Lightning', icon: 'Electric', col: '#FFE45E', dmg: 170, rad: 30, ammo: 2 },
+  { id: 'fire', n: 'Fire Bomb', icon: 'Fire', col: '#FF6B3D', dmg: 110, rad: 46, ammo: 2 },
+  { id: 'ice', n: 'Ice Bomb', icon: 'Ice', col: '#9FE3FF', dmg: 100, rad: 62, ammo: 2 }
+];
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.timers = []; this.anims = []; this.seq = 1; this.uid = Math.random().toString(36).slice(2, 8);
+    const m = MAPS[MAP_ID];
+    const U = (id, name, team, kind, slot, hp, max) => { const x = SPAWN[team][slot]; return { id, name, team, kind, x, y: topY(m, x), hp, max, face: team === 'red' ? 1 : -1 }; };
+    const ammo = {}; W6.forEach((w) => { ammo[w.id] = w.ammo; });
+    const units = [U('r0', 'Kaboomerang', 'red', 'thumper', 0, 780, 1000), U('r1', 'PicklePounder', 'red', 'voltaic', 1, 540, 700), U('r2', 'nightowl_ph', 'red', 'sprocket', 2, 0, 600), U('r3', 'Mara.Vex', 'red', 'cinder', 3, 470, 800), U('b0', 'FrostedFlakes', 'blue', 'frostbite', 0, 620, 800), U('b1', 'Tidecaller', 'blue', 'mollusk', 1, 690, 1100), U('b2', 'Gyrocopter', 'blue', 'whirligig', 2, 140, 700), U('b3', 'BoomBoxer', 'blue', 'boomba', 3, 480, 700)];
+    this.state = { units, angle: 52, power: 66, wind: -4, weapon: 'rocket', ammo, fuel: 100, timer: 30, turn: 7, craters: [{ x: 640, y: Math.round(topY(m, 640) + 6), r: 26 }], fly: null, booms: [], floaters: [], busy: false, shake: false, cam: this.camFor(units[0].x + 300, units[0].y - 120), camAnim: false, dragging: false };
+  }
+  get m() { return MAPS[MAP_ID]; }
+  later(f, ms) { this.timers.push(setTimeout(f, ms)); }
+  componentDidMount() { this.iv = setInterval(() => { if (!this.state.busy) this.setState({ timer: this.state.timer > 1 ? this.state.timer - 1 : 30 }); }, 1000); }
+  componentWillUnmount() { this.timers.forEach(clearTimeout); clearInterval(this.iv); this.anims.forEach((a) => a.cancel()); }
+  camFor(x, y) { const m = this.m; return { x: CL(x - VW / (2 * Z), 0, m.W - VW / Z), y: CL(y - VH / (2 * Z) + 40, 0, Math.max(0, m.H - VH / Z)) }; }
+  tf(c) { return 'translate(' + (-c.x * Z).toFixed(1) + 'px, ' + (-c.y * Z).toFixed(1) + 'px) scale(' + Z + ')'; }
+  solid(cr, x, y) { const m = this.m; if (x < 0 || x > m.W || inChasm(m, x) || y < topY(m, x) || y > botY(m, x)) return false; for (const c of cr) if ((x - c.x) ** 2 + (y - c.y) ** 2 < c.r * c.r) return false; return true; }
+  surf(cr, x) { const m = this.m; if (x < 0 || x > m.W || inChasm(m, x)) return null; let y = topY(m, x); for (let k = 0; k < 14; k++) { let mv = false; for (const c of cr) { const dx = x - c.x; if (Math.abs(dx) < c.r) { const h = Math.sqrt(c.r * c.r - dx * dx); if (y >= c.y - h && y < c.y + h) { y = c.y + h + 0.5; mv = true; } } } if (!mv) break; } return y > botY(m, x) || y > m.H ? null : y; }
+  traj(u, ang, pow) {
+    const s = this.state, m = this.m; const a = ang * Math.PI / 180, v = pow / 100 * 26;
+    let x = u.x + u.face * 28, y = u.y - 52, vx = Math.cos(a) * v * u.face, vy = -Math.sin(a) * v; const pts = [[x, y]];
+    for (let i = 0; i < 1200; i++) {
+      vx += s.wind * 0.0035; vy += 0.26;
+      const st = Math.max(1, Math.ceil(Math.hypot(vx, vy) / 5));
+      for (let k = 0; k < st; k++) {
+        x += vx / st; y += vy / st;
+        if (x < -100 || x > m.W + 100 || y > m.H + 60) { pts.push([x, y]); return { pts, hit: null }; }
+        for (const e of s.units) { if (e.hp <= 0 || (e.id === u.id && i < 14)) continue; const cy = e.y - 36 - (e.kind === 'whirligig' ? 24 : 0); if ((x - e.x) ** 2 + (y - cy) ** 2 < 784) { pts.push([x, y]); return { pts, hit: { x, y } }; } }
+        if (this.solid(s.craters, x, y)) { pts.push([x, y]); return { pts, hit: { x, y } }; }
+      }
+      pts.push([x, y]);
+    }
+    return { pts, hit: null };
+  }
+  runFlight(samples, dur) {
+    const n = samples.length; if (n < 2 || typeof document === 'undefined') return;
+    const q = (k) => document.querySelector('[data-lb="' + k + '-' + this.uid + '"]');
+    const offs = samples.map((_, i) => i / (n - 1)), opt = { duration: dur, easing: 'linear', fill: 'forwards' };
+    const shell = q('shell'), world = q('world');
+    if (shell && shell.animate) this.anims.push(shell.animate(samples.map((p, i) => { const a = samples[Math.max(0, i - 1)], b = samples[Math.min(n - 1, i + 1)]; return { transform: 'translate(' + (p[0] - 15) + 'px,' + (p[1] - 8) + 'px) rotate(' + Math.atan2(b[1] - a[1], b[0] - a[0]) + 'rad)', offset: offs[i] }; }), opt));
+    let c = { ...this.state.cam }; const fr = [];
+    samples.forEach((p, i) => { const t = this.camFor(p[0], p[1]); c = i === n - 1 ? t : { x: c.x + (t.x - c.x) * 0.22, y: c.y + (t.y - c.y) * 0.22 }; fr.push({ transform: this.tf(c), offset: offs[i] }); });
+    if (world && world.animate) this.anims.push(world.animate(fr, opt));
+    this.endCam = c;
+  }
+  fire() {
+    const s = this.state; if (s.busy) return; const you = s.units[0]; const w = W6.find((x) => x.id === s.weapon);
+    const tr = this.traj(you, s.angle, s.power); const step = Math.max(1, Math.floor(tr.pts.length / 110));
+    const samples = tr.pts.filter((p, i) => i % step === 0 || i === tr.pts.length - 1);
+    const dur = Math.round(CL(tr.pts.length * 16.7, 600, 5000));
+    const ammo = { ...s.ammo }; if (ammo[w.id] > 0) ammo[w.id]--;
+    this.setState({ busy: true, camAnim: false, fly: { col: w.col, t0: 'translate(' + (samples[0][0] - 15) + 'px,' + (samples[0][1] - 8) + 'px)' }, ammo });
+    this.later(() => this.runFlight(samples, dur), 30);
+    this.later(() => {
+      if (this.endCam) this.setState({ cam: this.endCam });
+      const anims = this.anims; this.anims = []; requestAnimationFrame(() => requestAnimationFrame(() => anims.forEach((a) => a.cancel())));
+      if (!tr.hit) { this.setState({ fly: null }); this.later(() => this.endShot(), 700); return; }
+      const st = this.state; const { x: hx, y: hy } = tr.hit; const fl = [];
+      const blasts = w.n2 ? Array.from({ length: w.n2 }, (_, k) => ({ x: hx + (k - 2) * 34, y: hy })) : [{ x: hx, y: hy }];
+      const craters = st.craters.concat(blasts.map((b) => ({ x: Math.round(b.x), y: Math.round(b.y), r: Math.round(w.rad * 0.62) }))).slice(-50);
+      const units = st.units.map((u) => {
+        if (u.hp <= 0) return u; let dm = 0;
+        blasts.forEach((b) => { const d = Math.hypot(u.x - b.x, u.y - 36 - b.y); const reach = w.rad + 36; if (d < reach) dm += w.dmg * (1 - 0.65 * d / reach) * (u.team === 'red' ? 0.5 : 1); });
+        dm = Math.round(dm); const gy = this.surf(craters, u.x);
+        if (dm) fl.push({ id: ++this.seq, x: u.x, y: u.y - 130, t: '-' + dm, col: '#F5F1E8' });
+        return { ...u, hp: gy === null ? 0 : Math.max(0, u.hp - dm), y: gy === null ? u.y : gy };
+      });
+      if (!fl.length) fl.push({ id: ++this.seq, x: hx, y: hy - 70, t: 'MISS', col: '#A9B3CC' });
+      this.setState({ fly: null, units, floaters: fl, craters, shake: true, booms: blasts.map((b, i) => ({ x: b.x, y: b.y, r: w.rad, col: w.col, dl: i * 0.06 })) });
+      this.later(() => this.setState({ shake: false }), 450);
+      this.later(() => this.setState({ booms: [] }), 900);
+      this.later(() => this.endShot(), 1500);
+    }, dur + 30);
+  }
+  endShot() { const s = this.state; this.setState({ floaters: [], busy: false, turn: s.turn + 2, timer: 30, wind: Math.round((Math.random() * 2 - 1) * 10), fuel: 100, cam: this.camFor(s.units[0].x + 300, s.units[0].y - 120), camAnim: true }); }
+  move(dir) { const s = this.state; if (s.busy || s.fuel <= 0) return; const units = s.units.slice(); const u = units[0]; const nx = CL(u.x + dir * 14, 40, 1600); const gy = this.surf(s.craters, nx); const ok = gy !== null && gy > u.y - 16; units[0] = { ...u, x: ok ? nx : u.x, y: ok ? gy : u.y, face: dir }; this.setState({ units, fuel: Math.max(0, s.fuel - 6) }); }
+  renderVals() {
+    const s = this.state, m = this.m; const you = s.units[0];
+    let prevPts = '';
+    if (!s.busy) prevPts = this.traj(you, s.angle, s.power).pts.slice(0, 70).filter((p, i) => i % 2 === 0).map((p) => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const team = (t, name, col, dark, dir, just, flip, order) => { const us = s.units.filter((u) => u.team === t); const hp = us.reduce((a, u) => a + u.hp, 0), mx = us.reduce((a, u) => a + u.max, 0);
+      return { label: 'Team ' + name, name: name.toUpperCase(), col, dark, dir, just, flip, order, alive: us.filter((u) => u.hp > 0).length, pct: Math.round(hp / mx * 100), members: us.map((u) => ({ name: u.name, kind: u.kind, bd: u.id === 'r0' ? '#FFD166' : '#0B0F1A', op: u.hp > 0 ? 1 : 0.5, filt: u.hp > 0 ? 'none' : 'grayscale(1)' })) }; };
+    return {
+      mapId: MAP_ID, mapUp: m.n.toUpperCase(), W: m.W, H: m.H, vb: '0 0 ' + m.W + ' ' + m.H, sky: SKY, lbWorld: 'world-' + this.uid, lbShell: 'shell-' + this.uid,
+      worldT: this.tf(s.cam), camTr: s.camAnim ? 'transform .9s cubic-bezier(.3,.8,.3,1)' : 'none', camHint: s.busy ? 'Camera following the shot' : 'Drag to look around',
+      fieldCls: s.shake ? 'shake' : '', craters: s.craters, showPrev: !s.busy, prevPts,
+      units: s.units.map((u) => ({ ...u, alive: u.hp > 0, isYou: u.id === 'r0' && !s.busy, left: u.x - 50, top: (u.y - 79 - (u.kind === 'whirligig' ? 24 : 0)).toFixed(1), flip: u.face < 0, aim: u.id === 'r0' ? s.angle : 22, pose: u.hp > 0 ? 'idle' : 'wreck', tint: u.team === 'red' ? '#F45B55' : '#4C9AFF', pct: Math.round(u.hp / u.max * 100), col: u.team === 'red' ? '#5ACB91' : '#4C9AFF', bg: u.team === 'red' ? '#3A2230' : '#1E2D4E', bd: u.id === 'r0' ? '#FFD166' : u.team === 'red' ? '#F45B55' : '#4C9AFF' })),
+      flying: !!s.fly, fly: s.fly || { col: '#fff', t0: 'none' },
+      booms: s.booms.map((b) => ({ x: b.x, y: b.y, col: b.col, s: b.r * 2, o: -b.r, is: b.r * 1.1, io: -b.r * 0.55, dl: b.dl })),
+      floaters: s.floaters,
+      teams: [team('red', 'Red', '#F45B55', '#3A2230', 'row', 'flex-start', false, 0), team('blue', 'Blue', '#4C9AFF', '#1E2D4E', 'row-reverse', 'flex-end', true, 2)],
+      turn: s.turn, timer: s.timer, timerOff: (150.8 * (1 - s.timer / 30)).toFixed(1),
+      weps: W6.map((w) => ({ ...w, on: s.weapon === w.id, cls: 'btn wb' + (s.weapon === w.id ? ' on' : ''), ammo: s.ammo[w.id] < 0 ? '∞' : '×' + s.ammo[w.id], pick: () => { if (s.ammo[w.id] !== 0) this.setState({ weapon: w.id }); } })),
+      busy: s.busy, fuel: s.fuel, moveL: () => this.move(-1), moveR: () => this.move(1),
+      angle: s.angle, angUp: () => this.setState({ angle: CL(s.angle + 2, 0, 90) }), angDown: () => this.setState({ angle: CL(s.angle - 2, 0, 90) }),
+      power: s.power, onPower: (e) => this.setState({ power: +e.target.value }),
+      windDir: s.wind < 0 ? -1 : 1, windAbs: Math.abs(s.wind), windAria: 'Wind ' + Math.abs(s.wind) + (s.wind < 0 ? ' blowing left' : ' blowing right'),
+      fire: () => this.fire(),
+      focus: () => { if (!s.busy) this.setState({ cam: this.camFor(you.x + 300, you.y - 120), camAnim: true }); },
+      onDown: (e) => { if (s.busy) return; const r = e.currentTarget.getBoundingClientRect(); this.drag = { sx: e.clientX, sy: e.clientY, cx: s.cam.x, cy: s.cam.y, k: r.width / VW }; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (x) {} },
+      onMove: (e) => { const d = this.drag; if (!d) return; const dx = (e.clientX - d.sx) / d.k / Z, dy = (e.clientY - d.sy) / d.k / Z; if (Math.abs(dx) + Math.abs(dy) < 5) return; this.setState({ cam: { x: CL(d.cx - dx, 0, m.W - VW / Z), y: CL(d.cy - dy, 0, Math.max(0, m.H - VH / Z)) }, camAnim: false }); },
+      onUp: () => { this.drag = null; }
+    };
+  }
+}
+</script>
+</body>
+</html>

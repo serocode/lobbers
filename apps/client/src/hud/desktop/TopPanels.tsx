@@ -1,6 +1,6 @@
 // Team Red / Team Blue panels and the Current Turn panel (Battle.dc.html top HUD).
 import { CAMERA, type TeamId, type UnitState } from '@lobbers/shared';
-import { MachineArt, SkullIcon, TimerRing } from '../../components';
+import { MachineArt, SkullIcon, TimerRing, WifiOffIcon } from '../../components';
 import { cameraBus } from '../../state/cameraBus';
 import { TEAM_COLOR, TEAM_DARK, canControl, isLocal, unitOf } from '../../state/matchStore';
 import { useMatch, useTurnSeconds } from '../BattleContext';
@@ -8,12 +8,13 @@ import s from '../battle.module.css';
 
 const fmt = (n: number): string => n.toLocaleString('en-US');
 
-function Member({ u, team, active, you }: { u: UnitState; team: TeamId; active: boolean; you: boolean }): JSX.Element {
+function Member({ u, team, active, you, offline }: { u: UnitState; team: TeamId; active: boolean; you: boolean; offline: boolean }): JSX.Element {
   const dead = !u.alive;
+  const off = offline && !dead;
   const pct = Math.round((u.hp / u.maxHp) * 100);
   return (
     <button type="button" className={active ? s.pulse : ''} onClick={() => cameraBus.command({ t: 'lookAt', x: u.x, y: u.y - CAMERA.focusAboveUnit })} title={`Look at ${u.name}`}
-      style={{ height: 52, borderRadius: 8, border: `2px solid ${active ? '#FFD166' : you ? '#8A6F2E' : '#0B0F1A'}`, background: '#1C2338', display: 'flex', alignItems: 'center', gap: 5, padding: '3px 5px', position: 'relative', opacity: dead ? 0.55 : 1, cursor: 'pointer', color: '#F5F1E8', fontFamily: 'Fredoka,sans-serif', textAlign: 'left', minWidth: 0 }}>
+      style={{ height: 52, borderRadius: 8, border: `2px solid ${active ? '#FFD166' : you ? '#8A6F2E' : '#0B0F1A'}`, background: '#1C2338', display: 'flex', alignItems: 'center', gap: 5, padding: '3px 5px', position: 'relative', opacity: dead || off ? 0.55 : 1, cursor: 'pointer', color: '#F5F1E8', fontFamily: 'Fredoka,sans-serif', textAlign: 'left', minWidth: 0 }}>
       <span style={{ width: 38, height: 40, flex: 'none', borderRadius: 6, background: TEAM_DARK[team], display: 'flex', alignItems: 'center', justifyContent: 'center', filter: dead ? 'grayscale(1)' : 'none' }}>
         <MachineArt kind={u.machine} tint={TEAM_COLOR[team]} size={36} flip={team === 'blue'} />
       </span>
@@ -23,6 +24,7 @@ function Member({ u, team, active, you }: { u: UnitState; team: TeamId; active: 
         <span className="mono" style={{ fontSize: 10, color: '#A9B3CC' }}>{dead ? 'OUT' : u.hp}</span>
       </span>
       {dead && <SkullIcon role="img" aria-label="Eliminated" style={{ position: 'absolute', right: 3, top: 3 }} />}
+      {off && <span role="img" aria-label="Disconnected" title="Disconnected" style={{ position: 'absolute', right: -5, top: -5, width: 18, height: 18, borderRadius: '50%', background: '#5B6378', border: '2px solid #0B0F1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><WifiOffIcon size={11} /></span>}
     </button>
   );
 }
@@ -31,6 +33,7 @@ export function TeamPanel({ team }: { team: TeamId }): JSX.Element {
   const units = useMatch((v) => v.units);
   const active = useMatch((v) => v.activeUnitId);
   const youId = useMatch((v) => (v.localPlayerIds.length === 1 ? v.units.find((u) => u.playerId === v.localPlayerIds[0])?.id : undefined));
+  const offline = useMatch((v) => v.sync.offline);
   const us = units.filter((u) => u.team === team).sort((a, b) => a.id.localeCompare(b.id));
   const hp = us.reduce((n, u) => n + u.hp, 0), max = us.reduce((n, u) => n + u.maxHp, 0);
   const red = team === 'red', col = TEAM_COLOR[team];
@@ -45,7 +48,7 @@ export function TeamPanel({ team }: { team: TeamId }): JSX.Element {
         <span className="mono" style={{ fontSize: 12, color: '#C9D1E0', whiteSpace: 'nowrap' }}>{fmt(hp)} / {fmt(max)}</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: 6 }}>
-        {us.map((u) => <Member key={u.id} u={u} team={team} active={u.id === active && u.alive} you={u.id === youId} />)}
+        {us.map((u) => <Member key={u.id} u={u} team={team} active={u.id === active && u.alive} you={u.id === youId} offline={!!offline[u.playerId]} />)}
       </div>
     </section>
   );

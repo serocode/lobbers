@@ -14,7 +14,8 @@ export type SimEvent =
   | { t: 'prop'; tick: number; propId: string; change: 'destroyed' | 'exploded' | 'collected' | 'moved'; y?: number; unitId?: string }
   | { t: 'heal'; tick: number; unitId: string; amount: number; hpAfter: number };
 
-export type DamageCause = 'explosion' | 'bolt' | 'fall' | 'hazard' | 'burn' | 'ability';
+/** `forfeit` = surrendered, disconnected past the window, or AFK (no damage dealt; the unit is removed). */
+export type DamageCause = 'explosion' | 'bolt' | 'fall' | 'hazard' | 'burn' | 'ability' | 'forfeit';
 
 export interface ProjectileTrack {
   id: number;

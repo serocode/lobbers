@@ -87,3 +87,75 @@ Append-only. Format: date · decision · reason · affects.
 - 2026-11-05 · Dev-only hooks (`window.__lobbers`, `__lobbersCam`, `__lobbersPerf`, `__lobbersDev.aimAtNearest`) exist only
   under `import.meta.env.DEV` for Playwright; `aimAtNearest` uses the same preview the player sees and sets aim through
   BattleControls (the shot still goes through the intent pipeline). · client
+
+### Phase 2 (2026-11-05)
+- 2026-11-05 · **Match state machine moved to `packages/shared/src/match/` (`MatchFlow` + `MatchTally`)** instead of a server-only
+  `match/MatchController`. · The hot-seat controller and the server must not drift; one implementation, tested in `pnpm test:core`
+  with a fake clock. The server room only adapts Colyseus (auth, zod, rate limits, reconnection). · shared, server, client net/local
+- 2026-11-05 · **Protocol additions**: `forfeit` intent + `forfeit` action kind / damage cause; `setRoomName` lobby intent;
+  `MatchStateView` (with `offline: playerId → reconnect deadline`) moved into protocol; `MatchEndedMsg` gained `mapId`, `mode`,
+  `mvpHighlight`, `details` (damage per turn, weapon usage); `LobbyView`, `LobbyServerMessage`, `TimeSyncReply`, `PublicRoomInfo`.
+  Rejections go only to the sender. · Results and reconnect needed them · protocol.ts
+- 2026-11-05 · **Match schema = turn/phase/timer/wind/shotsLeft/offline only.** Unit HP/positions travel in `actionResolved`
+  snapshots, not in the schema (NETWORK.md listed units). · Schema patches arrive before the replay animates, so HP bars would
+  drop before the shell lands; snapshots keep one source of truth in step with the animation. · MatchRoom, client
+- 2026-11-05 · **The LobbyRoom stays alive during the match**; MatchRoom calls `matchFinished` on it (remoteRoomCall), which reopens
+  the room and un-readies non-hosts. "Play again" = back to the same room (non-hosts auto-ready); there is no separate "new lobby". ·
+  Same players, settings and code with no extra flow · LobbyRoom, Results, victory overlay
+- 2026-11-05 · **Match rooms are created only by lobbies** (HMAC key of JWT_SECRET in create options); seats are reserved per lobby
+  client with its verified auth. A returning account (new tab, no token) is re-seated by `joinById`; the old reconnection is then
+  not treated as a forfeit. Reconnection tickets live in `localStorage` (one active game per browser profile). · Security + a
+  closed tab must be able to come back · rooms, net/online
+- 2026-11-05 · **Consented leave mid-match = surrender** (forfeit). Disconnect-forfeited players stay in `offline` so clients don't log
+  "reconnected". · Leave button and closing the socket on purpose mean the same thing · MatchFlow, MatchRoom
+- 2026-11-05 · **Join by code** resolves through a presence hash (`lobbers:room-codes`) because private rooms are hidden from
+  matchmaking. Quick Match = `joinOrCreate('lobby', { ranked: false })`; Play Now = the same over the `ranked` pool
+  (`filterBy(['ranked'])`). No rating band until ratings exist (Phase 4). · Simple matchmaker per the plan · server, Home
+- 2026-11-05 · **Home for guests**: the profile card shows a fresh guest's real values (Lv 1, 0 XP, 0 coins, "Unranked · Guest");
+  Recent Activity lists this browser's finished matches (localStorage); Friends shows an empty state. Inventory, Missions,
+  Leaderboards, profile card, "See all", Lobby "Customize", Machine Select "Skins for X" and Results "My Profile" are disabled with
+  "Arrives with accounts (Phase 4)". The Results "Mission" card reads "Guest progress · Not saved yet". · No fake data · Home, Lobby,
+  Results, Machine Select
+- 2026-11-05 · **Modes/options without rules are disabled with a reason**: Capture the Hill (lobby MODE + Create Room), Duel 1v1
+  (Create Room), Best of 3 (lobby ROUNDS). · Not in @lobbers/shared · Lobby, Home
+- 2026-11-05 · Lobby header ping panel reads "PING · n ms" (the mockup's "SEA · 38ms" implies regions we don't have). Lobby chat
+  shows the last 4 lines (4 fit in the mockup's 166 px panel). Invite Friends modal offers "Copy invite link" (code + /lobby/CODE)
+  until friends exist; empty slots open it. · Lobby
+- 2026-11-05 · Machine Select: the LOCK-IN ring is hidden (no server lock timer outside ranked; the ranked timer is not built). The
+  Special box gains the Ultimate row inside the same box (purple divider) so the detail panel keeps its 668 px height. In
+  `/machines` (no room) LOCK IN saves the default machine for new rooms. · DESIGN_SPEC §2.3, §3.2 · Machine Select
+- 2026-11-05 · Finished matches are kept in server memory (500 most recent) for `GET /api/matches/:id` until the Phase 4 matches
+  table. · Results revisits work today · server match/archive.ts
+- 2026-11-05 · Settings store gained master/music/effects volume, floating damage numbers and graphics quality (Low/Medium/High
+  caps canvas density at 1 / 1.5 / 2). · Home Settings modal is real · uiStores, PhaserHost, scenePresenter
+- 2026-11-05 · Map card taglines ("Lava vents, gusty") moved into `MapDef.tagline` (shared config) rather than UI literals. · maps.ts
+- 2026-11-05 · Server tests run on vitest's `threads` pool: Colyseus uses `process.send` IPC in child processes, which collides with
+  the default `forks` pool. Test-only timing overrides (countdown, intro delay, reconnect window) are accepted only when
+  `NODE_ENV=test`. `RECONNECT_WINDOW_SEC` now actually sets the window. · server tests
+- 2026-11-05 · `/` is Home; the component kit and hot-seat launcher stay at `/dev/kit`. · routes
+
+### Phase 3 (2026-11-06)
+- 2026-11-06 · **Items On = full arsenal** via `arsenalFor(loadout, itemsEnabled)` in shared config, used by `createUnit` (ammo),
+  `canUseWeapon` and every HUD weapon picker. Items Off = machine loadout. The tablet's 6-button weapon row shows 5 + "More"
+  (opens the phone weapon sheet) when the arsenal has more than 6. · DESIGN_SPEC §2.4 Armory · shared rules, HUD
+- 2026-11-06 · **Cosmetics catalog in `packages/shared/src/config/cosmetics.ts`** (Inventory.dc.html ids, names, rarities, copy).
+  Machine unlocks and avatars stay with the Phase 4 Inventory. Unlock prices/requirements for items the mockup lists as already
+  owned are placeholders. "Wind?!" is a default emote so the wheel has four for every player (the mockup has 3 defaults). · catalog
+- 2026-11-06 · **Ownership**: loadouts are sanitised server-side (`sanitizeLoadout`) against owned items — guests own the default
+  items until Phase 4's inventory — and the server resolves them per unit into `MatchStartedMsg.cosmetics`. Clients store their
+  loadout locally and send it on join (`setCosmetics` intent for later edits). The hot-seat harness can apply any preset (local
+  only) so every style can be seen in a real match. · no client trust · LobbyRoom, MatchFlow, devkit
+- 2026-11-06 · **Skins in Phaser**: `public/assets/machines/templates/<kind>-<team>-body.svg` are exported from the mockup parts
+  (`pnpm --filter @lobbers/client skin-templates`) with a body-colour token; the battle repaints only the token. A plain colour
+  replace would also recolour parts that share the signature colour (Voltaic coils, Frostbite ice). Verified identical to the
+  shipped body art when the token = signature colour. · game/render, scripts
+- 2026-11-06 · **Explosion/trail styles**: non-classic explosions keep the ring in the weapon colour (so the weapon still reads)
+  and restyle fireball/debris; barrel explosions stay classic. Default trail (Smoke Ring) is the mockup's flight trail. · Fx, ShotView
+- 2026-11-06 · **Emote wheel** (not in the mockup): T or a 46 px bubble button beside Focus/Overview (tablet 52 px above Focus,
+  phone 48 px beside Focus); 4 bubbles in the Inventory emote style around the field centre; 1–4 picks while open. Server
+  cooldown 2.5 s; bubble 2.6 s; "KABOOM!" shakes. · Phase 3 plan · HUD, MatchFlow
+- 2026-11-06 · **Hazard animation**: Phaser `HazardView` redraws the lava glow pulse and the icy-water wave over the rasterised
+  backdrop in backdrop (parallax) space. Void maps have no strip in the mockup, so nothing is added there. · game/render
+- 2026-11-06 · **Sound is synthesised in code** (`apps/client/src/audio`: WebAudio oscillators + filtered noise, a look-ahead
+  step sequencer for two music loops). No third-party audio files, so there are no licences to list. Audio unlocks on the first
+  pointer/key press (browser autoplay rules). · Phase 3 plan · client

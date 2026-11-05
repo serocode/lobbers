@@ -1,0 +1,20 @@
+<svg width="240" height="200" viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg"><ellipse cx="60" cy="95" rx="44" ry="4.5" fill="#000" opacity=".28"></ellipse><g transform="translate(0 0)"><g stroke="#151B2B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+  <g transform="rotate(-62 78 48)">
+    <rect x="74" y="43" width="12" height="11" rx="2" fill="#5B6378"></rect>
+    <path d="M84 42 L118 48.5 L84 55 Z" fill="#D7F3FF"></path>
+    <path d="M88 46 L108 48.5" stroke="#fff" stroke-width="2"></path>
+  </g>
+  <path d="M10 92 L104 92 Q112 92 112 84" fill="none" stroke="#2A3045" stroke-width="4.5"></path>
+  <line x1="32" y1="86" x2="32" y2="92"></line><line x1="88" y1="86" x2="88" y2="92"></line>
+  <rect x="20" y="72" width="80" height="15" rx="5" fill="#5B6378"></rect>
+  <path d="M24 75 Q26 32 60 32 Q94 32 96 75 Z" fill="#9FE3FF"></path>
+  <path d="M30 60 Q60 54 90 60 M27 47 Q60 40 93 47 M44 34 L46 47 M74 34 L72 47 M36 48 L36 60 M60 41 L60 54 M84 48 L84 60" fill="none" stroke="#151B2B" stroke-width="1.6" opacity=".35"></path>
+  <path d="M34 50 Q38 38 50 35" fill="none" stroke="#fff" stroke-width="3.5" opacity=".6"></path>
+  <path d="M47 75 Q47 57 60 57 Q73 57 73 75 Z" fill="#151B2B"></path>
+  <ellipse cx="55" cy="66" rx="2.8" ry="3.4" fill="#9FE3FF" stroke="none"><animate attributeName="ry" values="3.4;3.4;.3;3.4" keyTimes="0;.9;.95;1" dur="4.6s" repeatCount="indefinite"></animate></ellipse>
+  <ellipse cx="65" cy="66" rx="2.8" ry="3.4" fill="#9FE3FF" stroke="none"><animate attributeName="ry" values="3.4;3.4;.3;3.4" keyTimes="0;.9;.95;1" dur="4.6s" repeatCount="indefinite"></animate></ellipse>
+  <path d="M28 70 Q60 82 92 70 L92 77 Q60 89 28 77 Z" fill="#F45B55"></path>
+  <path d="M30 74 L16 82 L22 86 L33 78 Z" fill="#F45B55"><animateTransform attributeName="transform" type="rotate" values="0 30 74;-10 30 74;0 30 74" dur="1.4s" repeatCount="indefinite"></animateTransform></path></g><g fill="#FFD166" stroke="#151B2B" stroke-width="1.5">
+  <path d="M14 20 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z"><animate attributeName="opacity" values="0;1;0" dur="1.2s" repeatCount="indefinite"></animate></path>
+  <path d="M104 8 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z"><animate attributeName="opacity" values="1;0;1" dur="1.4s" repeatCount="indefinite"></animate></path>
+  <path d="M110 46 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5z"><animate attributeName="opacity" values="0;1;0" dur=".9s" repeatCount="indefinite"></animate></path></g></g></svg>

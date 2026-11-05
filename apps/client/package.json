@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "skin-templates": "node --import ../server/node_modules/tsx/dist/esm/index.mjs scripts/export-skin-templates.tsx"
   },
   "dependencies": {
     "@lobbers/shared": "workspace:*",

@@ -2,8 +2,11 @@ import type { TeamId, UnitState } from './types.ts';
 import { REWARDS } from './config/match.ts';
 import type { PlayerResult } from './protocol.ts';
 
+const score = (damage: number, elims: number, assists: number): number => damage + elims * 300 + assists * 120;
 /** Score used to pick the MVP (ties → winning team, then fewer damage received). */
-export const mvpScore = (u: UnitState): number => u.stats.damageDealt + u.stats.eliminations * 300 + u.stats.assists * 120;
+export const mvpScore = (u: UnitState): number => score(u.stats.damageDealt, u.stats.eliminations, u.stats.assists);
+/** The same score from a broadcast result row (Results podium order). */
+export const resultScore = (p: PlayerResult): number => score(p.damageDealt, p.eliminations, p.assists);
 
 export function computeResults(units: UnitState[], winner: TeamId | 'draw'): PlayerResult[] {
   const sorted = [...units].sort((a, b) =>

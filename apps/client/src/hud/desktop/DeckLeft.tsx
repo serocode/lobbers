@@ -1,8 +1,8 @@
 // Controls deck, left half: player card (portrait, HP, fuel, move + jump) and the weapon block.
-import { MACHINES } from '@lobbers/shared';
+import { MACHINES, type WeaponId } from '@lobbers/shared';
 import { ChevronLeft, ChevronRight, ChevronUp, MachineArt, WeaponIcon } from '../../components';
 import { quickSlots } from '../../state/battleControls';
-import { TEAM_COLOR, TEAM_DARK } from '../../state/matchStore';
+import { TEAM_COLOR, TEAM_DARK, arsenalOf } from '../../state/matchStore';
 import { useBattleUi } from '../../state/uiStores';
 import { useBattle, useCanControl, useDeckUnit, useMatch, weaponInfo } from '../BattleContext';
 import s from '../battle.module.css';
@@ -65,7 +65,8 @@ export function WeaponBlock(): JSX.Element {
   const weaponId = useMatch((v) => (u ? v.aim[u.id]?.weaponId : undefined) ?? 'standard-rocket');
   const openArmory = (): void => useBattleUi.getState().set({ armoryOpen: true });
   const w = weaponInfo(weaponId, u);
-  const slots = u ? quickSlots(MACHINES[u.machine]) : [];
+  const arsenal = useMatch((v) => (u ? arsenalOf(v, u).join(',') : ''));
+  const slots = arsenal ? quickSlots(arsenal.split(',') as WeaponId[]) : [];
   return (
     <div style={{ width: 282, height: 122, display: 'flex', flexDirection: 'column', gap: 6, flex: 'none' }}>
       <button type="button" className="btn" onClick={openArmory} aria-label="Open armory (W)" style={{ height: 70, justifyContent: 'flex-start', padding: '0 10px', gap: 10, background: '#1C2338' }}>

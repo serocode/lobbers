@@ -1,5 +1,5 @@
 // Keyboard (Battle.dc.html onKey + DESIGN_SPEC): ↑/↓ angle, ←/→ move (hold), Q/E power, Space fire,
-// W armory, 1–4 quick slots, J jump, F focus, Z overview, Esc pause / close.
+// W armory, 1–4 quick slots, J jump, F focus, Z overview, T emotes, Esc pause / close.
 import { useEffect } from 'react';
 import { cameraBus } from '../state/cameraBus';
 import { useBattleUi } from '../state/uiStores';
@@ -14,8 +14,11 @@ export function useBattleKeys(): void {
       if (typing(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
       const ui = useBattleUi.getState();
       const k = e.key;
+      if (k === 'Escape' && ui.emoteOpen) { ui.set({ emoteOpen: false }); return; }
       if (k === 'Escape') { if (ui.armoryOpen) ui.set({ armoryOpen: false }); else if (!match.store.getState().result) ui.set({ paused: !ui.paused, confirmLeave: false }); return; }
       if (ui.paused || match.store.getState().result) return;
+      if (k === 't' || k === 'T') { ui.set({ emoteOpen: !ui.emoteOpen }); return; }
+      if (ui.emoteOpen && k >= '1' && k <= '4') { controls.emote(+k - 1); ui.set({ emoteOpen: false }); return; }
       if (k === 'w' || k === 'W') { ui.set({ armoryOpen: !ui.armoryOpen }); return; }
       if (k === 'f' || k === 'F') { cameraBus.command({ t: 'focusActive' }); return; }
       if (k === 'z' || k === 'Z') { cameraBus.command({ t: 'toggleOverview' }); return; }

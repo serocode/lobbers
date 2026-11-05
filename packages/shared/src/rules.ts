@@ -1,6 +1,6 @@
 import type { AimInput, WeaponId } from './types.ts';
 import { MACHINES } from './config/machines.ts';
-import { WEAPONS } from './config/weapons.ts';
+import { WEAPONS, arsenalFor } from './config/weapons.ts';
 import { clampAngle, clampPower } from './sim/projectile.ts';
 import type { World } from './sim/world.ts';
 
@@ -24,7 +24,7 @@ export function canUseWeapon(world: World, unitId: string, weaponId: WeaponId): 
   const u = world.units.find((x) => x.id === unitId);
   if (!u) return no('unknown unit');
   if (!(weaponId in WEAPONS)) return no('unknown weapon');
-  if (!MACHINES[u.machine].loadout.includes(weaponId)) return no('weapon not in loadout');
+  if (!arsenalFor(MACHINES[u.machine].loadout, world.settings.itemsEnabled).includes(weaponId)) return no('weapon not in loadout');
   if ((u.ammo[weaponId] ?? 0) === 0) return no('out of ammo');
   if ((u.weaponCooldowns[weaponId] ?? 0) > 0) return no('weapon on cooldown');
   return { ok: true, value: undefined };

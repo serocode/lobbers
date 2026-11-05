@@ -54,3 +54,7 @@ export const SkullIcon = ({ size = 22, teeth = '#0B0F1A', ...r }: P & { teeth?: 
 export const WifiOffIcon = ({ size = 12, ...r }: P): ReactElement => (
   <svg {...base(size, r)} fill="none" stroke="#F5F1E8" strokeWidth="2.6" strokeLinecap="round"><path d="M2 8.5a16 16 0 0 1 20 0M5.5 12.5a11 11 0 0 1 13 0M9 16.5a5.5 5.5 0 0 1 6 0M3 3l18 18" /><circle cx="12" cy="20" r="1" fill="#F5F1E8" /></svg>
 );
+/** Speech bubble (Inventory "Emotes" category icon path). */
+export const EmoteIcon = ({ size = 22, ...r }: P): ReactElement => (
+  <svg {...base(size, r)} fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round"><path d="M4 4h16v11H11l-5 4v-4H4z" /></svg>
+);

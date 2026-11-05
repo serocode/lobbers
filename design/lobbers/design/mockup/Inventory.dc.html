@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lobbers — Inventory</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&amp;family=Fredoka:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101522}
+*{box-sizing:border-box}
+a{color:#FFD166}
+.fd{font-family:'Lilita One',Fredoka,system-ui,sans-serif;letter-spacing:.5px;font-weight:400}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.btn{font-family:Fredoka,system-ui,sans-serif;font-weight:600;cursor:pointer;border:3px solid #0B0F1A;border-radius:10px;box-shadow:0 4px 0 #0B0F1A;transition:transform .08s,box-shadow .08s,filter .15s;color:#F5F1E8;background:#232B42;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{filter:brightness(1.12);transform:translateY(-2px);box-shadow:0 6px 0 #0B0F1A;color:#F5F1E8}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0B0F1A}
+.btn:disabled{filter:grayscale(.7) brightness(.7);cursor:not-allowed;transform:none}
+.btn:focus-visible{outline:3px solid #FFD166;outline-offset:2px}
+.dark{color:#101522}.dark:hover{color:#101522}
+.panel{background:#151B2B;border:3px solid #0B0F1A;border-radius:12px;box-shadow:0 5px 0 #0B0F1A,inset 0 2px 0 rgba(255,255,255,.05)}
+.bg{background-color:#101522;background-image:radial-gradient(rgba(255,255,255,.05) 1.5px,transparent 1.5px);background-size:22px 22px}
+.stripes{background-image:repeating-linear-gradient(135deg,rgba(0,0,0,.22) 0 9px,transparent 9px 18px)}
+.cat{justify-content:flex-start;height:58px;padding:0 12px;font-size:16px;width:100%}
+.cat.on{background:#F5F1E8;color:#101522}
+.cat.on:hover{color:#101522}
+.chip{height:36px;padding:0 14px;font-size:14px}
+.chip.on{background:#4C9AFF;color:#101522}
+.item{flex-direction:column;align-items:stretch;gap:0;padding:0;overflow:hidden;height:196px;background:#1C2338;text-align:left}
+.item.on{border-color:#FFD166;box-shadow:0 4px 0 #0B0F1A,0 0 0 3px rgba(255,209,102,.4);animation:pop .3s cubic-bezier(.2,1.8,.4,1)}
+@keyframes pop{from{transform:scale(.92)}to{transform:none}}
+.trail{stroke-dasharray:14 10;animation:dash 1s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-48}}
+.burst{animation:burst 1.6s ease-in-out infinite;transform-origin:center;transform-box:fill-box}
+@keyframes burst{0%,100%{transform:scale(.85)}50%{transform:scale(1.08)}}
+.enter{animation:enter .4s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes enter{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+.bob{animation:bob 2.6s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.prog{transition:width .5s cubic-bezier(.3,1,.4,1)}
+</style>
+</helmet>
+<div class="bg" style="width:1440px;height:900px;position:relative;overflow:hidden;font-family:Fredoka,system-ui,sans-serif;color:#F5F1E8">
+  <header style="position:absolute;left:24px;top:20px;width:1392px;height:60px;display:flex;align-items:center;gap:16px">
+    <a href="Main.dc.html" class="btn" style="height:52px;padding:0 16px;font-size:16px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>Home</a>
+    <h1 class="fd" style="margin:0;font-size:40px">INVENTORY</h1>
+    <div style="flex:1"></div>
+    <span class="mono" role="status" style="font-size:14px;color:#5ACB91;font-weight:700">{{msg}}</span>
+    <div class="panel" style="height:52px;display:flex;align-items:center;gap:16px;padding:0 16px">
+      <span style="display:flex;align-items:center;gap:8px"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="#FFD166" stroke="#0B0F1A" stroke-width="2.5"></circle></svg><span class="mono" style="font-size:17px;font-weight:700">{{coinsTxt}}</span></span>
+      <span style="display:flex;align-items:center;gap:8px"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 20 20"><path d="M10 2 18 8 10 18 2 8Z" fill="#B07CF2" stroke="#0B0F1A" stroke-width="2.5" stroke-linejoin="round"></path></svg><span class="mono" style="font-size:17px;font-weight:700">{{gems}}</span></span>
+    </div>
+  </header>
+
+  <nav aria-label="Categories" class="panel" style="position:absolute;left:24px;top:100px;width:252px;height:780px;padding:12px;display:flex;flex-direction:column;gap:8px">
+    <sc-for list="{{cats}}" as="c" hint-placeholder-count="8">
+      <button class="{{c.cls}}" onClick="{{c.pick}}" aria-pressed="{{c.on}}">
+        <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="{{c.icon}}"></path></svg>
+        <span style="flex:1;text-align:left">{{c.n}}</span>
+        <span class="mono" style="font-size:12px;opacity:.8">{{c.cnt}}</span>
+      </button>
+    </sc-for>
+    <div style="flex:1"></div>
+    <div style="background:#0E1320;border:3px solid #0B0F1A;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+      <span style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#A9B3CC"><span>TOTAL COLLECTION</span><span class="mono">{{totTxt}}</span></span>
+      <span style="height:12px;border-radius:6px;background:#1C2338;overflow:hidden;display:block"><span class="prog" style="display:block;height:100%;width:{{totPct}}%;background:#FFD166"></span></span>
+    </div>
+  </nav>
+
+  <section aria-label="Items" style="position:absolute;left:296px;top:100px;width:716px;height:780px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:flex-end;gap:16px">
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+        <h2 class="fd" style="margin:0;font-size:34px;line-height:1">{{catName}}</h2>
+        <div style="display:flex;align-items:center;gap:10px"><span style="flex:1;height:12px;border:2px solid #0B0F1A;border-radius:6px;background:#0E1320;overflow:hidden;display:block"><span class="prog" style="display:block;height:100%;width:{{catPct}}%;background:#5ACB91"></span></span><span class="mono" style="font-size:13px;color:#C9D1E0">{{catTxt}} collected</span></div>
+      </div>
+      <div style="display:flex;gap:6px"><sc-for list="{{filters}}" as="f" hint-placeholder-count="3"><button class="{{f.cls}}" onClick="{{f.pick}}" aria-pressed="{{f.on}}">{{f.n}}</button></sc-for></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;overflow:auto;padding:2px 2px 10px;align-content:start">
+      <sc-for list="{{items}}" as="it" hint-placeholder-count="8">
+        <button class="{{it.cls}}" onClick="{{it.pick}}" aria-pressed="{{it.on}}" aria-label="{{it.aria}}">
+          <div class="stripes" style="height:118px;background-color:{{it.bg}};position:relative;display:flex;align-items:center;justify-content:center;border-bottom:3px solid #0B0F1A;filter:{{it.filt}}">
+            <sc-if value="{{it.isMach}}" hint-placeholder-val="{{ true }}"><dc-import name="Machine" kind="{{it.kind}}" paint="{{it.paint}}" tint="#F45B55" size="{{ 116 }}" hint-size="116px,97px"></dc-import></sc-if>
+            <sc-if value="{{it.isW}}" hint-placeholder-val="{{ false }}"><dc-import name="WeaponIcon" cat="{{it.wcat}}" col="{{it.col}}" size="{{ 72 }}" hint-size="72px,72px"></dc-import></sc-if>
+            <sc-if value="{{it.isTrail}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="140" height="80" viewBox="0 0 140 80"><path class="trail" d="M8 70 Q60 -10 132 40" fill="none" stroke="{{it.col}}" stroke-width="9" stroke-linecap="round"></path><circle cx="132" cy="40" r="8" fill="#F5F1E8" stroke="#0B0F1A" stroke-width="3"></circle></svg></sc-if>
+            <sc-if value="{{it.isBoom}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="96" height="96" viewBox="0 0 120 120"><path class="burst" d="M60 6 L70 40 L104 22 L84 52 L116 64 L82 72 L98 104 L66 84 L56 116 L48 82 L16 100 L34 70 L4 58 L38 48 L22 18 L52 36 Z" fill="{{it.col}}" stroke="#0B0F1A" stroke-width="5" stroke-linejoin="round"></path><circle cx="60" cy="62" r="16" fill="#F5F1E8" stroke="#0B0F1A" stroke-width="3"></circle></svg></sc-if>
+            <sc-if value="{{it.isEmote}}" hint-placeholder-val="{{ false }}"><span class="fd" style="background:#F5F1E8;color:#101522;border:3px solid #0B0F1A;border-radius:14px 14px 14px 2px;padding:6px 12px;font-size:18px;max-width:140px;text-align:center;line-height:1.1">{{it.text}}</span></sc-if>
+            <sc-if value="{{it.isTitle}}" hint-placeholder-val="{{ false }}"><span class="fd" style="background:#101522;color:#FFD166;border:3px solid #FFD166;border-radius:6px;padding:6px 10px;font-size:16px;text-align:center;line-height:1.1;max-width:150px">“{{it.n}}”</span></sc-if>
+            <sc-if value="{{it.equipped}}" hint-placeholder-val="{{ false }}"><span class="fd" style="position:absolute;left:6px;top:6px;background:#5ACB91;color:#101522;border:2px solid #0B0F1A;border-radius:5px;padding:0 6px;font-size:12px">EQUIPPED</span></sc-if>
+          </div>
+          <sc-if value="{{it.locked}}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;right:8px;top:8px;width:30px;height:30px;border-radius:8px;background:#101522;border:2px solid #0B0F1A;display:flex;align-items:center;justify-content:center"><svg aria-label="Locked" role="img" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5F1E8" stroke-width="3" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="#F5F1E8"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></span>
+          </sc-if>
+          <div style="padding:8px 10px;display:flex;flex-direction:column;gap:3px;flex:1">
+            <span style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{it.n}}</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700"><span style="width:10px;height:10px;border-radius:3px;background:{{it.rc}};border:2px solid #0B0F1A"></span><span style="color:{{it.rc}}">{{it.r}}</span><span style="color:#A9B3CC;margin-left:auto;font-weight:600">{{it.state}}</span></span>
+          </div>
+        </button>
+      </sc-for>
+    </div>
+  </section>
+
+  <aside aria-label="Item preview" class="panel" style="position:absolute;left:1028px;top:100px;width:388px;height:780px;padding:0;overflow:hidden;display:flex;flex-direction:column">
+    <sc-if value="{{show}}" hint-placeholder-val="{{ true }}">
+      <div class="enter" style="display:flex;flex-direction:column;height:100%">
+        <div class="stripes" style="height:300px;flex:none;background-color:{{sel.bg}};border-bottom:3px solid #0B0F1A;display:flex;align-items:center;justify-content:center;position:relative">
+          <svg aria-hidden="true" width="382" height="300" viewBox="0 0 382 300" style="position:absolute;inset:0"><ellipse cx="191" cy="250" rx="140" ry="20" fill="#0B0F1A" opacity=".45"></ellipse><circle cx="191" cy="150" r="118" fill="none" stroke="{{sel.rc}}" stroke-width="4" stroke-dasharray="3 14" opacity=".7"></circle></svg>
+          <sc-if value="{{sel.isMach}}" hint-placeholder-val="{{ true }}"><div class="bob" style="position:relative"><dc-import name="Machine" kind="{{sel.kind}}" paint="{{sel.paint}}" tint="#F45B55" size="{{ 280 }}" hint-size="280px,233px"></dc-import></div></sc-if>
+          <sc-if value="{{sel.isW}}" hint-placeholder-val="{{ false }}"><div class="bob" style="position:relative"><dc-import name="WeaponIcon" cat="{{sel.wcat}}" col="{{sel.col}}" size="{{ 180 }}" hint-size="180px,180px"></dc-import></div></sc-if>
+          <sc-if value="{{sel.isTrail}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="320" height="200" viewBox="0 0 140 80" style="position:relative"><path class="trail" d="M8 70 Q60 -10 132 40" fill="none" stroke="{{sel.col}}" stroke-width="7" stroke-linecap="round"></path><circle cx="132" cy="40" r="7" fill="#F5F1E8" stroke="#0B0F1A" stroke-width="2.5"></circle></svg></sc-if>
+          <sc-if value="{{sel.isBoom}}" hint-placeholder-val="{{ false }}"><svg aria-hidden="true" width="220" height="220" viewBox="0 0 120 120" style="position:relative"><path class="burst" d="M60 6 L70 40 L104 22 L84 52 L116 64 L82 72 L98 104 L66 84 L56 116 L48 82 L16 100 L34 70 L4 58 L38 48 L22 18 L52 36 Z" fill="{{sel.col}}" stroke="#0B0F1A" stroke-width="4" stroke-linejoin="round"></path><circle cx="60" cy="62" r="16" fill="#F5F1E8" stroke="#0B0F1A" stroke-width="3"></circle></svg></sc-if>
+          <sc-if value="{{sel.isEmote}}" hint-placeholder-val="{{ false }}"><span class="fd bob" style="position:relative;background:#F5F1E8;color:#101522;border:4px solid #0B0F1A;border-radius:22px 22px 22px 4px;padding:14px 22px;font-size:34px;max-width:300px;text-align:center;line-height:1.1;box-shadow:0 6px 0 #0B0F1A">{{sel.text}}</span></sc-if>
+          <sc-if value="{{sel.isTitle}}" hint-placeholder-val="{{ false }}"><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:8px"><span class="fd" style="font-size:30px">Kaboomerang</span><span class="fd" style="background:#101522;color:#FFD166;border:3px solid #FFD166;border-radius:8px;padding:6px 16px;font-size:24px">“{{sel.n}}”</span></span></sc-if>
+        </div>
+        <div style="padding:18px;display:flex;flex-direction:column;gap:10px;flex:1">
+          <div style="display:flex;gap:8px;align-items:center"><span class="fd" style="background:{{sel.rc}};color:#101522;border:2px solid #0B0F1A;border-radius:6px;padding:1px 10px;font-size:15px">{{sel.rUp}}</span><span style="font-size:13px;font-weight:700;color:#A9B3CC">{{catName}}</span></div>
+          <h2 class="fd" style="margin:0;font-size:34px;line-height:1">{{sel.n}}</h2>
+          <p style="margin:0;font-size:15px;line-height:1.45;color:#C9D1E0">{{sel.d}}</p>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;background:#0E1320;border:2px solid #0B0F1A;border-radius:8px;padding:8px 10px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A9B3CC" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16v.5"></path></svg><span style="color:#C9D1E0">{{sel.src}}</span></div>
+          <div style="flex:1"></div>
+          <button class="btn dark" onClick="{{act}}" disabled="{{actOff}}" style="height:60px;font-size:22px;background:{{actBg}}"><span class="fd">{{actLbl}}</span></button>
+        </div>
+      </div>
+    </sc-if>
+  </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { cat: 1, filter: 0, sel: 0, show: true, coins: 12480, gems: 260, unlocked: {}, equipped: { 0: 'm-thumper', 1: 's-arctic', 2: 'w-gild', 3: 't-ember', 4: 'b-confetti', 5: 'a-thumper', 6: 'e-gg', 7: 'ti-hill' }, msg: '' };
+  }
+  componentWillUnmount() { clearTimeout(this.to); clearTimeout(this.mt); }
+  select(i) { this.setState({ sel: i, show: false }); clearTimeout(this.to); this.to = setTimeout(() => this.setState({ show: true }), 20); }
+  say(m) { clearTimeout(this.mt); this.setState({ msg: m }); this.mt = setTimeout(() => this.setState({ msg: '' }), 2200); }
+  data() {
+    const MN = { thumper: 'Thumper', sprocket: 'Sprocket', mollusk: 'Mollusk', whirligig: 'Whirligig', voltaic: 'Voltaic', cinder: 'Cinder', frostbite: 'Frostbite', boomba: 'Boomba' };
+    const MB = { thumper: '#4A2E1E', sprocket: '#1E3E33', mollusk: '#33264E', whirligig: '#1B3A48', voltaic: '#3E3820', cinder: '#4A221C', frostbite: '#1E3A50', boomba: '#4A2440' };
+    const own = ['thumper', 'sprocket', 'mollusk', 'voltaic', 'cinder'];
+    const mlock = { whirligig: ['Reach level 40', null], frostbite: ['6,000 coins', ['coins', 6000]], boomba: ['Season 4 pass · level 20', null] };
+    const I = (id, n, r, type, extra) => ({ id, n, r, type, ...extra });
+    return [
+      { n: 'Battle Machines', icon: 'M2 18h20M5 18l2-5h9l2 5M12 13V9h8', items: Object.keys(MN).map((k) => I('m-' + k, MN[k], k === 'boomba' ? 'Legendary' : k === 'frostbite' ? 'Epic' : 'Rare', 'mach', { kind: k, bg: MB[k], owned: own.includes(k), req: mlock[k] ? mlock[k][0] : '', cost: mlock[k] ? mlock[k][1] : null, d: 'Unlock the ' + MN[k] + ' chassis for every mode.' })) },
+      { n: 'Machine Skins', icon: 'M12 3l8 4v6c0 4-4 7-8 8-4-1-8-4-8-8V7z', items: [
+        I('s-arctic', 'Arctic Camo Thumper', 'Rare', 'mach', { kind: 'thumper', paint: '#B9C7A0', bg: '#2E3A2A', owned: true, d: 'Sage-and-frost plating that hides you nicely on Glacier Rift. Nicely.', src: 'Earned: Season 3 pass, level 12' }),
+        I('s-ash', 'Ashfall Cinder', 'Epic', 'mach', { kind: 'cinder', paint: '#6E5A60', bg: '#2A1A1E', owned: true, d: 'Soot-black furnace plating with a cooled-lava sheen.', src: 'Unlocked 5 hours ago' }),
+        I('s-neon', 'Neon Sprocket', 'Rare', 'mach', { kind: 'sprocket', paint: '#39E59A', bg: '#123A2C', owned: true, d: 'Glow-in-the-dark bodywork for night maps.', src: 'Earned: 50 wins with Sprocket' }),
+        I('s-coral', 'Coral Mollusk', 'Rare', 'mach', { kind: 'mollusk', paint: '#FF8A7A', bg: '#4A2626', owned: false, req: '1,200 coins', cost: ['coins', 1200], d: 'A reef-pink shell. Same tungsten, friendlier colour.' }),
+        I('s-thunder', 'Thunderhead Voltaic', 'Epic', 'mach', { kind: 'voltaic', paint: '#7C88C2', bg: '#252A48', owned: false, req: '300 gems', cost: ['gems', 300], d: 'Storm-cloud plating with crackling copper coils.' }),
+        I('s-midnight', 'Midnight Boomba', 'Legendary', 'mach', { kind: 'boomba', paint: '#3A4466', bg: '#1A1E34', owned: false, req: 'Season 4 pass · level 50', d: 'The classic cartoon bomb, finally in its true colours.' }),
+        I('s-gild', 'Gilded Thumper', 'Legendary', 'mach', { kind: 'thumper', paint: '#E8C25A', bg: '#3E3418', owned: false, req: 'Reach Gold I rank', d: 'Solid-gold siege plating for players who never miss. Or say so.' })
+      ] },
+      { n: 'Weapon Skins', icon: 'M4 20l7-7M14 4l6 6-7 7-6-6z', items: [
+        I('w-gild', 'Gilded Shell', 'Legendary', 'w', { wcat: 'Explosive', col: '#E8C25A', bg: '#3E3418', owned: true, d: 'Your Basic Shell, but make it treasure.', src: 'Earned: Season 2 top 500' }),
+        I('w-candy', 'Candy Stripe Mortar', 'Rare', 'w', { wcat: 'Explosive', col: '#FF7EB6', bg: '#4A2440', owned: true, d: 'Pink-and-white striped Heavy Mortar rounds.', src: 'Earned: Daily login streak 30' }),
+        I('w-pump', 'Pumpkin Bomb', 'Epic', 'w', { wcat: 'Cluster', col: '#F28C38', bg: '#4A2E1E', owned: true, d: 'Scatterpop bomblets carved like tiny pumpkins.', src: 'Event: Harvest Havoc 2026' }),
+        I('w-circuit', 'Circuit Bolt', 'Epic', 'w', { wcat: 'Electric', col: '#5ACB91', bg: '#1E3E33', owned: false, req: '250 gems', cost: ['gems', 250], d: 'Arc Bolt with a green circuit-board glow.' }),
+        I('w-jade', 'Jade Spear', 'Rare', 'w', { wcat: 'Ice', col: '#6EE0B0', bg: '#1E3E33', owned: false, req: '900 coins', cost: ['coins', 900], d: 'Icicle Spear carved from polished jade.' }),
+        I('w-comet', 'Comet Hornet', 'Rare', 'w', { wcat: 'Guided', col: '#8FE3FF', bg: '#1B3A48', owned: false, req: 'Mission: 20 guided hits', d: 'A Homing Hornet with a comet tail.' })
+      ] },
+      { n: 'Projectile Trails', icon: 'M3 18c5-10 10-12 18-6', items: [
+        I('t-ember', 'Ember Sparks', 'Epic', 'trail', { col: '#FF8A3D', bg: '#4A221C', owned: true, d: 'Your shots leave a fizzing streak of embers.', src: 'Earned: Season 3 pass, level 40' }),
+        I('t-bubble', 'Bubble Stream', 'Rare', 'trail', { col: '#8FE3FF', bg: '#1B3A48', owned: true, d: 'A wobbly trail of soap bubbles.', src: 'Earned: 200 matches played' }),
+        I('t-pixel', 'Pixel Dash', 'Rare', 'trail', { col: '#5ACB91', bg: '#1E3E33', owned: true, d: 'Chunky retro dashes behind every shot.', src: 'Store purchase' }),
+        I('t-smoke', 'Smoke Ring', 'Common', 'trail', { col: '#A9B3CC', bg: '#2A3045', owned: true, d: 'The default puff of grey smoke.', src: 'Default item' }),
+        I('t-rainbow', 'Rainbow Ribbon', 'Legendary', 'trail', { col: '#FF7EB6', bg: '#4A2440', owned: false, req: '1,500 gems', cost: ['gems', 1500], d: 'A shimmering ribbon that cycles colours mid-flight.' }),
+        I('t-star', 'Starfall', 'Epic', 'trail', { col: '#FFD166', bg: '#3E3820', owned: false, req: 'Win 10 matches on Glacier Rift', d: 'Twinkling stars that linger after the shot lands.' })
+      ] },
+      { n: 'Explosion Effects', icon: 'M12 2v5M12 17v5M2 12h5M17 12h5M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3', items: [
+        I('b-confetti', 'Confetti Pop', 'Legendary', 'boom', { col: '#FF7EB6', bg: '#4A2440', owned: true, d: 'Every impact is a party. The crater is still very real.', src: 'Earned: Season 3 top 1,000' }),
+        I('b-plasma', 'Blue Plasma', 'Epic', 'boom', { col: '#4C9AFF', bg: '#1E2D4E', owned: true, d: 'A crackling sphere of blue plasma.', src: 'Store purchase' }),
+        I('b-classic', 'Classic Kaboom', 'Common', 'boom', { col: '#FFB547', bg: '#4A2E1E', owned: true, d: 'Orange fireball. Timeless.', src: 'Default item' }),
+        I('b-pixel', 'Pixel Burst', 'Rare', 'boom', { col: '#5ACB91', bg: '#1E3E33', owned: false, req: '800 coins', cost: ['coins', 800], d: 'An 8-bit explosion with square debris.' }),
+        I('b-sakura', 'Cherry Blossom', 'Epic', 'boom', { col: '#FFB3D1', bg: '#4A2440', owned: false, req: '400 gems', cost: ['gems', 400], d: 'A soft burst of petals drifting on the wind.' }),
+        I('b-hole', 'Black Hole', 'Legendary', 'boom', { col: '#B07CF2', bg: '#33264E', owned: false, req: 'Reach Platinum rank', d: 'The blast collapses inward before it detonates.' })
+      ] },
+      { n: 'Avatars', icon: 'M12 3l8 4.5v9L12 21l-8-4.5v-9z', items: Object.keys(MN).map((k, i) => I('a-' + k, MN[k] + ' Portrait', i < 5 ? 'Common' : 'Rare', 'mach', { kind: k, bg: MB[k], owned: i < 6, req: i < 6 ? '' : 'Own the ' + MN[k] + ' machine', d: 'Show off your ' + MN[k] + ' in lobbies and on your profile.', src: i < 6 ? 'Unlocked with the machine' : '' })) },
+      { n: 'Emotes', icon: 'M4 4h16v11H11l-5 4v-4H4z', items: [
+        I('e-gg', 'GG, well lobbed!', 'Common', 'emote', { text: 'GG, well lobbed!', bg: '#2A3045', owned: true, d: 'The polite post-match classic.', src: 'Default item' }),
+        I('e-oops', 'Oops.', 'Common', 'emote', { text: 'Oops.', bg: '#2A3045', owned: true, d: 'For friendly fire. Use often.', src: 'Default item' }),
+        I('e-nice', 'Nice shot!', 'Common', 'emote', { text: 'Nice shot!', bg: '#2A3045', owned: true, d: 'Even when it hit you.', src: 'Default item' }),
+        I('e-wind', 'Wind?!', 'Rare', 'emote', { text: 'Wind?!', bg: '#1E2D4E', owned: true, d: 'Blame the weather, not the aim.', src: 'Earned: Wind Whisperer achievement' }),
+        I('e-boom', 'KABOOM!', 'Epic', 'emote', { text: 'KABOOM!', bg: '#4A2E1E', owned: false, req: '200 gems', cost: ['gems', 200], d: 'Animated, shakes the chat bubble on send.' }),
+        I('e-ready', 'Ready when you are', 'Rare', 'emote', { text: 'Ready when you are', bg: '#1E2D4E', owned: false, req: '600 coins', cost: ['coins', 600], d: 'A lobby favourite for impatient hosts.' })
+      ] },
+      { n: 'Titles', icon: 'M4 7h16M4 12h11M4 17h14', items: [
+        I('ti-hill', 'Hill Breaker', 'Rare', 'title', { bg: '#2A3045', owned: true, d: 'Destroy 10,000 px of terrain in a single match.', src: 'Earned in Season 3' }),
+        I('ti-wind', 'Wind Whisperer', 'Epic', 'title', { bg: '#1E2D4E', owned: true, d: 'Land a hit in wind 10 or stronger.', src: 'Achievement reward' }),
+        I('ti-crater', 'Crater Maker', 'Rare', 'title', { bg: '#4A2E1E', owned: true, d: 'Destroy 50,000 px of terrain overall.', src: 'Achievement reward' }),
+        I('ti-last', 'Last Lobber Standing', 'Legendary', 'title', { bg: '#3E3418', owned: true, d: 'Win as the last machine alive on your team.', src: 'Achievement reward' }),
+        I('ti-rookie', 'Rookie', 'Common', 'title', { bg: '#2A3045', owned: true, d: 'Everyone starts somewhere.', src: 'Default item' }),
+        I('ti-ff', 'Friendly Fire Expert', 'Rare', 'title', { bg: '#4A2440', owned: false, req: 'Hit teammates 10 times (3/10)', d: 'A title nobody wants and everyone deserves.' })
+      ] }
+    ];
+  }
+  renderVals() {
+    const s = this.state;
+    const D = this.data();
+    const RC = { Common: '#A9B3CC', Rare: '#4C9AFF', Epic: '#B07CF2', Legendary: '#FFD166' };
+    const owned = (it) => it.owned || !!s.unlocked[it.id];
+    const cats = D.map((c, i) => ({ n: c.n, icon: c.icon, on: s.cat === i, cls: 'btn cat' + (s.cat === i ? ' on' : ''), cnt: c.items.filter(owned).length + '/' + c.items.length, pick: () => { this.setState({ cat: i, filter: 0 }); this.select(0); } }));
+    const C = D[s.cat];
+    const list = C.items.map((it, i) => ({ it, i })).filter(({ it }) => s.filter === 0 || (s.filter === 1 ? owned(it) : !owned(it)));
+    const decor = (it) => ({ ...it, rc: RC[it.r], isMach: it.type === 'mach', isW: it.type === 'w', isTrail: it.type === 'trail', isBoom: it.type === 'boom', isEmote: it.type === 'emote', isTitle: it.type === 'title', paint: it.paint || '', kind: it.kind || 'thumper', wcat: it.wcat || 'Explosive', col: it.col || '#F5F1E8', text: it.text || '' });
+    const items = list.map(({ it, i }) => { const o = owned(it), eq = s.equipped[s.cat] === it.id;
+      return { ...decor(it), locked: !o, equipped: eq, on: s.sel === i, cls: 'btn item' + (s.sel === i ? ' on' : ''), filt: o ? 'none' : 'grayscale(.8) brightness(.6)', state: eq ? 'Equipped' : o ? 'Owned' : 'Locked', aria: it.n + ', ' + it.r + (o ? '' : ', locked'), pick: () => this.select(i) }; });
+    const all = D.reduce((a, c) => a.concat(c.items), []);
+    const totOwned = all.filter(owned).length;
+    const catOwned = C.items.filter(owned).length;
+    const sIt = C.items[Math.min(s.sel, C.items.length - 1)];
+    const so = owned(sIt), seq = s.equipped[s.cat] === sIt.id;
+    const cost = sIt.cost;
+    const afford = cost && (cost[0] === 'coins' ? s.coins >= cost[1] : s.gems >= cost[1]);
+    let actLbl = 'EQUIP', actOff = false, actBg = '#FFD166';
+    if (seq) { actLbl = 'EQUIPPED'; actOff = true; actBg = '#5ACB91'; }
+    else if (!so) { if (cost) { actLbl = afford ? 'UNLOCK · ' + sIt.req.toUpperCase() : 'NOT ENOUGH ' + cost[0].toUpperCase(); actOff = !afford; actBg = '#4C9AFF'; } else { actLbl = 'LOCKED'; actOff = true; actBg = '#5B6378'; } }
+    return {
+      coinsTxt: s.coins.toLocaleString('en-US'), gems: s.gems, msg: s.msg,
+      cats, catName: C.n, catPct: Math.round(catOwned / C.items.length * 100), catTxt: catOwned + ' / ' + C.items.length,
+      totTxt: totOwned + ' / ' + all.length, totPct: Math.round(totOwned / all.length * 100),
+      filters: ['All', 'Owned', 'Locked'].map((n, i) => ({ n, on: s.filter === i, cls: 'btn chip' + (s.filter === i ? ' on' : ''), pick: () => this.setState({ filter: i }) })),
+      items, show: s.show,
+      sel: { ...decor(sIt), rUp: sIt.r.toUpperCase(), src: so ? (sIt.src || 'In your collection') : 'Unlock: ' + (sIt.req || 'Coming soon') },
+      actLbl, actOff, actBg,
+      act: () => {
+        if (so) { this.setState({ equipped: { ...s.equipped, [s.cat]: sIt.id } }); this.say(sIt.n + ' equipped'); return; }
+        if (cost && afford) { const upd = { unlocked: { ...s.unlocked, [sIt.id]: true } }; if (cost[0] === 'coins') upd.coins = s.coins - cost[1]; else upd.gems = s.gems - cost[1]; this.setState(upd); this.say('Unlocked ' + sIt.n + '!'); }
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

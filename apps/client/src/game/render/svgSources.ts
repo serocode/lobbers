@@ -1,6 +1,7 @@
 // SVG sources for battlefield sprites, copied from Battle.dc.html (shell, props, flame) and the
 // Scene decorations. Rasterised once per match into Phaser textures.
-import { WEAPONS, type MachineId, type MapId, type TeamId, type WeaponId } from '@lobbers/shared';
+import { WEAPONS, type MachineId, type MapId, type MatchStartedMsg, type TeamId, type UnitState, type WeaponId } from '@lobbers/shared';
+import { SKIN_TOKEN } from './skinToken';
 import { TREE_GROUP_ATTRS, columnMarkup, decorSvg, rockMarkup, treeMarkup } from '../../components/art/sceneArt';
 import { sceneModel } from '../../components/art/sceneModel';
 
@@ -70,3 +71,38 @@ export function decorTextures(map: MapId, k: number): TextureSource[] {
 }
 
 export const backgroundUrl = (map: MapId): string => `${import.meta.env.BASE_URL}assets/maps/${map}-background.svg`;
+
+const hexKey = (c: string): string => c.replace('#', '').toUpperCase();
+
+/** Body texture for a unit: its team body, or the skin-painted body when a skin is equipped. */
+export const bodyKey = (u: Pick<UnitState, 'machine' | 'team'>, paint: string | null | undefined): string =>
+  paint ? `body-${u.machine}-${u.team}-skin-${hexKey(paint)}` : `body-${u.machine}-${u.team}`;
+
+/** Shell texture: the weapon colour, or a weapon-skin colour. */
+export const shellKey = (weaponId: WeaponId, color: string | undefined): string => (color ? `shell-c-${hexKey(color)}` : `shell-${weaponId}`);
+
+/**
+ * Skin bodies (templates/<kind>-<team>-body.svg with the body token repainted) and weapon-skin shells
+ * for the units in this match. Templates are fetched once before the scene starts.
+ */
+export async function cosmeticTextures(start: MatchStartedMsg, k: number): Promise<TextureSource[]> {
+  const out: TextureSource[] = [];
+  const size = { width: Math.round(120 * k), height: Math.round(100 * k) };
+  const seen = new Set<string>();
+  for (const u of start.units) {
+    const c = start.cosmetics[u.id];
+    if (c?.paint) {
+      const key = bodyKey(u, c.paint);
+      if (!seen.has(key)) {
+        seen.add(key);
+        const res = await fetch(machineUrl(`templates/${u.machine}-${u.team}-body`));
+        if (res.ok) out.push({ key, url: dataUrl((await res.text()).split(SKIN_TOKEN).join(c.paint)), ...size });
+      }
+    }
+    for (const color of Object.values(c?.shellColors ?? {})) {
+      const key = shellKey('standard-rocket', color);
+      if (color && !seen.has(key)) { seen.add(key); out.push({ key, url: dataUrl(shellSvg(color)), width: 32 * k, height: 28 * k }); }
+    }
+  }
+  return out;
+}

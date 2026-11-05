@@ -20,11 +20,16 @@ On start: `phase='starting'`, broadcast `matchStarting {countdown:3}`, create ma
 consume them and navigate to `/match/:id`.
 
 ## Match state
-Schema (small, frequently changing): `MatchState { phase, turnNumber, activeUnitId, endsAt, wind, units: MapSchema<UnitSchema> (id, playerId, name, team, machine, x, y, hp, maxHp, alive, facing, fuel, charge, specialCooldown, connected, status flags) }`.
+Schema (small, frequently changing): `MatchState { phase, turnNumber, activeUnitId, endsAt, wind, shotsLeft, offline: MapSchema<number> (playerId → reconnect deadline) }`.
+Unit HP/positions are NOT in the schema: they arrive as `actionResolved.units` snapshots so the HUD changes in step with the
+replayed animation (DECISIONS, Phase 2). All server messages use the room message type `s` with a `ServerMessage` body.
 Messages (large or event-like): `matchStarted`, `turnStarted`, `actionResolved`, `aimUpdate`, `matchEnded`, `rejected`,
 `resyncTerrain`.
-Intents: `aim` (≤10/s, cosmetic, relayed), `move {dir, ticks≤10}`, `jump`, `selectWeapon`, `useAbility {slot}`,
-`fire {aim}`, `skipTurn`, `forfeit`.
+Intents (room message type `intent`): `aim` (≤10/s, cosmetic, relayed), `move {dir, ticks≤10}`, `jump`, `selectWeapon`,
+`useAbility {slot}`, `fire {aim}`, `skipTurn`, `forfeit`. The state machine is `MatchFlow` in `packages/shared/src/match/flow.ts`.
+Lobby: intents under `intent`; server notices under `lobby` (`matchStarting`, `matchReady {matchId, reservation}`, `kicked`,
+`rejected`); `ping`/`pong` every 3 s for the slot ping; `time` for clock sync (both rooms). Match rooms are created only by a
+lobby (HMAC key) and accept reserved seats or the same account rejoining.
 
 ## Reconnection
 - `onLeave(client, consented)`: if not consented → `unit.connected=false`, broadcast; `await this.allowReconnection(client,

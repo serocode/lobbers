@@ -61,6 +61,12 @@ has no surviving units (both gone = draw).
 | Airstrike | beacon → 5 bombs (90) across the landing point | — | 34 | 1 | 4 |
 | Gravity Bomb | pulls machines in, crater ×1.4 | 140 | 50 | 1 | 4 |
 
+**Items setting** (`arsenalFor` in `config/weapons.ts`): Items On = every machine may fire all 10 weapons (ammo stocked
+per weapon); Items Off = only `MACHINES[kind].loadout`. Quick slots 1–4 = `DEFAULT_QUICK_SLOTS` within that arsenal.
+
+**Cosmetics** (`config/cosmetics.ts`) never touch the simulation: skins repaint the body, trails/explosions/weapon skins
+restyle FX, titles show in the lobby, emotes are speech bubbles (one per `EMOTE_RULES.cooldownMs` per player).
+
 ## Machines
 | Machine | HP | ATK | DEF | MOB | Special | Ultimate |
 |---|---|---|---|---|---|---|

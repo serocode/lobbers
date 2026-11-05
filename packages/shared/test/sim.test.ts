@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
   Terrain, MAPS, MAP_LIST, DEFAULT_SETTINGS, CAMERA, cameraFor, fitZoom, createWorld, createRng, NO_VARIANCE, predictTrajectory, resolveShot,
   advanceTurn, initialTurnState, beginTurn, endTurn, matchWinner, validateFire, commitFire, validateStart, transferHost, generateRoomCode,
-  computeResults, walk, jump, activateAbility, unitById, applyExplosion, settleUnits, inChasm, terrainBottomAt, MACHINES, WEAPONS,
+  computeResults, walk, jump, activateAbility, unitById, cloneWorld, applyExplosion, settleUnits, inChasm, terrainBottomAt, MACHINES, WEAPONS,
   type World, type SeatInput, type WeaponId, type AimInput, type MachineId, type TeamId, type LobbyPlayer, type ActiveTurn, type MapId, type SimContext,
 } from '../src/index.ts';
 
@@ -227,6 +227,7 @@ test('turns alternate teams, rotate players and skip eliminated/disconnected', (
 
 test('intent validation rejects out-of-turn, bad weapons and empty ammo', () => {
   const w = world1v1();
+  w.settings = { ...w.settings, itemsEnabled: false };
   const turn: ActiveTurn = { unitId: 'red-0', playerId: 'a', phase: 'acting', shotsLeft: 1, endsAt: 1e15 };
   assert.equal(validateFire(w, turn, 'b', { angle: 45, power: 50, weaponId: 'standard-rocket' }, 0).ok, false);
   assert.equal(validateFire(w, turn, 'a', { angle: 45, power: 50, weaponId: 'ice-bomb' }, 0).ok, false);
@@ -277,3 +278,44 @@ for (const [n, mapId] of MATCHES) {
     assert.ok(res.filter((r) => r.team !== winner).every((r) => !r.survived));
   });
 }
+
+test('items: On = all 10 weapons stocked and usable; Off = the machine loadout only', () => {
+  const seat = [{ playerId: 'a', name: 'A', team: 'red' as const, machine: 'thumper' as const, slot: 0 }, { playerId: 'b', name: 'B', team: 'blue' as const, machine: 'mollusk' as const, slot: 0 }];
+  const on = createWorld({ ...DEFAULT_SETTINGS, itemsEnabled: true }, seat);
+  const off = createWorld({ ...DEFAULT_SETTINGS, itemsEnabled: false }, seat);
+  assert.equal(Object.keys(unitById(on, 'red-0').ammo).length, 10);
+  assert.deepEqual(Object.keys(unitById(off, 'red-0').ammo).sort(), [...MACHINES.thumper.loadout].sort());
+  const turn: ActiveTurn = { unitId: 'red-0', playerId: 'a', phase: 'acting', shotsLeft: 1, endsAt: 1e15 };
+  assert.ok(validateFire(on, turn, 'a', { angle: 45, power: 50, weaponId: 'lightning-strike' }, 0).ok, 'Items On: off-loadout weapon allowed');
+  const r = validateFire(off, turn, 'a', { angle: 45, power: 50, weaponId: 'lightning-strike' }, 0);
+  assert.ok(!r.ok && r.reason === 'weapon not in loadout');
+  for (const wd of WEAPONS_ALL()) assert.equal(unitById(on, 'red-0').ammo[wd], WEAPONS[wd].ammo);
+});
+const WEAPONS_ALL = (): WeaponId[] => Object.keys(WEAPONS) as WeaponId[];
+
+test('all 8 machines: special and ultimate each have an observable effect', () => {
+  const ids = Object.keys(MACHINES) as MachineId[];
+  for (const id of ids) {
+    for (const slot of ['special', 'ultimate'] as const) {
+      const w = world1v1(id, 'mollusk');
+      const me = unitById(w, 'red-0');
+      place(w, 'blue-0', me.x + 260);
+      me.charge = 100;
+      w.wind = 9; // Updraft only matters in wind
+      const foe = unitById(w, 'blue-0');
+      const before = { x: me.x, foeHp: foe.hp, shield: !!me.status.shield, fuel: me.status.unlimitedFuel };
+      const probe = cloneWorld(w);
+      const r = activateAbility(w, 'red-0', slot, NO_VARIANCE);
+      const changed = me.x !== before.x || foe.hp !== before.foeHp || !!me.status.shield !== before.shield || me.status.unlimitedFuel !== before.fuel || foe.status.frozenTurns > 0;
+      let shotDiffers = false;
+      if (r.modifiers.length) {
+        const weaponId = MACHINES[id].loadout.find((x) => WEAPONS[x].behavior.kind === 'impact') ?? 'standard-rocket';
+        const aim = aimAt(probe, 'red-0', foe.x, weaponId);
+        const base = resolveShot(cloneWorld(probe), 'red-0', aim, [], NO_VARIANCE);
+        const mod = resolveShot(cloneWorld(probe), 'red-0', aim, r.modifiers, NO_VARIANCE);
+        shotDiffers = JSON.stringify(base.events) !== JSON.stringify(mod.events) || base.tracks.length !== mod.tracks.length || r.modifiers.some((m) => (m.extraShots ?? 0) > 0);
+      }
+      assert.ok(changed || shotDiffers, `${id} ${slot} (${MACHINES[id][slot].name}) has no effect`);
+    }
+  }
+});

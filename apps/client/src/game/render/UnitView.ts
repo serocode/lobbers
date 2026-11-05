@@ -4,12 +4,14 @@ import Phaser from 'phaser';
 import { MACHINES, type TeamId, type UnitState } from '@lobbers/shared';
 import type { LayoutSpec } from '../layouts';
 import { drawStatusIcon, type StatusIcon } from './statusIcons';
+import { bodyKey } from './svgSources';
 
 const ART_W = 120, ART_GROUND = 95, DRAW_W = 100;
 const S = DRAW_W / ART_W;
 const TEAM = { red: { col: 0xF45B55, dark: 0x3A2230 }, blue: { col: 0x4C9AFF, dark: 0x1E2D4E } } as const;
 
-export interface UnitLook { angle: number; active: boolean; you: boolean; ownTeam: TeamId; burning: boolean }
+/** `offline`: "OFFLINE m:ss" while the player is disconnected (DESIGN_SPEC §3.4), else null. */
+export interface UnitLook { angle: number; active: boolean; you: boolean; ownTeam: TeamId; burning: boolean; offline: string | null }
 
 export class UnitView {
   readonly id: string;
@@ -23,6 +25,7 @@ export class UnitView {
   private readonly tagGfx: Phaser.GameObjects.Graphics;
   private readonly nameText: Phaser.GameObjects.Text | null;
   private readonly arrow: Phaser.GameObjects.Graphics;
+  private readonly offText: Phaser.GameObjects.Text;
   private readonly hover: number;
   private bob = { y: 0 };
   private bounce = { v: 0 };
@@ -32,7 +35,7 @@ export class UnitView {
   private gone = false;
   private smoke: Phaser.Time.TimerEvent | null = null;
 
-  constructor(private readonly scene: Phaser.Scene, u: UnitState, private readonly layout: LayoutSpec, k: number, depth: number, res: number, private readonly reducedMotion: boolean) {
+  constructor(private readonly scene: Phaser.Scene, u: UnitState, private readonly layout: LayoutSpec, k: number, depth: number, res: number, private readonly reducedMotion: boolean, paint: string | null = null) {
     this.id = u.id;
     this.x = u.x; this.y = u.y;
     const m = MACHINES[u.machine];
@@ -40,7 +43,8 @@ export class UnitView {
     const sc = S / k;
     this.barrel = scene.add.image((m.barrelPivot.x - 60) * S, (m.barrelPivot.y - ART_GROUND) * S, `barrel-${u.machine}`)
       .setOrigin(m.barrelPivot.x / ART_W, m.barrelPivot.y / 100).setScale(sc);
-    this.hull = scene.add.image(0, 0, `body-${u.machine}-${u.team}`).setOrigin(0.5, ART_GROUND / 100).setScale(sc);
+    const key = bodyKey(u, paint);
+    this.hull = scene.add.image(0, 0, scene.textures.exists(key) ? key : bodyKey(u, null)).setOrigin(0.5, ART_GROUND / 100).setScale(sc);
     this.ice = scene.add.graphics().setVisible(false);
     this.drawIce();
     this.body = scene.add.container(u.x, u.y, [this.barrel, this.hull, this.ice]).setDepth(depth);
@@ -51,7 +55,8 @@ export class UnitView {
     this.arrow = scene.add.graphics();
     this.arrow.fillStyle(0xFFD166).lineStyle(3, 0x0B0F1A).beginPath().moveTo(-11, 0).lineTo(11, 0).lineTo(0, 16).closePath().fillPath().strokePath();
     this.arrow.setVisible(false);
-    this.tag = scene.add.container(u.x, u.y, [this.tagGfx, ...(this.nameText ? [this.nameText] : []), this.arrow]).setDepth(depth + 1);
+    this.offText = scene.add.text(0, 0, '', { fontFamily: 'JetBrains Mono', fontStyle: '700', fontSize: '11px', color: '#C9D1E0', resolution: res }).setOrigin(0.5, 0).setVisible(false);
+    this.tag = scene.add.container(u.x, u.y, [this.tagGfx, ...(this.nameText ? [this.nameText] : []), this.offText, this.arrow]).setDepth(depth + 1);
     if (!reducedMotion) scene.tweens.add({ targets: this.bounce, v: -8, duration: 400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     if (u.machine === 'whirligig' && !reducedMotion) scene.tweens.add({ targets: this.bob, y: -4, duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
@@ -65,6 +70,28 @@ export class UnitView {
   }
 
   setPos(x: number, y: number): void { this.x = x; this.y = y; }
+
+  private bubble: Phaser.GameObjects.Container | null = null;
+
+  /** Emote speech bubble (Inventory.dc.html emote style: off-white, ink border, 14/14/14/2 radius). */
+  say(text: string, res: number, ms: number, shake: boolean): void {
+    this.bubble?.destroy();
+    const label = this.scene.add.text(0, 0, text, { fontFamily: '"Lilita One"', fontSize: '18px', color: '#101522', resolution: res, align: 'center', wordWrap: { width: 140 } }).setOrigin(0, 0);
+    const w = label.width + 24, h = label.height + 12;
+    const g = this.scene.add.graphics();
+    const radii = { tl: 14, tr: 14, br: 14, bl: 2 };
+    g.fillStyle(0x0B0F1A).fillRoundedRect(0, 4, w, h, radii);
+    g.fillStyle(0xF5F1E8).fillRoundedRect(0, 0, w, h, radii).lineStyle(3, 0x0B0F1A).strokeRoundedRect(0, 0, w, h, radii);
+    label.setPosition(12, 6);
+    const top = -79 - this.layout.tag.top - 30 - h;
+    const c = this.scene.add.container(6, top, [g, label]);
+    this.tag.add(c);
+    this.bubble = c;
+    c.setScale(0.4).setAlpha(0);
+    this.scene.tweens.add({ targets: c, scale: 1, alpha: 1, duration: 320, ease: 'Back.easeOut' });
+    if (shake && !this.reducedMotion) this.scene.tweens.add({ targets: c, x: { from: 2, to: 10 }, duration: 60, yoyo: true, repeat: 5 });
+    this.scene.tweens.add({ targets: c, alpha: 0, delay: ms, duration: 300, onComplete: () => { c.destroy(); if (this.bubble === c) this.bubble = null; } });
+  }
 
   /** Per-frame: position, facing, barrel, tag. Redraws the tag only when its content changes. */
   update(u: UnitState, look: UnitLook): void {
@@ -86,9 +113,20 @@ export class UnitView {
       if (look.burning) icons.push('burning');
       if (u.status.unlimitedFuel) icons.push('fuel');
     }
-    const key = `${u.alive}|${u.hp}|${u.maxHp}|${look.you}|${look.ownTeam}|${icons.join(',')}`;
-    if (key !== this.key) { this.key = key; this.drawTag(u, look, icons); }
+    const key = `${u.alive}|${u.hp}|${u.maxHp}|${look.you}|${look.ownTeam}|${icons.join(',')}|${u.alive ? look.offline ?? '' : ''}`;
+    if (key !== this.key) { this.key = key; this.drawTag(u, look, icons); this.drawOffline(u.alive ? look.offline : null); }
     this.arrow.setVisible(u.alive && look.active).setY(this.arrowBase + this.bounce.v);
+  }
+
+  /** Grey "OFFLINE m:ss" pill above the name tag while the player's reconnect window runs. */
+  private drawOffline(text: string | null): void {
+    this.offText.setVisible(!!text);
+    if (!text) return;
+    const top = -79 - this.layout.tag.top - 22;
+    this.offText.setText(text).setPosition(0, top + 2);
+    const w = this.offText.width + 12, h = this.offText.height + 4;
+    this.tagGfx.fillStyle(0x2A3045).fillRoundedRect(-w / 2, top, w, h, 5).lineStyle(2, 0x0B0F1A).strokeRoundedRect(-w / 2, top, w, h, 5);
+    this.tag.bringToTop(this.offText);
   }
 
   private drawTag(u: UnitState, look: UnitLook, icons: StatusIcon[]): void {

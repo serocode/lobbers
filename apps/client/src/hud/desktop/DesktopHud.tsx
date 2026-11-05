@@ -4,6 +4,7 @@ import { unitOf } from '../../state/matchStore';
 import { useBattleUi } from '../../state/uiStores';
 import { useBattle, useCanControl, useMatch } from '../BattleContext';
 import { BattleToast, ElimRibbon, HurtVignette, TurnBanner } from '../Overlays';
+import { EmoteWheel } from '../EmoteWheel';
 import { AngleDial, Abilities, PowerMeter, WindGauge } from './DeckRight';
 import { PlayerCard, WeaponBlock } from './DeckLeft';
 import { CameraButtons, CombatLog, EdgeMarker, KillFeed, LogToggle, Minimap, minimapHeight } from './FieldHud';
@@ -60,6 +61,7 @@ export function DesktopHud(): JSX.Element {
       <Deck />
       <BattleToast bottom={170} />
       <ArmoryModal />
+      <EmoteWheel layout="desktop" />
       <PauseMenu />
       <VictoryOverlay />
     </>

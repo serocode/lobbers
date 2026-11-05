@@ -1,6 +1,6 @@
 import type { BurnZone, MachineId, MapDef, MatchSettings, PropState, TeamId, UnitState, WeaponId } from '../types.ts';
 import { MACHINES } from '../config/machines.ts';
-import { WEAPONS } from '../config/weapons.ts';
+import { WEAPONS, arsenalFor } from '../config/weapons.ts';
 import { MAPS } from '../config/maps.ts';
 import { Terrain } from './terrain.ts';
 
@@ -22,10 +22,10 @@ export interface World {
 
 export interface SeatInput { playerId: string; name: string; team: TeamId; machine: MachineId; slot: number }
 
-export function createUnit(seat: SeatInput, x: number, y: number): UnitState {
+export function createUnit(seat: SeatInput, x: number, y: number, itemsEnabled = false): UnitState {
   const m = MACHINES[seat.machine];
   const ammo: Partial<Record<WeaponId, number>> = {};
-  for (const id of m.loadout) ammo[id] = WEAPONS[id].ammo;
+  for (const id of arsenalFor(m.loadout, itemsEnabled)) ammo[id] = WEAPONS[id].ammo;
   return {
     id: `${seat.team}-${seat.slot}`, playerId: seat.playerId, name: seat.name, team: seat.team, machine: seat.machine,
     x, y, vx: 0, vy: 0, hp: m.maxHp, maxHp: m.maxHp, alive: true, facing: seat.team === 'red' ? 1 : -1,
@@ -41,7 +41,7 @@ export function createWorld(settings: MatchSettings, seats: SeatInput[], terrain
   const units = seats.map((seat) => {
     const x = map.spawns[seat.team][seat.slot] ?? map.width / 2;
     const y = t.surfaceBelow(x, 0) ?? map.height - 1;
-    return createUnit(seat, x, y);
+    return createUnit(seat, x, y, settings.itemsEnabled);
   });
   const props: PropState[] = [
     ...map.props.barrels.map((x, i) => ({ id: `barrel-${i}`, kind: 'barrel' as const, x, y: t.surfaceBelow(x, 0) ?? map.height, alive: true })),

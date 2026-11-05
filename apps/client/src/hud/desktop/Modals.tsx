@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { ARMORY_TABS, MACHINES, type TeamId, type WeaponCategory, type WeaponId } from '@lobbers/shared';
 import { Button, CloseButton, MachineArt, Modal, Switch, WeaponIcon } from '../../components';
-import { TEAM_COLOR } from '../../state/matchStore';
+import { TEAM_COLOR, arsenalOf } from '../../state/matchStore';
 import { useBattleUi, useSettings } from '../../state/uiStores';
 import { useBattle, useCanControl, useDeckUnit, useMatch, weaponInfo } from '../BattleContext';
 import s from '../battle.module.css';
@@ -16,10 +16,12 @@ export function ArmoryModal(): JSX.Element | null {
   const mine = useCanControl();
   const current = useMatch((v) => (u ? v.aim[u.id]?.weaponId : undefined) ?? 'standard-rocket');
   const [hover, setHover] = useState<WeaponId | null>(null);
+  const items = useMatch((v) => v.settings?.itemsEnabled ?? false);
+  const arsenal = useMatch((v) => (u ? arsenalOf(v, u).join(',') : '')).split(',').filter(Boolean) as WeaponId[];
   if (!ui.armoryOpen || !u) return null;
   const close = (): void => { setHover(null); ui.set({ armoryOpen: false }); };
   const m = MACHINES[u.machine];
-  const list = m.loadout.map((id) => weaponInfo(id, u));
+  const list = arsenal.map((id) => weaponInfo(id, u));
   const shown = list.filter((w) => ui.armoryTab === 'All' || w.def.category === ui.armoryTab);
   const usable = (id: WeaponId): boolean => mine && controls.canUse(id);
   const det = weaponInfo(hover ?? current, u);
@@ -29,7 +31,7 @@ export function ArmoryModal(): JSX.Element | null {
     <Modal label="Armory" onClose={close} style={{ width: 1120, height: 640, padding: 22, display: 'flex', gap: 20 }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}><h2 className="fd" style={{ margin: 0, fontSize: 38 }}>ARMORY</h2><span style={{ fontSize: 14, color: '#A9B3CC' }}>{mine ? `${m.name} loadout — ${list.length} weapons` : 'Browsing — you can equip on your turn'}</span></div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}><h2 className="fd" style={{ margin: 0, fontSize: 38 }}>ARMORY</h2><span style={{ fontSize: 14, color: '#A9B3CC' }}>{!mine ? 'Browsing — you can equip on your turn' : items ? 'Items: On — full arsenal this match' : `Items: Off — ${m.name} loadout`}</span></div>
           <CloseButton onClick={close} label="Close armory" />
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -78,7 +80,7 @@ export function ArmoryModal(): JSX.Element | null {
 }
 
 export function PauseMenu(): JSX.Element | null {
-  const { onLeave } = useBattle();
+  const { nav } = useBattle();
   const ui = useBattleUi();
   const st = useSettings();
   if (!ui.paused) return null;
@@ -88,8 +90,8 @@ export function PauseMenu(): JSX.Element | null {
       {ui.confirmLeave ? (
         <>
           <h2 className="fd" style={{ margin: '0 0 6px', fontSize: 40, textAlign: 'center' }}>SURRENDER?</h2>
-          <p style={{ margin: 0, color: '#C9D1E0', textAlign: 'center' }}>This hot-seat match ends for everyone at this screen.</p>
-          <Button variant="danger" onClick={onLeave} style={{ height: 56, fontSize: 20 }}><span className="fd">SURRENDER &amp; LEAVE</span></Button>
+          <p style={{ margin: 0, color: '#C9D1E0', textAlign: 'center' }}>{nav.surrenderNote}</p>
+          <Button variant="danger" onClick={nav.surrender} style={{ height: 56, fontSize: 20 }}><span className="fd">SURRENDER &amp; LEAVE</span></Button>
           <Button onClick={() => ui.set({ confirmLeave: false })} style={{ height: 50, fontSize: 17 }}>Keep playing</Button>
         </>
       ) : (
@@ -107,7 +109,7 @@ export function PauseMenu(): JSX.Element | null {
 }
 
 export function VictoryOverlay({ scale = 1 }: { scale?: number }): JSX.Element | null {
-  const { onLeave, onPlayAgain } = useBattle();
+  const { nav } = useBattle();
   const result = useMatch((v) => v.result);
   const units = useMatch((v) => v.units);
   const mineTeam = useMatch((v) => (v.localPlayerIds.length === 1 ? v.units.find((u) => u.playerId === v.localPlayerIds[0])?.team : undefined));
@@ -127,9 +129,9 @@ export function VictoryOverlay({ scale = 1 }: { scale?: number }): JSX.Element |
         {winners.map((u, i) => <div key={u.id} className={s.vbob} style={{ animationDelay: `${(i * 0.12).toFixed(2)}s` }}><MachineArt kind={u.machine} tint={TEAM_COLOR[u.team]} size={120 * scale} pose={u.alive ? 'victory' : 'wreck'} flip={u.team === 'blue'} /></div>)}
       </div>
       <div style={{ display: 'flex', gap: 12, marginTop: 10 * scale }}>
-        <Button variant="primary" disabled title="The Results screen arrives with multiplayer (Phase 2)" style={{ height: 60 * scale, padding: `0 ${30 * scale}px`, fontSize: 22 * scale }}><span className="fd">SEE RESULTS</span></Button>
-        <Button onClick={onPlayAgain} style={{ height: 60 * scale, padding: `0 ${24 * scale}px`, fontSize: 18 * scale }}>Play again</Button>
-        <Button onClick={onLeave} style={{ height: 60 * scale, padding: `0 ${24 * scale}px`, fontSize: 18 * scale }}>Back to setup</Button>
+        <Button variant="primary" disabled={!nav.seeResults} title={nav.seeResults ? undefined : nav.resultsReason} onClick={nav.seeResults} style={{ height: 60 * scale, padding: `0 ${30 * scale}px`, fontSize: 22 * scale }}><span className="fd">SEE RESULTS</span></Button>
+        <Button disabled={!nav.playAgain} title={nav.playAgain ? undefined : nav.playAgainReason} onClick={nav.playAgain} style={{ height: 60 * scale, padding: `0 ${24 * scale}px`, fontSize: 18 * scale }}>{nav.playAgainLabel}</Button>
+        <Button onClick={nav.back} style={{ height: 60 * scale, padding: `0 ${24 * scale}px`, fontSize: 18 * scale }}>{nav.backLabel}</Button>
       </div>
     </div>
   );

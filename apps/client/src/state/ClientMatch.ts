@@ -27,7 +27,7 @@ export class ClientMatch {
     this.replay.add(createHudPresenter(this.store, () => this.world?.map ?? null));
     this.unsub = transport.subscribe({
       message: (m) => this.onMessage(m),
-      state: (s) => this.store.setState({ sync: s }),
+      state: (s) => { this.noteConnections(s.offline); this.store.setState({ sync: s }); },
     });
   }
 
@@ -68,6 +68,20 @@ export class ClientMatch {
   toast(text: string, kind: 'ok' | 'error' = 'ok'): void { this.store.setState({ toast: { id: this.toastSeq++, text, kind } }); }
 
   private started: MatchStartedMsg | null = null;
+  private logSeq = 1_000_000;
+
+  /** Combat log lines for players dropping / coming back (DESIGN_SPEC §3.4). */
+  private noteConnections(next: Record<string, number>): void {
+    const prev = this.store.getState().sync.offline;
+    const v = this.store.getState();
+    const line = (playerId: string, verb: string): void => {
+      const u = v.units.find((x) => x.playerId === playerId);
+      if (!u || !u.alive) return;
+      this.store.setState((st) => ({ log: [{ id: this.logSeq++, text: `T${st.turnNumber} · ${u.name} ${verb}`, color: '#A9B3CC' }, ...st.log].slice(0, 7) }));
+    };
+    for (const id of Object.keys(next)) if (!(id in prev)) line(id, 'disconnected');
+    for (const id of Object.keys(prev)) if (!(id in next)) line(id, 'reconnected');
+  }
 
   private onMessage(m: ServerMessage): void {
     switch (m.t) {
@@ -77,6 +91,9 @@ export class ClientMatch {
       case 'matchEnded': return this.replay.enqueue({ kind: 'end', msg: m.data });
       case 'aimUpdate':
         this.store.setState((s) => ({ remoteAim: { ...s.remoteAim, [m.unitId]: { angle: m.angle, power: m.power, weaponId: m.weaponId } } }));
+        return;
+      case 'emote':
+        this.store.setState((s) => ({ emotes: [...s.emotes, { id: this.logSeq++, unitId: m.unitId, emoteId: m.emoteId }].slice(-8) }));
         return;
       case 'rejected': return this.toast(`Rejected: ${m.reason}`, 'error');
     }
@@ -91,7 +108,7 @@ export class ClientMatch {
     };
     const aim = Object.fromEntries(d.units.map((u) => [u.id, { angle: u.facing > 0 ? 45 : 135, power: 60, weaponId: MACHINES[u.machine].loadout[0] }]));
     this.store.setState((s) => ({
-      ready: true, mapId: d.mapId, settings: d.settings, units: d.units.map((u) => structuredClone(u)), props: d.props, burnZones: d.burnZones,
+      ready: true, mapId: d.mapId, settings: d.settings, cosmetics: d.cosmetics ?? {}, units: d.units.map((u) => structuredClone(u)), props: d.props, burnZones: d.burnZones,
       wind: d.wind, aim, hash: { ...s.hash, checks: s.hash.checks + 1, mismatches: s.hash.mismatches + (ok ? 0 : 1), client: terrain.hash(), server: d.terrainHash },
     }));
     this.started = d;

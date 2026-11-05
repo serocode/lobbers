@@ -88,13 +88,14 @@ export function createHudPresenter(store: MatchStore, map: () => MapDef | null):
           if (!victim) return;
           patchUnit(e.unitId, (u) => ({ ...u, hp: 0, alive: false }));
           const hazard = map()?.hazard.kind;
-          const how = e.cause === 'hazard' && hazard === 'void' ? 'FELL INTO THE VOID' : 'ELIMINATED';
-          if (e.cause === 'hazard') log(`${tag()}${victim.name} ${hazard === 'void' ? 'fell into the void' : hazard === 'lava' ? 'sank into the lava' : 'sank into the icy water'}`, '#FFD166');
+          const how = e.cause === 'forfeit' ? 'FORFEITED' : e.cause === 'hazard' && hazard === 'void' ? 'FELL INTO THE VOID' : 'ELIMINATED';
+          if (e.cause === 'forfeit') log(`${tag()}${victim.name} forfeited`, '#A9B3CC');
+          else if (e.cause === 'hazard') log(`${tag()}${victim.name} ${hazard === 'void' ? 'fell into the void' : hazard === 'lava' ? 'sank into the lava' : 'sank into the icy water'}`, '#FFD166');
           else if (e.cause === 'fall') log(`${tag()}${victim.name} did not survive the fall`, '#FFD166');
           else log(`${tag()}${e.byUnitId ? name(e.byUnitId) : 'A barrel'} eliminated ${victim.name}`, '#FFD166');
           store.setState((s) => ({
             elim: { id: seq++, name: victim.name.toUpperCase(), machine: victim.machine, how },
-            feed: [...s.feed, { id: seq++, killer: e.byUnitId ? name(e.byUnitId) : e.cause === 'hazard' ? 'Gravity' : 'Barrel', killerColor: teamCol(e.byUnitId), victim: victim.name, victimColor: TEAM_COLOR[victim.team] }].slice(-MAX_FEED),
+            feed: [...s.feed, { id: seq++, killer: e.byUnitId ? name(e.byUnitId) : e.cause === 'hazard' ? 'Gravity' : e.cause === 'forfeit' ? 'Forfeit' : 'Barrel', killerColor: teamCol(e.byUnitId), victim: victim.name, victimColor: TEAM_COLOR[victim.team] }].slice(-MAX_FEED),
           }));
           return;
         }

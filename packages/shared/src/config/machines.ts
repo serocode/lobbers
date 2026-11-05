@@ -87,3 +87,6 @@ export const MACHINES: Record<MachineId, MachineDef> = {
 };
 
 export const MACHINE_LIST: MachineDef[] = Object.values(MACHINES);
+
+/** The five machines every new player owns (first-run starter pick; Inventory.dc.html `own`). */
+export const STARTER_MACHINES: MachineId[] = ['thumper', 'sprocket', 'mollusk', 'voltaic', 'cinder'];

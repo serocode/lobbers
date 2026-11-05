@@ -1,0 +1,29 @@
+{
+  "name": "lobbers",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @lobbers/client",
+    "dev:client": "npm run dev -w @lobbers/client",
+    "build": "npm run build -w @lobbers/client",
+    "test": "npm run test --workspaces --if-present",
+    "test:core": "node --experimental-strip-types --no-warnings --test packages/shared/test/*.test.ts",
+    "smoke:p2p": "node tools/p2p-smoke/run.mjs 4 cobalt",
+    "peer:local": "npx peerjs --port 9000 --path /",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "e2e": "npm run e2e -w @lobbers/client"
+  },
+  "engines": {
+    "node": ">=22.6"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "ws": "^8.18.0",
+    "playwright": "^1.49.0",
+    "peer": "^1.0.2"
+  }
+}

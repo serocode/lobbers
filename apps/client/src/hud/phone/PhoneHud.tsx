@@ -1,14 +1,15 @@
 // Phone landscape battle HUD (BattleMobile.dc.html, 844×390; the field is the whole screen at zoom 0.55).
 import { useRef } from 'react';
-import { MACHINES, type TeamId } from '@lobbers/shared';
+import { MACHINES, type TeamId, type WeaponId } from '@lobbers/shared';
 import { CloseButton, FocusIcon, MachineArt, MoreIcon, PauseIcon, WeaponIcon } from '../../components';
 import { cameraBus } from '../../state/cameraBus';
-import { TEAM_DARK, canControl, unitOf } from '../../state/matchStore';
+import { TEAM_DARK, arsenalOf, canControl, unitOf } from '../../state/matchStore';
 import { useBattleUi } from '../../state/uiStores';
 import { useBattle, useCanControl, useDeckUnit, useMatch, useTurnSeconds, weaponInfo } from '../BattleContext';
 import { BattleToast, ElimRibbon, HurtVignette, TurnBanner } from '../Overlays';
 import { AbilityPair, MoveButtons, SHORT, useTeam } from '../compact';
 import { PauseMenu, VictoryOverlay } from '../desktop/Modals';
+import { EmoteButton, EmoteWheel } from '../EmoteWheel';
 import { timerColor } from '../../components/controls';
 import s from '../battle.module.css';
 
@@ -88,11 +89,13 @@ function AimPad(): JSX.Element {
   );
 }
 
-function WeaponSheet(): JSX.Element | null {
+/** Bottom sheet with every weapon this unit can use (phone "More"; tablet "More" when the arsenal exceeds its row). */
+export function WeaponSheet(): JSX.Element | null {
   const { controls } = useBattle();
   const open = useBattleUi((x) => x.sheetOpen), set = useBattleUi((x) => x.set);
   const u = useDeckUnit();
   const current = useMatch((v) => (u ? v.aim[u.id]?.weaponId : undefined));
+  const arsenal = useMatch((v) => (u ? arsenalOf(v, u).join(',') : '')).split(',').filter(Boolean) as WeaponId[];
   if (!open || !u) return null;
   const close = (): void => set({ sheetOpen: false });
   return (
@@ -103,7 +106,7 @@ function WeaponSheet(): JSX.Element | null {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><AbilityPair size={44} /><CloseButton onClick={close} /></div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,minmax(0,1fr))', gap: 8 }}>
-          {MACHINES[u.machine].loadout.map((id) => {
+          {arsenal.map((id) => {
             const w = weaponInfo(id, u), on = current === id;
             return (
               <button key={id} type="button" className={`btn ${s.wb} ${on ? s.on : ''}`} disabled={!controls.canUse(id)} onClick={() => { controls.selectWeapon(id); close(); }} style={{ height: 86, flexDirection: 'column', gap: 2, padding: 0 }}>
@@ -122,7 +125,7 @@ function BottomLeft(): JSX.Element {
   const mine = useCanControl();
   const u = useDeckUnit();
   const current = useMatch((v) => (u ? v.aim[u.id]?.weaponId : undefined));
-  const quick = u ? MACHINES[u.machine].loadout.slice(0, 3) : [];
+  const quick = useMatch((v) => (u ? arsenalOf(v, u).slice(0, 3).join(',') : '')).split(',').filter(Boolean) as WeaponId[];
   return (
     <div style={{ position: 'absolute', left: 10, top: 318, display: 'flex', gap: 8, alignItems: 'flex-end' }}>
       <MoveButtons w={52} h={60} />
@@ -137,6 +140,7 @@ function BottomLeft(): JSX.Element {
       })}
       <button type="button" className="btn" onClick={() => useBattleUi.getState().set({ sheetOpen: true })} aria-label="All weapons and abilities" style={{ width: 64, height: 64, flexDirection: 'column', fontSize: 11, padding: 0 }}><MoreIcon />More</button>
       <button type="button" className="btn" onClick={() => cameraBus.command({ t: 'focusActive' })} aria-label="Focus camera on the active machine" style={{ width: 48, height: 48, padding: 0 }}><FocusIcon /></button>
+      <EmoteButton size={48} />
     </div>
   );
 }
@@ -155,6 +159,7 @@ export function PhoneHud(): JSX.Element {
       <button type="button" className={`fd ${s.firec}`} aria-label="Fire" onClick={() => controls.fire()} disabled={!mine} style={{ position: 'absolute', left: 730, top: 280 }}>FIRE</button>
       <BattleToast bottom={110} />
       <WeaponSheet />
+      <EmoteWheel layout="phone" />
       <PauseMenu />
       <VictoryOverlay scale={0.42} />
     </>

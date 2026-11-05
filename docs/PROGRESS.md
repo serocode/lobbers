@@ -76,11 +76,87 @@ and props fall in). On Sunscar Dunes press E to 100 and fire: the camera chases 
 - Decorations are not cut by craters (they topple when their base is carved).
 - fps measured headless on an Apple-silicon Mac; re-measure on a mid laptop in Phase 5.
 
-## Phase 2 — Multiplayer
-_not started_
+## Phase 2 — Multiplayer ✅ (2026-11-05)
+**Works**
+- **One state machine**: the match loop now lives in `packages/shared/src/match/flow.ts` (`MatchFlow`) with an injected clock.
+  The server `MatchRoom` and the hot-seat `LocalMatchController` both run it. It adds disconnects (turn ends at once,
+  turns skipped, forfeit after `maxSkippedTurnsWhileDisconnected` or the reconnect window), AFK forfeits
+  (`maxConsecutiveTimeouts`), surrender (`forfeit` intent), and a tally for Results (damage per turn, weapon use, MVP line).
+- **Server** (`apps/server/src`): `LobbyRoom` (LOB-XXXX codes in Colyseus presence, auto team balance, setTeam / setMachine /
+  setReady / updateSettings / setRoomName / kick / chat with 2/s limit + filter, host transfer, validated 3-2-1 start, seat
+  reservations, stays open during the match and reopens after it) and `MatchRoom` (reserved seats only, JWT `onAuth`,
+  zod-validated intents, 10/s aim relay, reconnect window, full snapshot on (re)join, same-account rejoin from a new tab,
+  results archived for `GET /api/matches/:id`). REST: `/api/rooms` (public list), `/api/rooms/code/:code`, `/api/season`.
+- **Client net** (`apps/client/src/net/online`): guest session + first-run name modal, colyseus client, `lobbyService`
+  (create / join by code / join by id / quick match / resume), `NetMatchController` (MatchTransport over the room; replays
+  history to late subscribers; reconnects inside the window → fresh snapshot), clock offset (median of 3).
+- **Screens** ported from the mockups: Home (+ Quick Match / Play Now, Create Room, Join Room, Settings, first-run name),
+  Lobby (slots incl. RECONNECTING m:ss, host kick, public/private toggle, chat, countdown + DEPLOYING!), Machine Select
+  (in room and `/machines` browse mode, Ultimate row), Results (podium, MVP, sortable rankings, rewards, match details).
+- **Battle online**: offline badge on HUD chips, grey `OFFLINE m:ss` tag on units, combat-log lines for
+  disconnected / reconnected / forfeited, "Reconnecting…" scrim with countdown + Leave match, red toasts for rejections,
+  pause → surrender (server forfeit), victory → SEE RESULTS / Play again / Back to lobby.
 
-## Phase 3 — Content
-_not started_
+**Verify**
+```bash
+pnpm test:core                                   # 32 tests (8 new MatchFlow tests)
+pnpm --filter @lobbers/server test               # 12 tests: REST + LobbyRoom/MatchRoom via @colyseus/testing
+pnpm dev:server & pnpm dev:client
+pnpm --filter @lobbers/client exec playwright test e2e/multiplayer.spec.ts   # 1v1–4v4 to victory, validation, host leave, disconnect/reconnect/forfeit
+pnpm --filter @lobbers/client exec playwright test e2e/screens-phase2.spec.ts
+```
+Manual: open two browser profiles → Create Room in one, Join Room with the code in the other → READY UP → START MATCH.
+Close the active player's tab mid-turn and reopen `/match/<id>`: the seat, HP and craters come back.
+
+**Evidence** — `docs/screenshots/phase-2/`
+- `matrix-report.json`: 1v1 (16 turns), 2v2 (21), 3v3 (29), 4v4 (37) each played to victory in separate browser
+  contexts; every client compared after every action — **0 terrain-hash mismatches**, identical HP/positions/wind/turn.
+- `sync-2v2-a.png` + `sync-2v2-b.png`: the same moment from two contexts.
+- Screens vs references (`screens-report.json`, mean pixel difference): home 6.9 % (01), create room 3.8 % (01c), quick
+  match 2.9 % (01b), lobby 4.2 % (02), machine select 4.6 % / 4.2 % (03 / 03b); `results.png`, `results-details.png` (05 / 05b).
+  Differences are guest data (names, levels, currency) and the references' substitute fonts.
+
+**Known gaps** (logged in DECISIONS)
+- Guest progress (XP, coins, level, history, friends, missions, inventory, leaderboards) is not stored until Phase 4;
+  those buttons are disabled with the reason. Recent Activity lists this browser's matches.
+- Capture the Hill, Duel 1v1 and Best of 3 have no rules yet → visible but disabled. Ranked has no rating band until ratings exist.
+- Machine Select lock-in ring is hidden (no server lock timer). Lobby ping panel shows your ping, not a region.
+- Finished-match results live in server memory (lost on restart) until the matches table lands.
+
+## Phase 3 — Content ✅ (2026-11-06)
+**Works**
+- **Items On = full arsenal** (shared rules: `arsenalFor`, `createUnit` stocks ammo, `canUseWeapon`): Armory lists all 10
+  with "Items: On — full arsenal this match"; Items Off lists the machine loadout. Quick slots, tablet row (6th button →
+  "More" sheet when the arsenal is larger) and the phone sheet follow it. Hot-seat launcher gained an Items toggle.
+- **All 8 specials + ultimates**: HUD (Phase 1) and Machine Select (Special + Ultimate rows); a core test proves every one
+  changes the outcome (shot modifiers change the resolved shot; instant effects change state).
+- **Maps**: all 6 in battle at world size; lava glow and icy-water wave animate again (Phaser `HazardView` over the
+  rasterised backdrop, same timings as Scene.dc.html).
+- **Cosmetics in matches** (`config/cosmetics.ts`, items/copy from Inventory.dc.html): skins (body repainted from exported
+  templates so only the body changes), weapon skins (shell colour per Armory category), 6 trail styles (smoke, sparks,
+  bubbles, dash, rainbow, stars), 6 explosion styles (classic, confetti, plasma, pixel, sakura, black hole), titles (lobby
+  slot), emotes. Loadouts are sanitised server-side against what the player owns (guests: the default items) and resolved
+  into `matchStarted.cosmetics`, so everyone sees the same thing.
+- **Emote wheel**: T or the bubble button next to Focus/Overview; 4 equipped emotes; `emote` intent (any time, 2.5 s
+  cooldown, server-validated) → speech bubble over the machine in the Inventory mockup's bubble style.
+- **Sound** (`src/audio`, all synthesised with WebAudio — no third-party files): fire per weapon category, flight whistle,
+  explosion by category/size, lightning, hit, heal, elimination, turn start, match end, UI clicks, emote pop; menu and
+  battle music loops. Master / Music / Effects volumes from Settings; unlocks on the first gesture.
+
+**Verify**
+```bash
+pnpm test:core                                                # 35 tests (Items On/Off, all abilities, cosmetics + emotes)
+pnpm --filter @lobbers/client exec playwright test e2e/cosmetics.spec.ts e2e/maps.spec.ts
+```
+Manual: `/dev/kit#hotseat` → pick "RED COSMETICS: Rainbow Ribbon · Black Hole" → START → press T, then 2; fire a shot.
+
+**Evidence** — `docs/screenshots/phase-3/`: `<preset>-emote.png`, `<preset>-flight.png`, `<preset>-impact.png` for the five
+presets (all trails, explosion styles, skins, weapon-skin shells, bubbles); `armory-items-on.png`; `map-<id>.png` ×6.
+
+**Known gaps** (logged in DECISIONS)
+- Players can't change cosmetics in the UI until the Inventory screen (Phase 4); the hot-seat harness has presets to see them.
+- Unlock prices/requirements for items the mockup shows as already owned are placeholders until the store exists.
+- Void maps have no animated hazard strip (none in the mockup).
 
 ## Phase 4 — Persistence
 _not started_

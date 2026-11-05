@@ -6,7 +6,7 @@ import { LocalMatchController } from '../../net/local/LocalMatchController';
 import { ClientMatch } from '../../state/ClientMatch';
 import { BattleControls } from '../../state/battleControls';
 import { installDevHooks } from '../../dev/devHooks';
-import { decodeLocalConfig, encodeLocalConfig, seatsFor, settingsFor } from '../../state/localMatchConfig';
+import { cosmeticsFor, decodeLocalConfig, encodeLocalConfig, seatsFor, settingsFor } from '../../state/localMatchConfig';
 import { BattleScreen } from './BattleScreen';
 
 interface Session { match: ClientMatch; controls: BattleControls }
@@ -19,7 +19,7 @@ export default function LocalMatchRoute(): JSX.Element {
 
   // Created inside the effect so StrictMode's mount → unmount → mount never reuses a disposed authority.
   useEffect(() => {
-    const transport = new LocalMatchController({ settings: settingsFor(cfg), seats: seatsFor(cfg), seed: cfg.seed });
+    const transport = new LocalMatchController({ settings: settingsFor(cfg), seats: seatsFor(cfg), seed: cfg.seed, cosmetics: cosmeticsFor(cfg) });
     const match = new ClientMatch(transport);
     const controls = new BattleControls(match);
     match.start();
@@ -30,8 +30,15 @@ export default function LocalMatchRoute(): JSX.Element {
 
   const value = useMemo(() => session && ({
     ...session,
-    onLeave: () => nav('/dev/kit#hotseat'),
-    onPlayAgain: () => nav(encodeLocalConfig({ ...cfg, seed: cfg.seed + 1 })),
+    nav: {
+      surrender: () => nav('/dev/kit#hotseat'),
+      surrenderNote: 'This hot-seat match ends for everyone at this screen.',
+      resultsReason: 'Hot-seat matches have no online results',
+      playAgain: () => nav(encodeLocalConfig({ ...cfg, seed: cfg.seed + 1 })),
+      playAgainLabel: 'Play again',
+      back: () => nav('/dev/kit#hotseat'),
+      backLabel: 'Back to setup',
+    },
   }), [session, nav, cfg]);
 
   if (!value) return <div style={{ position: 'fixed', inset: 0, background: '#101522' }} />;

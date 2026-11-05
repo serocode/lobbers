@@ -13,6 +13,8 @@ import { PhoneHud } from '../../hud/phone/PhoneHud';
 import { TabletHud } from '../../hud/tablet/TabletHud';
 import { useBattleKeys } from '../../hud/useBattleKeys';
 import { useBattleUi } from '../../state/uiStores';
+import { createBattleAudio } from '../../audio/battleAudio';
+import { sfx } from '../../audio/sfx';
 
 function useViewport(): { w: number; h: number } {
   const [s, set] = useState({ w: window.innerWidth, h: window.innerHeight });
@@ -59,6 +61,11 @@ function Battle(): JSX.Element {
   const vp = useViewport();
   const [start, setStart] = useState<MatchStartedMsg | null>(null);
   useEffect(() => match.onStarted(setStart), [match]);
+  useEffect(() => {
+    const off = match.addPresenter(createBattleAudio(match));
+    const offEmote = match.store.subscribe((s, p) => { if (s.emotes.length && s.emotes !== p.emotes) sfx.emote(); });
+    return () => { off(); offEmote(); };
+  }, [match]);
   useEffect(() => () => useBattleUi.getState().reset(), []);
   useBattleKeys();
   useFpsProbe();

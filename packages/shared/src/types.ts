@@ -140,6 +140,8 @@ export interface MapDef {
   id: MapId;
   name: string;
   description: string;
+  /** Short card line (Create Room thumbnails). */
+  tagline: string;
   sizeLabel: string;
   width: number;
   height: number;

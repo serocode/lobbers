@@ -6,6 +6,8 @@ import type { ClientMatch } from '../state/ClientMatch';
 import type { BattleControls } from '../state/battleControls';
 import type { LayoutSpec } from './layouts';
 import { BattleScene, type BattleSceneData } from './scenes/BattleScene';
+import { cosmeticTextures } from './render/svgSources';
+import { DENSITY_CAP, useSettings } from '../state/uiStores';
 
 export interface MountOptions {
   match: ClientMatch;
@@ -20,7 +22,8 @@ const FONTS = ['700 12px Fredoka', '400 36px "Lilita One"', '700 12px "JetBrains
 
 export async function mountBattle(parent: HTMLElement, o: MountOptions): Promise<Phaser.Game> {
   await Promise.all(FONTS.map((f) => document.fonts.load(f).catch(() => [])));
-  const density = Math.max(1, Math.min(2, (window.devicePixelRatio || 1) * o.stageScale));
+  const extra = await cosmeticTextures(o.start, 1).catch(() => []);
+  const density = Math.max(1, Math.min(DENSITY_CAP[useSettings.getState().graphics], (window.devicePixelRatio || 1) * o.stageScale));
   const texScale = Math.max(1, Math.min(2, Math.ceil(o.layout.zoom * density * 4) / 4));
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const { w, h } = o.layout.field;
@@ -37,7 +40,7 @@ export async function mountBattle(parent: HTMLElement, o: MountOptions): Promise
     disableContextMenu: true,
     fps: { target: 60, smoothStep: true },
   });
-  const data: BattleSceneData = { match: o.match, controls: o.controls, start: o.start, layout: o.layout, density, texScale, reducedMotion };
+  const data: BattleSceneData = { match: o.match, controls: o.controls, start: o.start, layout: o.layout, density, texScale, reducedMotion, extraTextures: extra };
   game.scene.add('battle', BattleScene, true, data);
   return game;
 }

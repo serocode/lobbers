@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MACHINE_LIST, MAP_LIST, ROOM_LIMITS, SETTING_OPTIONS, type MachineId, type TeamId } from '@lobbers/shared';
 import { Button, ChevronLeft, ChevronRight, MachineArt, Panel, Segmented, SceneBackdrop } from '../../components';
 import { DEFAULT_LOCAL, encodeLocalConfig, type LocalMatchConfig } from '../../state/localMatchConfig';
+import { PRESETS, PRESET_IDS, type PresetId } from '../../state/cosmeticPresets';
 import { Section } from './Section';
 
 const TEAM = { red: { col: '#F45B55', dark: '#3A2230', name: 'TEAM RED' }, blue: { col: '#4C9AFF', dark: '#1E2D4E', name: 'TEAM BLUE' } } as const;
@@ -58,11 +59,23 @@ export function HotSeatSection(): JSX.Element {
         <TeamPicker team="blue" list={c.blue} onChange={(blue) => patch({ blue })} />
       </div>
       <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+        {(['red', 'blue'] as const).map((t) => (
+          <label key={t} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, fontWeight: 700, color: '#A9B3CC' }}>{t.toUpperCase()} COSMETICS
+            <select aria-label={`${t} cosmetics`} data-testid={`look-${t}`} value={c.look[t]} onChange={(e) => patch({ look: { ...c.look, [t]: e.target.value as PresetId } })}
+              style={{ height: 36, background: '#0E1320', border: '3px solid #0B0F1A', borderRadius: 8, color: '#F5F1E8', padding: '0 8px', fontFamily: 'Fredoka,sans-serif' }}>
+              {PRESET_IDS.map((id) => <option key={id} value={id}>{PRESETS[id].label}</option>)}
+            </select>
+          </label>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: '#A9B3CC' }}>TURN TIMER</span>
         <Segmented kind="chip" label="Turn timer" value={String(c.turnSeconds)} onChange={(v) => patch({ turnSeconds: Number(v) as LocalMatchConfig['turnSeconds'] })}
           options={SETTING_OPTIONS.turnSeconds.map((s) => ({ value: String(s), label: `${s}s` }))} />
         <span style={{ fontSize: 13, fontWeight: 700, color: '#A9B3CC' }}>WIND</span>
         <Segmented kind="chip" label="Wind" value={c.wind} onChange={(wind) => patch({ wind })} options={SETTING_OPTIONS.wind.map((w) => ({ value: w, label: w[0].toUpperCase() + w.slice(1) }))} />
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#A9B3CC' }}>ITEMS</span>
+        <Segmented kind="chip" label="Items" value={c.itemsEnabled ? 'on' : 'off'} onChange={(v) => patch({ itemsEnabled: v === 'on' })} options={[{ value: 'on', label: 'On (all 10)' }, { value: 'off', label: 'Off (loadout)' }]} />
         <span style={{ fontSize: 13, fontWeight: 700, color: '#A9B3CC' }}>SEED</span>
         <input className="mono" aria-label="Seed" type="number" min={1} value={c.seed} onChange={(e) => patch({ seed: Math.max(1, Math.floor(+e.target.value || 1)) })}
           style={{ width: 110, height: 36, background: '#0E1320', border: '3px solid #0B0F1A', borderRadius: 8, color: '#F5F1E8', padding: '0 8px' }} />

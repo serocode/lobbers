@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lobbers — Lobby</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&amp;family=Fredoka:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#101522}
+*{box-sizing:border-box}
+a{color:#FFD166}a:hover{color:#FFE29A}
+.fd{font-family:'Lilita One',Fredoka,system-ui,sans-serif;letter-spacing:.5px;font-weight:400}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.btn{font-family:Fredoka,system-ui,sans-serif;font-weight:600;cursor:pointer;border:3px solid #0B0F1A;border-radius:10px;box-shadow:0 4px 0 #0B0F1A;transition:transform .08s,box-shadow .08s,filter .15s;color:#F5F1E8;background:#232B42;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{filter:brightness(1.12);transform:translateY(-2px);box-shadow:0 6px 0 #0B0F1A;color:#F5F1E8}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0B0F1A}
+.btn:disabled{filter:grayscale(.85) brightness(.65);cursor:not-allowed;transform:none;box-shadow:0 4px 0 #0B0F1A}
+.btn:focus-visible{outline:3px solid #FFD166;outline-offset:2px}
+.dark{color:#101522}.dark:hover{color:#101522}
+.panel{background:#151B2B;border:3px solid #0B0F1A;border-radius:12px;box-shadow:0 5px 0 #0B0F1A,inset 0 2px 0 rgba(255,255,255,.05)}
+.bg{background-color:#101522;background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 14px,transparent 14px 28px)}
+.stripes{background-image:repeating-linear-gradient(135deg,rgba(0,0,0,.18) 0 8px,transparent 8px 16px)}
+.slot{transition:transform .2s}
+.slot:hover{transform:translateX(3px)}
+.join{animation:join .5s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes join{from{opacity:0;transform:scale(.8) translateY(14px)}to{opacity:1;transform:none}}
+.readyOn{animation:rdy .4s cubic-bezier(.2,1.6,.4,1) both, glow 2s ease-in-out .4s infinite}
+@keyframes rdy{from{transform:scale(.6)}to{transform:scale(1)}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(90,203,145,.0)}50%{box-shadow:0 0 0 5px rgba(90,203,145,.25)}}
+.wait{animation:wait 1.4s ease-in-out infinite}
+@keyframes wait{0%,100%{opacity:.55}50%{opacity:1}}
+.ping{animation:ping 2.4s ease-in-out infinite}
+@keyframes ping{0%,90%,100%{opacity:1}95%{opacity:.3}}
+.spin{animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dash{border:3px dashed #3B4257;background:rgba(21,27,43,.6)}
+.dash:hover{border-color:#FFD166;background:rgba(255,209,102,.06)}
+.bob{animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.scrim{position:absolute;inset:0;background:rgba(8,11,20,.78);display:flex;align-items:center;justify-content:center;z-index:50;animation:fade .2s both}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{animation:modal .32s cubic-bezier(.2,1.3,.4,1) both}
+@keyframes modal{from{opacity:0;transform:translateY(24px) scale(.94)}to{opacity:1;transform:none}}
+.count{animation:count .9s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes count{0%{opacity:0;transform:scale(2.4)}30%{opacity:1;transform:scale(1)}85%{opacity:1}100%{opacity:0;transform:scale(.8)}}
+.load{animation:load 2.2s cubic-bezier(.4,0,.2,1) both}
+@keyframes load{from{width:0}to{width:100%}}
+.toast{animation:toast .3s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes toast{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.setb{flex-direction:column;align-items:flex-start;gap:2px;height:56px;padding:0 12px;text-align:left}
+.inp{height:42px;border:3px solid #0B0F1A;border-radius:10px;background:#0E1320;color:#F5F1E8;padding:0 12px;font-family:Fredoka,sans-serif;font-size:15px;flex:1;min-width:0}
+.inp:focus{outline:3px solid #4C9AFF}
+.msg{animation:join .3s ease-out both}
+</style>
+</helmet>
+<div class="bg" style="width:1440px;height:900px;position:relative;overflow:hidden;font-family:Fredoka,system-ui,sans-serif;color:#F5F1E8">
+
+  <header style="position:absolute;left:24px;top:20px;width:1392px;height:64px;display:flex;align-items:center;gap:16px">
+    <a href="Main.dc.html" class="btn" style="height:52px;padding:0 16px;font-size:16px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>Leave</a>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <h1 class="fd" style="margin:0;font-size:32px;line-height:1">Kaboomerang's Brawl</h1>
+      <span style="font-size:13px;color:#A9B3CC;font-weight:600">{{modeName}} · Private room · Host: Kaboomerang</span>
+    </div>
+    <div style="flex:1"></div>
+    <div class="panel" style="height:56px;display:flex;align-items:center;gap:12px;padding:0 8px 0 16px">
+      <span style="font-size:12px;color:#A9B3CC;font-weight:700;letter-spacing:1.5px">ROOM CODE</span>
+      <span class="mono" style="font-size:22px;font-weight:700;letter-spacing:3px;color:#FFD166">LOB-7Q4K</span>
+      <button class="btn" onClick="{{copyCode}}" aria-label="Copy room code" style="height:40px;padding:0 12px;font-size:14px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"></rect><path d="M16 8V4H3v13h5"></path></svg>{{copyLbl}}</button>
+    </div>
+    <div class="panel" style="height:56px;display:flex;align-items:center;gap:10px;padding:0 16px">
+      <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F5F1E8" stroke-width="2.6" stroke-linecap="round"><circle cx="9" cy="8" r="4"></circle><path d="M2 21c0-4 3-6 7-6s7 2 7 6M16 4a4 4 0 0 1 0 8M19 15c2 1 3 3 3 6"></path></svg>
+      <span class="fd" style="font-size:28px">{{countTxt}}</span>
+    </div>
+    <div class="panel" style="height:56px;display:flex;align-items:center;gap:8px;padding:0 14px">
+      <span style="display:flex;align-items:flex-end;gap:2px;height:16px" aria-hidden="true"><span style="width:4px;height:6px;background:#5ACB91"></span><span style="width:4px;height:11px;background:#5ACB91"></span><span style="width:4px;height:16px;background:#5ACB91"></span></span>
+      <span class="mono" style="font-size:14px">SEA · 38ms</span>
+    </div>
+  </header>
+
+  <sc-for list="{{teams}}" as="t" hint-placeholder-count="2">
+    <section aria-label="{{t.label}}" style="position:absolute;left:{{t.x}}px;top:104px;width:400px;display:flex;flex-direction:column;gap:12px">
+      <div class="stripes" style="height:60px;background-color:{{t.col}};border:3px solid #0B0F1A;box-shadow:0 5px 0 #0B0F1A;clip-path:{{t.clip}};display:flex;align-items:center;justify-content:space-between;padding:0 26px;color:#101522">
+        <span class="fd" style="font-size:32px">{{t.name}}</span>
+        <span style="display:flex;flex-direction:column;align-items:flex-end;font-weight:700"><span class="mono" style="font-size:20px">{{t.cnt}}</span><span style="font-size:12px">avg Lv {{t.avg}}</span></span>
+      </div>
+      <sc-for list="{{t.slots}}" as="p" hint-placeholder-count="4">
+        <div style="height:136px">
+          <sc-if value="{{p.filled}}" hint-placeholder-val="{{ true }}">
+            <div class="panel slot join" style="height:136px;display:flex;gap:14px;padding:10px;align-items:center;border-color:{{p.bd}}">
+              <div class="stripes" style="width:112px;height:110px;flex:none;border-radius:8px;border:3px solid #0B0F1A;background-color:{{t.dark}};display:flex;align-items:flex-end;justify-content:center;position:relative;overflow:hidden">
+                <div class="bob" style="margin-bottom:4px"><dc-import name="Machine" kind="{{p.kind}}" tint="{{t.col}}" size="{{ 100 }}" flip="{{t.flip}}" hint-size="100px,83px"></dc-import></div>
+                <sc-if value="{{p.host}}" hint-placeholder-val="{{ false }}">
+                  <span title="Host" style="position:absolute;left:4px;top:4px;width:30px;height:24px;background:#FFD166;border:2px solid #0B0F1A;border-radius:6px;display:flex;align-items:center;justify-content:center"><svg aria-label="Host" role="img" width="18" height="14" viewBox="0 0 18 14"><path d="M1 12 L2 3 L6 7 L9 1 L12 7 L16 3 L17 12 Z" fill="#101522"></path></svg></span>
+                </sc-if>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span class="fd" style="font-size:23px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{p.n}}</span>
+                  <sc-if value="{{p.you}}" hint-placeholder-val="{{ false }}"><span class="fd" style="font-size:13px;background:#FFD166;color:#101522;border:2px solid #0B0F1A;border-radius:6px;padding:0 6px">YOU</span></sc-if>
+                </div>
+                <span style="font-size:13px;color:#FFD166;font-weight:600">“{{p.title}}”</span>
+                <span style="font-size:13px;color:#A9B3CC">{{p.mname}} · {{p.role}}</span>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+                  <sc-if value="{{p.ready}}" hint-placeholder-val="{{ true }}">
+                    <span class="readyOn fd" style="font-size:14px;background:#5ACB91;color:#101522;border:2px solid #0B0F1A;border-radius:6px;padding:2px 8px;display:flex;align-items:center;gap:4px"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#101522" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"></path></svg>READY</span>
+                  </sc-if>
+                  <sc-if value="{{p.notReady}}" hint-placeholder-val="{{ false }}">
+                    <span class="wait fd" style="font-size:14px;background:#2A3045;color:#C9D1E0;border:2px solid #0B0F1A;border-radius:6px;padding:2px 8px">NOT READY</span>
+                  </sc-if>
+                  <span class="fd" style="font-size:13px;background:#0E1320;border:2px solid #0B0F1A;border-radius:6px;padding:2px 6px">LV {{p.lvl}}</span>
+                  <span class="ping" title="{{p.pingTxt}}" style="display:flex;align-items:flex-end;gap:2px;height:14px;margin-left:auto"><span style="width:4px;height:5px;background:{{p.b1}}"></span><span style="width:4px;height:9px;background:{{p.b2}}"></span><span style="width:4px;height:14px;background:{{p.b3}}"></span></span>
+                  <span class="mono" style="font-size:12px;color:#A9B3CC">{{p.ping}}ms</span>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{p.empty}}" hint-placeholder-val="{{ false }}">
+            <button class="dash" onClick="{{p.invite}}" style="width:100%;height:136px;border-radius:12px;cursor:pointer;color:#A9B3CC;font-family:Fredoka,sans-serif;display:flex;align-items:center;justify-content:center;gap:16px">
+              <sc-if value="{{p.idle}}" hint-placeholder-val="{{ true }}">
+                <span style="display:flex;align-items:center;gap:14px"><span style="width:56px;height:56px;border-radius:50%;border:3px dashed #5B6378;display:flex;align-items:center;justify-content:center"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFD166" stroke-width="3.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span><span style="display:flex;flex-direction:column;align-items:flex-start"><span class="fd" style="font-size:20px;color:#F5F1E8">Open slot</span><span style="font-size:14px">Click to invite a friend</span></span></span>
+              </sc-if>
+              <sc-if value="{{p.inviting}}" hint-placeholder-val="{{ false }}">
+                <span style="display:flex;align-items:center;gap:14px"><svg class="spin" aria-hidden="true" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4C9AFF" stroke-width="3.5" stroke-linecap="round"><path d="M12 3a9 9 0 1 1-9 9"></path></svg><span style="display:flex;flex-direction:column;align-items:flex-start"><span class="fd" style="font-size:20px;color:#F5F1E8">Connecting…</span><span style="font-size:14px">{{p.invName}} accepted your invite</span></span></span>
+              </sc-if>
+            </button>
+          </sc-if>
+        </div>
+      </sc-for>
+    </section>
+  </sc-for>
+
+  <div style="position:absolute;left:444px;top:104px;width:552px;display:flex;flex-direction:column;gap:14px">
+    <div class="panel" style="position:relative;height:286px;overflow:hidden;padding:0">
+      <sc-if value="{{mapShow}}" hint-placeholder-val="{{ true }}">
+        <div class="join" style="position:absolute;inset:0"><dc-import name="Scene" map="{{map.id}}" w="{{ 546 }}" h="{{ 280 }}" hint-size="546px,280px"></dc-import></div>
+      </sc-if>
+      <div style="position:absolute;left:12px;top:12px;display:flex;gap:8px">
+        <span class="fd" style="background:#101522;border:3px solid #0B0F1A;border-radius:8px;padding:4px 10px;font-size:15px;color:#FFD166">MAP {{mapNo}} / 6</span>
+        <span class="fd" style="background:#101522;border:3px solid #0B0F1A;border-radius:8px;padding:4px 10px;font-size:15px">{{map.size}}</span>
+      </div>
+      <div class="fd" style="position:absolute;left:226px;top:110px;width:100px;height:64px;background:#FFD166;color:#101522;border:4px solid #0B0F1A;box-shadow:0 5px 0 #0B0F1A;font-size:40px;display:flex;align-items:center;justify-content:center;transform:rotate(-6deg);clip-path:polygon(8% 0,100% 0,92% 100%,0 100%)">VS</div>
+      <button class="btn" aria-label="Previous map" onClick="{{prevMap}}" style="position:absolute;left:10px;bottom:12px;width:44px;height:44px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>
+      <button class="btn" aria-label="Next map" onClick="{{nextMap}}" style="position:absolute;right:10px;bottom:12px;width:44px;height:44px"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;padding:0 4px">
+      <h2 class="fd" style="margin:0;font-size:30px;line-height:1">{{map.n}}</h2>
+      <p style="margin:0;font-size:14px;color:#C9D1E0;line-height:1.4">{{map.d}}</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+      <sc-for list="{{settings}}" as="o" hint-placeholder-count="6">
+        <button class="btn setb" onClick="{{o.cycle}}" title="Host: click to change"><span style="font-size:11px;color:#A9B3CC;letter-spacing:1.4px;font-weight:700">{{o.k}}</span><span style="font-size:16px">{{o.v}}</span></button>
+      </sc-for>
+    </div>
+    <div class="panel" style="height:166px;display:flex;flex-direction:column;padding:10px;gap:8px">
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;overflow:hidden;font-size:14px">
+        <sc-for list="{{chat}}" as="c" hint-placeholder-count="4">
+          <div class="msg"><span style="font-weight:700;color:{{c.col}}">{{c.who}}:</span> <span style="color:#E6E2D8">{{c.t}}</span></div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:8px">
+        <label for="chatIn" style="position:absolute;left:-9999px">Lobby chat message</label>
+        <input id="chatIn" class="inp" placeholder="Say something to the lobby…" value="{{draft}}" onChange="{{onDraft}}" onKeyDown="{{onChatKey}}">
+        <button class="btn" onClick="{{sendChat}}" style="height:42px;padding:0 14px;font-size:14px">Send</button>
+        <button class="btn" onClick="{{quickGl}}" style="height:42px;padding:0 12px;font-size:14px">gl hf</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="panel" style="position:absolute;left:24px;top:796px;width:1392px;height:84px;display:flex;align-items:center;gap:12px;padding:0 14px">
+    <a href="Machines.dc.html" class="btn" style="height:56px;padding:0 16px;font-size:16px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"><rect x="2" y="14" width="20" height="6" rx="3"></rect><path d="M5 14l2-5h9l2 5M12 9V6h8"></path></svg>Change Machine</a>
+    <a href="Inventory.dc.html" class="btn" style="height:56px;padding:0 16px;font-size:16px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M4 20l6-6M14 4l6 6-8 8H6v-6z"></path></svg>Customize</a>
+    <button class="btn" onClick="{{openInvite}}" style="height:56px;padding:0 16px;font-size:16px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="9" cy="8" r="4"></circle><path d="M2 21c0-4 3-6 7-6s7 2 7 6M19 8v6M16 11h6"></path></svg>Invite Friends</button>
+    <button class="btn" onClick="{{copyCode}}" style="height:56px;padding:0 16px;font-size:16px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"></rect><path d="M16 8V4H3v13h5"></path></svg>Copy Room Code</button>
+    <button class="btn" onClick="{{switchTeam}}" style="height:56px;padding:0 16px;font-size:16px"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h14l-4-4M20 16H6l4 4"></path></svg>Switch to {{otherTeam}}</button>
+    <div style="flex:1"></div>
+    <span style="font-size:14px;color:#A9B3CC;font-weight:600">{{readyInfo}}</span>
+    <button class="btn dark" onClick="{{toggleReady}}" aria-pressed="{{meReady}}" style="height:60px;width:170px;font-size:24px;background:{{readyBg}}"><span class="fd">{{readyLbl}}</span></button>
+    <button class="btn dark" onClick="{{start}}" disabled="{{cantStart}}" style="height:60px;width:200px;font-size:24px;background:#FFD166"><span class="fd">START MATCH</span></button>
+  </footer>
+
+  <sc-if value="{{inviteOpen}}" hint-placeholder-val="{{ false }}">
+    <div class="scrim">
+      <div class="panel modal" role="dialog" aria-label="Invite friends" style="width:520px;padding:24px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 class="fd" style="margin:0;font-size:32px">Invite Friends</h2>
+          <button class="btn" aria-label="Close" onClick="{{closeInvite}}" style="width:44px;height:44px"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"><path d="M5 5l14 14M19 5 5 19"></path></svg></button>
+        </div>
+        <span style="font-size:14px;color:#A9B3CC">{{openSlots}} open slots · invites expire in 2 minutes</span>
+        <sc-for list="{{inviteList}}" as="f" hint-placeholder-count="5">
+          <div style="display:flex;align-items:center;gap:12px;background:#1C2338;border:3px solid #0B0F1A;border-radius:10px;padding:8px 10px">
+            <span style="width:48px;height:48px;background:#232B42;border:2px solid #0B0F1A;border-radius:8px;display:flex;align-items:center;justify-content:center"><dc-import name="Machine" kind="{{f.kind}}" size="{{ 42 }}" tint="#4C9AFF" hint-size="42px,35px"></dc-import></span>
+            <span style="flex:1;display:flex;flex-direction:column"><span style="font-weight:600">{{f.n}}</span><span style="font-size:12px;color:#A9B3CC">{{f.st}}</span></span>
+            <button class="btn dark" onClick="{{f.inv}}" disabled="{{f.sent}}" style="height:40px;width:96px;font-size:14px;background:{{f.bg}}">{{f.lbl}}</button>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{starting}}" hint-placeholder-val="{{ false }}">
+    <div class="scrim" style="flex-direction:column;gap:20px;background:rgba(8,11,20,.9)">
+      <span style="font-size:15px;letter-spacing:3px;font-weight:700;color:#A9B3CC">MATCH STARTING · {{map.n}}</span>
+      <sc-if value="{{counting}}" hint-placeholder-val="{{ true }}">
+        <sc-if value="{{c3}}" hint-placeholder-val="{{ true }}"><span class="fd count" style="font-size:200px;line-height:1;color:#FFD166;-webkit-text-stroke:10px #0B0F1A;paint-order:stroke fill;text-shadow:0 10px 0 #0B0F1A">3</span></sc-if>
+        <sc-if value="{{c2}}" hint-placeholder-val="{{ false }}"><span class="fd count" style="font-size:200px;line-height:1;color:#FFD166;-webkit-text-stroke:10px #0B0F1A;paint-order:stroke fill;text-shadow:0 10px 0 #0B0F1A">2</span></sc-if>
+        <sc-if value="{{c1}}" hint-placeholder-val="{{ false }}"><span class="fd count" style="font-size:200px;line-height:1;color:#F45B55;-webkit-text-stroke:10px #0B0F1A;paint-order:stroke fill;text-shadow:0 10px 0 #0B0F1A">1</span></sc-if>
+      </sc-if>
+      <sc-if value="{{loaded}}" hint-placeholder-val="{{ false }}">
+        <div class="join" style="display:flex;flex-direction:column;align-items:center;gap:18px">
+          <span class="fd" style="font-size:72px;line-height:1;color:#F5F1E8;-webkit-text-stroke:6px #0B0F1A;paint-order:stroke fill">DEPLOYING!</span>
+          <div style="width:520px;height:22px;border:3px solid #0B0F1A;border-radius:12px;background:#0E1320;overflow:hidden"><div class="load" style="height:100%;background:#5ACB91"></div></div>
+          <span style="font-size:14px;color:#A9B3CC">Tip: wind pushes harder on lighter shells — Icicle Spear barely drifts.</span>
+          <a href="Battle.dc.html" class="btn dark" style="height:64px;padding:0 34px;background:#FFD166;font-size:26px"><span class="fd">ENTER BATTLEFIELD</span></a>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}">
+    <div class="toast panel" role="status" style="position:absolute;left:600px;top:720px;width:240px;padding:10px 16px;font-weight:600;display:flex;gap:10px;align-items:center;justify-content:center;z-index:60;background:#1C2338">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5ACB91" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"></path></svg>{{toast}}
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const P = (n, kind, lvl, title, ping, ready, extra) => ({ n, kind, lvl, title, ping, ready, ...(extra || {}) });
+    this.state = {
+      red: [P('Kaboomerang', 'thumper', 34, 'Hill Breaker', 38, false, { you: true, host: true }), P('PicklePounder', 'voltaic', 27, 'Static Cling', 52, true), P('nightowl_ph', 'sprocket', 19, 'Rookie', 120, false), P('Mara.Vex', 'cinder', 41, 'Crater Maker', 44, true)],
+      blue: [P('FrostedFlakes', 'frostbite', 38, 'Wind Whisperer', 61, true), P('Tidecaller', 'mollusk', 45, 'Shellshocked', 88, false), null, null],
+      inviting: {}, map: 0, mapShow: true, opts: [0, 1, 2, 0, 0, 0], toast: null, copied: false,
+      chat: [{ who: 'Mara.Vex', t: 'gonna burn the whole left ridge again', team: 'red' }, { who: 'FrostedFlakes', t: 'not if I freeze you first', team: 'blue' }, { who: 'PicklePounder', t: 'host pls Cobalt, wind is fair there', team: 'red' }, { who: 'SYSTEM', t: 'Tidecaller joined Team Blue', team: 'sys' }],
+      draft: '', inviteOpen: false, sent: {}, phase: null, count: 3
+    };
+    this.pool = [P('Gyrocopter', 'whirligig', 22, 'Updraft Enjoyer', 47, false), P('BoomBoxer', 'boomba', 31, 'Fuse Lit', 70, false)];
+    this.timers = [];
+  }
+  later(fn, ms) { const t = setTimeout(fn, ms); this.timers.push(t); return t; }
+  componentDidMount() {
+    this.later(() => this.setReady('red', 2), 3200);
+    this.later(() => this.setReady('blue', 1), 5200);
+  }
+  componentWillUnmount() { this.timers.forEach(clearTimeout); clearInterval(this.ci); }
+  setReady(team, i) {
+    const arr = this.state[team].slice();
+    if (arr[i] && !arr[i].you) { arr[i] = { ...arr[i], ready: true }; this.setState({ [team]: arr }); }
+  }
+  toastMsg(m) { clearTimeout(this.tt); this.setState({ toast: m }); this.tt = this.later(() => this.setState({ toast: null }), 2000); }
+  fillSlot(team, i, who) {
+    const key = team + i;
+    if (this.state.inviting[key]) return;
+    const p = who || this.pool.shift();
+    if (!p) { this.toastMsg('No friends left to invite'); return; }
+    this.setState({ inviting: { ...this.state.inviting, [key]: p.n } });
+    this.later(() => {
+      const arr = this.state[team].slice(); arr[i] = p;
+      const inv = { ...this.state.inviting }; delete inv[key];
+      this.setState({ [team]: arr, inviting: inv, chat: this.state.chat.concat({ who: 'SYSTEM', t: p.n + ' joined Team ' + (team === 'red' ? 'Red' : 'Blue'), team: 'sys' }).slice(-5) });
+      this.later(() => this.setReady(team, i), 2400);
+    }, 1600);
+  }
+  send(text) {
+    const t = (text || '').trim(); if (!t) return;
+    this.setState({ chat: this.state.chat.concat({ who: 'Kaboomerang', t, team: 'me' }).slice(-5), draft: '' });
+    this.later(() => this.setState({ chat: this.state.chat.concat({ who: 'Tidecaller', t: 'glhf, may the wind be ever in your favor', team: 'blue' }).slice(-5) }), 1500);
+  }
+  renderVals() {
+    const s = this.state;
+    const MI = { thumper: ['Thumper', 'Heavy Artillery'], sprocket: ['Sprocket', 'Scout'], mollusk: ['Mollusk', 'Defender'], whirligig: ['Whirligig', 'Aerial Support'], voltaic: ['Voltaic', 'Electric Control'], cinder: ['Cinder', 'Fire Brawler'], frostbite: ['Frostbite', 'Ice Control'], boomba: ['Boomba', 'Demolition'] };
+    const MAPS = [
+      { id: 'cobalt', n: 'Cobalt Crags', size: 'Medium · 4v4', d: 'Grassy ridgelines under a ringed gas giant. Floating isles hold the high ground and a central peak splits the teams.' },
+      { id: 'ember', n: 'Ember Basin', size: 'Large · 4v4', d: 'A volcanic caldera at dusk. Lava pours off the isles and ash winds gust hard from the east.' },
+      { id: 'glacier', n: 'Glacier Rift', size: 'Medium · 4v4', d: 'A night-time ice shelf under the aurora. Snowcaps crumble fast — dig in or slide out.' },
+      { id: 'dunes', n: 'Sunscar Dunes', size: 'Huge · 4v4', d: 'Rolling desert under a white sun. Long sightlines, ancient columns and barrels buried in the sand.' },
+      { id: 'skyreach', n: 'Skyreach Isles', size: 'Large · 4v4', d: 'Three floating islands above the clouds. Knock rivals into the gaps — the void never misses.' },
+      { id: 'hollow', n: 'Glowcap Hollow', size: 'Large · 4v4', d: 'A bioluminescent mushroom forest at night. Soft spongy ground that craters deep.' }
+    ];
+    const OPTS = [['MODE', ['Team Deathmatch', 'Capture the Hill']], ['TURN TIMER', ['20 seconds', '30 seconds', '45 seconds']], ['WIND', ['Off', 'Calm', 'Variable', 'Wild']], ['ITEMS', ['On', 'Off']], ['FRIENDLY FIRE', ['50%', 'Off', '100%']], ['ROUNDS', ['Best of 1', 'Best of 3']]];
+    const settings = OPTS.map(([k, vals], i) => ({ k, v: vals[s.opts[i]], cycle: () => { const o = s.opts.slice(); o[i] = (o[i] + 1) % vals.length; this.setState({ opts: o }); } }));
+    const filled = s.red.concat(s.blue).filter(Boolean);
+    const bars = (ping) => { const n = ping < 60 ? 3 : ping < 100 ? 2 : 1; const c = n === 3 ? '#5ACB91' : n === 2 ? '#FFD166' : '#F45B55'; return { b1: c, b2: n >= 2 ? c : '#3B4257', b3: n >= 3 ? c : '#3B4257' }; };
+    const mk = (team) => (p, i) => {
+      const key = team + i;
+      if (!p) return { filled: false, empty: true, idle: !s.inviting[key], inviting: !!s.inviting[key], invName: s.inviting[key] || '', invite: () => this.fillSlot(team, i) };
+      return { ...p, ...bars(p.ping), filled: true, empty: false, mname: MI[p.kind][0], role: MI[p.kind][1], notReady: !p.ready, you: !!p.you, host: !!p.host, pingTxt: p.ping + ' ms', bd: p.you ? '#FFD166' : '#0B0F1A' };
+    };
+    const tInfo = (key, name, col, dark, x, flip, clip) => {
+      const arr = s[key]; const ps = arr.filter(Boolean);
+      return { label: 'Team ' + name, name: 'TEAM ' + name.toUpperCase(), col, dark, x, flip, clip, cnt: ps.length + '/4', avg: ps.length ? Math.round(ps.reduce((a, p) => a + p.lvl, 0) / ps.length) : 0, slots: arr.map(mk(key)) };
+    };
+    const youTeam = s.red.some((p) => p && p.you) ? 'red' : 'blue';
+    const me = s[youTeam].find((p) => p && p.you);
+    const notReadyN = filled.filter((p) => !p.ready).length;
+    const FR = [{ n: 'nightowl_ph', kind: 'sprocket', st: 'In this room' }, { n: 'Gyrocopter', kind: 'whirligig', st: 'Online · in menus' }, { n: 'BoomBoxer', kind: 'boomba', st: 'Online · in menus' }, { n: 'Saltwire', kind: 'sprocket', st: 'Online · Lv 52' }, { n: 'ArcLight', kind: 'voltaic', st: 'In Match · Turn 4' }];
+    const inviteList = FR.filter((f) => f.st !== 'In this room').map((f) => {
+      const inRoom = filled.some((p) => p.n === f.n); const sent = !!s.sent[f.n] || inRoom;
+      return { ...f, sent, lbl: inRoom ? 'Joined' : s.sent[f.n] ? 'Sent' : 'Invite', bg: sent ? '#2A3045' : '#4C9AFF',
+        inv: () => {
+          this.setState({ sent: { ...s.sent, [f.n]: true } });
+          const pi = this.pool.findIndex((p) => p.n === f.n);
+          if (pi >= 0) { const team = s.blue.indexOf(null) >= 0 ? 'blue' : s.red.indexOf(null) >= 0 ? 'red' : null; if (team) { const p = this.pool.splice(pi, 1)[0]; this.fillSlot(team, s[team].indexOf(null), p); } }
+          this.toastMsg('Invite sent to ' + f.n);
+        } };
+    });
+    const map = MAPS[s.map];
+    const changeMap = (d) => { this.setState({ map: (s.map + d + 6) % 6, mapShow: false }); this.later(() => this.setState({ mapShow: true }), 30); };
+    return {
+      modeName: OPTS[0][1][s.opts[0]],
+      teams: [tInfo('red', 'Red', '#F45B55', '#3A2230', 24, false, 'polygon(0 0,100% 0,94% 100%,0 100%)'), tInfo('blue', 'Blue', '#4C9AFF', '#1E2D4E', 1016, true, 'polygon(6% 0,100% 0,100% 100%,0 100%)')],
+      countTxt: filled.length + '/8',
+      map, mapNo: s.map + 1, mapShow: s.mapShow, prevMap: () => changeMap(-1), nextMap: () => changeMap(1),
+      settings, chat: s.chat.map((c) => ({ ...c, col: c.team === 'red' ? '#F45B55' : c.team === 'blue' ? '#4C9AFF' : c.team === 'me' ? '#FFD166' : '#5ACB91' })),
+      draft: s.draft, onDraft: (e) => this.setState({ draft: e.target.value }),
+      onChatKey: (e) => { if (e.key === 'Enter') this.send(s.draft); }, sendChat: () => this.send(s.draft), quickGl: () => this.send('gl hf everyone!'),
+      copyLbl: s.copied ? 'Copied' : 'Copy',
+      copyCode: () => { try { navigator.clipboard && navigator.clipboard.writeText('LOB-7Q4K').catch(() => {}); } catch (e) {} this.setState({ copied: true }); this.toastMsg('Room code copied'); this.later(() => this.setState({ copied: false }), 2000); },
+      otherTeam: youTeam === 'red' ? 'Blue' : 'Red',
+      switchTeam: () => {
+        const from = youTeam, to = from === 'red' ? 'blue' : 'red';
+        const ti = s[to].indexOf(null);
+        if (ti < 0) { this.toastMsg('Team ' + (to === 'red' ? 'Red' : 'Blue') + ' is full'); return; }
+        const a = s[from].slice(), b = s[to].slice(); const fi = a.findIndex((p) => p && p.you);
+        b[ti] = a[fi]; a[fi] = null;
+        this.setState({ [from]: a, [to]: b });
+      },
+      meReady: !!(me && me.ready), readyLbl: me && me.ready ? 'READY!' : 'READY UP', readyBg: me && me.ready ? '#5ACB91' : '#F5F1E8',
+      toggleReady: () => { const arr = s[youTeam].slice(); const i = arr.findIndex((p) => p && p.you); arr[i] = { ...arr[i], ready: !arr[i].ready }; this.setState({ [youTeam]: arr }); },
+      readyInfo: notReadyN ? notReadyN + ' not ready' : 'Everyone is ready',
+      cantStart: notReadyN > 0,
+      start: () => {
+        this.setState({ phase: 'count', count: 3 });
+        clearInterval(this.ci);
+        this.ci = setInterval(() => { const c = this.state.count - 1; if (c <= 0) { clearInterval(this.ci); this.setState({ phase: 'loaded', count: 0 }); } else this.setState({ count: c }); }, 900);
+      },
+      starting: !!s.phase, counting: s.phase === 'count', loaded: s.phase === 'loaded', c3: s.count === 3, c2: s.count === 2, c1: s.count === 1,
+      inviteOpen: s.inviteOpen, openInvite: () => this.setState({ inviteOpen: true }), closeInvite: () => this.setState({ inviteOpen: false }),
+      inviteList, openSlots: s.red.concat(s.blue).filter((p) => !p).length,
+      hasToast: !!s.toast, toast: s.toast || ''
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -75,3 +75,12 @@ export const ARMORY_TABS: Array<'All' | WeaponCategory> = ['All', 'Explosive', '
 
 /** Quick-slot keys 1–4 in the combat controls. */
 export const DEFAULT_QUICK_SLOTS: WeaponId[] = ['standard-rocket', 'heavy-bomb', 'cluster-bomb', 'ice-bomb'];
+
+/**
+ * The weapons a machine can fire this match: Items On = the full arsenal (its loadout first, then the
+ * rest in Armory order); Items Off = only `MACHINES[kind].loadout`. Ammo is stocked for exactly these.
+ */
+export function arsenalFor(loadout: readonly WeaponId[], itemsEnabled: boolean): WeaponId[] {
+  if (!itemsEnabled) return [...loadout];
+  return [...loadout, ...WEAPON_LIST.map((w) => w.id).filter((id) => !loadout.includes(id))];
+}

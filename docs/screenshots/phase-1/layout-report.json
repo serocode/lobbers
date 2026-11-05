@@ -1,7 +1,7 @@
 {
-  "tabletDiffVs04f": 7.65,
-  "phoneDiffVs04g": 8.32,
-  "skyreachDiffVs04i": 4.56,
+  "tabletDiffVs04f": 7.56,
+  "phoneDiffVs04g": 8.42,
+  "skyreachDiffVs04i": 4.75,
   "fpsWith8Units": {
     "tablet-turn": 60,
     "phone-turn": 60,

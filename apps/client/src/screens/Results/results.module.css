@@ -1,0 +1,22 @@
+/* Results.dc.html helmet classes (screen-specific). */
+.burst { animation: rot 60s linear infinite; }
+@keyframes rot { to { transform: rotate(360deg); } }
+.vic { animation: vic .8s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes vic { from { opacity: 0; transform: scale(2.2) rotate(-8deg); } to { opacity: 1; transform: rotate(-3deg); } }
+.conf { position: absolute; top: -30px; width: 12px; height: 18px; border: 2px solid #0B0F1A; border-radius: 2px; animation-name: conf; animation-timing-function: linear; animation-iteration-count: infinite; }
+@keyframes conf { 0% { transform: translateY(0) rotate(0); } 100% { transform: translateY(960px) rotate(720deg); } }
+.jump { animation: jump .75s ease-in-out infinite alternate; }
+@keyframes jump { from { transform: translateY(0); } to { transform: translateY(-22px); } }
+.rise { animation: rise .6s cubic-bezier(.2,1.4,.4,1) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+.xp { animation: xp 1.6s .6s cubic-bezier(.3,1,.4,1) both; }
+@keyframes xp { from { width: var(--xp-from); } }
+.levelUp { animation: vic .8s 1.6s cubic-bezier(.2,1.6,.4,1) both; }
+.th { background: none; border: none; color: #A9B3CC; font-family: Fredoka, sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 1px; cursor: pointer; padding: 4px 2px; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 3px; }
+.th:hover { color: #F5F1E8; }
+.th.on { color: #FFD166; }
+.th:focus-visible { outline: 3px solid #FFD166; }
+.tr { display: grid; grid-template-columns: 26px minmax(0,1fr) 62px 62px 44px 44px 48px 48px 52px; gap: 8px; align-items: center; padding: 0 10px; height: 50px; border-radius: 8px; }
+.bar { animation: bar .6s cubic-bezier(.3,1.2,.4,1) both; transform-origin: bottom; }
+@keyframes bar { from { transform: scaleY(0); } }
+@media (prefers-reduced-motion: reduce) { .burst, .conf, .jump { animation: none; } .conf { display: none; } }

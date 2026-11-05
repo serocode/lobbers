@@ -14,7 +14,7 @@ const shape = (base: number, waves: Array<[number, number, number]>, peaks: Arra
 
 export const MAPS: Record<MapId, MapDef> = {
   cobalt: {
-    id: 'cobalt', name: 'Cobalt Crags', sizeLabel: 'Medium · 4v4',
+    id: 'cobalt', name: 'Cobalt Crags', tagline: 'Floating isles, calm winds', sizeLabel: 'Medium · 4v4',
     description: 'Grassy ridgelines under a ringed gas giant. Floating isles hold the high ground and a central peak splits the teams.',
     width: 2400, height: 1000,
     terrain: shape(700, [[40, 150, 1], [22, 61, 0.4], [10, 27, 0]], [[1200, 230, 200], [520, 90, 120], [1880, 100, 130]]),
@@ -25,7 +25,7 @@ export const MAPS: Record<MapId, MapDef> = {
     backgroundAsset: 'assets/maps/cobalt-background.svg',
   },
   ember: {
-    id: 'ember', name: 'Ember Basin', sizeLabel: 'Large · 4v4',
+    id: 'ember', name: 'Ember Basin', tagline: 'Lava vents, gusty', sizeLabel: 'Large · 4v4',
     description: 'A volcanic caldera at dusk. Lava pours off the isles and ash winds gust hard from the east.',
     width: 2800, height: 1000,
     terrain: shape(720, [[46, 170, 0.2], [18, 53, 1.1], [9, 31, 0]], [[800, 200, 140], [2000, 210, 150], [1400, -80, 220]]),
@@ -36,7 +36,7 @@ export const MAPS: Record<MapId, MapDef> = {
     backgroundAsset: 'assets/maps/ember-background.svg',
   },
   glacier: {
-    id: 'glacier', name: 'Glacier Rift', sizeLabel: 'Medium · 4v4',
+    id: 'glacier', name: 'Glacier Rift', tagline: 'Slick slopes, night', sizeLabel: 'Medium · 4v4',
     description: 'A night-time ice shelf under the aurora. Snowcaps crumble fast — dig in or slide out.',
     width: 2600, height: 1050,
     terrain: shape(720, [[30, 140, 2], [24, 70, 0.3], [8, 25, 1]], [[1300, 190, 320], [450, 60, 100], [2150, 70, 110]]),
@@ -47,7 +47,7 @@ export const MAPS: Record<MapId, MapDef> = {
     backgroundAsset: 'assets/maps/glacier-background.svg',
   },
   dunes: {
-    id: 'dunes', name: 'Sunscar Dunes', sizeLabel: 'Huge · 4v4',
+    id: 'dunes', name: 'Sunscar Dunes', tagline: 'Huge desert, long shots', sizeLabel: 'Huge · 4v4',
     description: 'Rolling desert under a white sun. Long sightlines, ancient columns and barrels buried in the sand.',
     width: 3000, height: 1000,
     terrain: shape(730, [[55, 260, 0.5], [24, 90, 1.7], [6, 20, 0]], [[1500, 140, 260], [620, 70, 150], [2380, 80, 160]]),
@@ -58,7 +58,7 @@ export const MAPS: Record<MapId, MapDef> = {
     backgroundAsset: 'assets/maps/dunes-background.svg',
   },
   skyreach: {
-    id: 'skyreach', name: 'Skyreach Isles', sizeLabel: 'Large · 4v4',
+    id: 'skyreach', name: 'Skyreach Isles', tagline: 'Islands over the void', sizeLabel: 'Large · 4v4',
     description: 'Three floating islands above the clouds. Knock rivals into the gaps — the void never misses.',
     width: 2800, height: 1100,
     terrain: shape(640, [[35, 120, 0.8], [15, 45, 2], [6, 22, 0]], [[1400, 150, 160], [420, 60, 120], [2380, 70, 120]], [[860, 150], [1930, 160]], 250),
@@ -69,7 +69,7 @@ export const MAPS: Record<MapId, MapDef> = {
     backgroundAsset: 'assets/maps/skyreach-background.svg',
   },
   hollow: {
-    id: 'hollow', name: 'Glowcap Hollow', sizeLabel: 'Large · 4v4',
+    id: 'hollow', name: 'Glowcap Hollow', tagline: 'Glowing mushroom forest', sizeLabel: 'Large · 4v4',
     description: 'A bioluminescent mushroom forest at night. Soft spongy ground that craters deep.',
     width: 2600, height: 1000,
     terrain: shape(700, [[34, 130, 2.4], [20, 57, 0.2], [9, 24, 1]], [[900, 120, 140], [1700, 140, 150]]),

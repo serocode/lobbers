@@ -2,20 +2,20 @@
 // Local aim is UI state; the server clamps and validates everything on `fire`.
 import {
   DEFAULT_QUICK_SLOTS, MACHINES, canActivate, canUseWeapon, clampAngle, clampPower, isGrounded,
-  type MachineDef, type WeaponId,
+  type WeaponId,
 } from '@lobbers/shared';
 import type { ClientMatch } from './ClientMatch';
-import { canControl, unitOf, type Aim, type MatchView } from './matchStore';
+import { arsenalOf, canControl, unitOf, type Aim, type MatchView } from './matchStore';
 
 const MOVE_INTERVAL_MS = 100;
 const MOVE_TICKS = 6;
 const AIM_SYNC_MS = 100;
 export const JUMP_FUEL = 12;
 
-/** Quick slots 1–4: the default slots that are in this machine's loadout, topped up from the loadout. */
-export function quickSlots(m: MachineDef): WeaponId[] {
-  const slots = DEFAULT_QUICK_SLOTS.filter((w) => m.loadout.includes(w));
-  for (const w of m.loadout) if (slots.length < 4 && !slots.includes(w)) slots.push(w);
+/** Quick slots 1–4: the default slots this unit can use this match, topped up from its arsenal. */
+export function quickSlots(arsenal: readonly WeaponId[]): WeaponId[] {
+  const slots = DEFAULT_QUICK_SLOTS.filter((w) => arsenal.includes(w));
+  for (const w of arsenal) if (slots.length < 4 && !slots.includes(w)) slots.push(w);
   return slots.slice(0, 4);
 }
 
@@ -32,6 +32,9 @@ export class BattleControls {
 
   private get v(): MatchView { return this.match.store.getState(); }
   get enabled(): boolean { return canControl(this.v); }
+
+  /** Send one of your equipped emotes (any time; hot-seat: the active player's). Server rate-limits. */
+  emote(slot: number): void { this.match.send({ t: 'emote', slot }); }
   activeAim(): Aim | null { const id = this.v.activeUnitId; return id ? this.v.aim[id] ?? null : null; }
 
   // ---------- aim ----------
@@ -75,7 +78,7 @@ export class BattleControls {
   quickSlot(i: number): void {
     const u = unitOf(this.v, this.v.activeUnitId);
     if (!u) return;
-    const w = quickSlots(MACHINES[u.machine])[i];
+    const w = quickSlots(arsenalOf(this.v, u))[i];
     if (w) this.selectWeapon(w);
   }
 

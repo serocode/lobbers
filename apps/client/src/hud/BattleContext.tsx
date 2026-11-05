@@ -5,7 +5,22 @@ import type { ClientMatch } from '../state/ClientMatch';
 import type { BattleControls } from '../state/battleControls';
 import { canControl, unitOf, type MatchView } from '../state/matchStore';
 
-export interface BattleCtx { match: ClientMatch; controls: BattleControls; onLeave: () => void; onPlayAgain: () => void }
+/** What the pause menu and victory overlay buttons do (hot-seat vs online differ in copy and target). */
+export interface BattleNav {
+  /** Pause → confirm → surrender. Online: server `forfeit`, then home. */
+  surrender(): void;
+  surrenderNote: string;
+  /** SEE RESULTS; undefined → disabled with `resultsReason`. */
+  seeResults?: () => void;
+  resultsReason?: string;
+  playAgain?: () => void;
+  playAgainLabel: string;
+  playAgainReason?: string;
+  back(): void;
+  backLabel: string;
+}
+
+export interface BattleCtx { match: ClientMatch; controls: BattleControls; nav: BattleNav }
 
 const Ctx = createContext<BattleCtx | null>(null);
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MACHINE_LIST, ROOM_LIMITS } from '@lobbers/shared';
+import { DEFAULT_QUICK_SLOTS, MACHINE_LIST, ROOM_LIMITS, arsenalFor } from '@lobbers/shared';
 import { decodeLocalConfig, encodeLocalConfig, seatsFor, DEFAULT_LOCAL } from './localMatchConfig';
 import { elevationOf, quickSlots } from './battleControls';
 
@@ -26,12 +26,16 @@ describe('hot-seat config', () => {
 });
 
 describe('battle controls helpers', () => {
-  it('quick slots are 4 distinct loadout weapons for every machine', () => {
+  it('quick slots are 4 distinct usable weapons for every machine (Items Off and On)', () => {
     for (const m of MACHINE_LIST) {
-      const q = quickSlots(m);
-      expect(q).toHaveLength(4);
-      expect(new Set(q).size).toBe(4);
-      for (const w of q) expect(m.loadout).toContain(w);
+      for (const items of [false, true]) {
+        const arsenal = arsenalFor(m.loadout, items);
+        const q = quickSlots(arsenal);
+        expect(q).toHaveLength(4);
+        expect(new Set(q).size).toBe(4);
+        for (const w of q) expect(arsenal).toContain(w);
+      }
+      expect(quickSlots(arsenalFor(m.loadout, true))).toEqual(DEFAULT_QUICK_SLOTS);
     }
   });
   it('elevation mirrors on the left side', () => {
