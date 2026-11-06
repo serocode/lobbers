@@ -5,7 +5,7 @@
     "hashChecks": 17,
     "mismatches": 0,
     "winner": "blue",
-    "seconds": 73
+    "seconds": 70
   },
   "2v2": {
     "players": 4,
@@ -17,11 +17,11 @@
   },
   "3v3": {
     "players": 6,
-    "turns": 31,
-    "hashChecks": 32,
+    "turns": 29,
+    "hashChecks": 30,
     "mismatches": 0,
     "winner": "red",
-    "seconds": 136
+    "seconds": 129
   },
   "4v4": {
     "players": 8,

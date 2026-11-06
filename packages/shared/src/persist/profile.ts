@@ -1,9 +1,11 @@
+import type { AchievementId, CounterId } from '../config/progression.ts';
+import { applyProgress } from './progress.ts';
 import type { MachineId, MapId, TeamId } from '../types.ts';
 import { applyXp } from '../rewards.ts';
 import type { MatchDetails, MatchEndedMsg, PeerProfile, PlayerResult } from '../protocol.ts';
-import { STARTER_MACHINES } from '../config/machines.ts';
+import { MACHINES, STARTER_MACHINES } from '../config/machines.ts';
 import {
-  COSMETIC_BY_ID, DEFAULT_EQUIPPED, DEFAULT_ITEMS, equippedFromLoadout, loadoutFromEquipped, machineItemId, sanitizeLoadout,
+  avatarItemId, avatarMachine, COSMETIC_BY_ID, DEFAULT_EQUIPPED, DEFAULT_ITEMS, equippedFromLoadout, loadoutFromEquipped, machineItemId, sanitizeLoadout,
 } from '../config/cosmetics.ts';
 import type { Verdict } from '../rules.ts';
 import type { KeyValueStore } from './store.ts';
@@ -104,8 +106,15 @@ export interface LocalProfile {
   recentPlayers: RecentPlayer[];
   /** Match ids already credited — reloading the results screen must not pay out twice. */
   credited: string[];
-  /** Daily missions / achievements progress keyed by definition id. */
+  /** Daily missions ("daily:<id>", resetAt = next local midnight) and achievements (<id>, claimedAt = unlocked at). */
   progress: Record<string, { value: number; claimedAt: number | null; resetAt: number | null }>;
+  /** Lifetime counters from the host's per-player feats (persist/progress.ts). */
+  counters: Partial<Record<CounterId, number>>;
+  /** Best single-match feats ever. */
+  best: { bestChain: number; bestFreeze: number; bestTurnElims: number; winStreak: number; bestWinStreak: number };
+  winsOn: Partial<Record<MapId, number>>;
+  /** Days in a row with at least one finished match (local calendar). */
+  streak: { day: string; count: number };
 }
 
 const LIMITS = { history: 30, recentPlayers: 50, credited: 60, recentRooms: 4, detailTurns: 14 } as const;
@@ -121,15 +130,21 @@ export function createProfile(name: string, id: string, now: number): LocalProfi
     settings: { ...DEFAULT_PROFILE_SETTINGS }, recentRooms: [],
     stats: { matches: 0, wins: 0, losses: 0, draws: 0, damageDealt: 0, eliminations: 0, assists: 0, mvps: 0, shots: 0, hits: 0, byMachine: {} },
     history: [], recentPlayers: [], credited: [], progress: {},
+    counters: {}, best: { bestChain: 0, bestFreeze: 0, bestTurnElims: 0, winStreak: 0, bestWinStreak: 0 }, winsOn: {}, streak: { day: '', count: 0 },
   };
 }
+
+const avatarOf = (p: LocalProfile): string | null => {
+  const m = p.equipped.avatar ? avatarMachine(p.equipped.avatar) : null;
+  return m && ownsMachine(p, m) ? avatarItemId(m) : null;
+};
 
 /** What this browser tells the host about its player. */
 export function toPeerProfile(p: LocalProfile): PeerProfile {
   // Only items this profile owns, in the right slots (the host can't check ownership).
   const cosmetics = equippedFromLoadout(sanitizeLoadout(loadoutFromEquipped(p.equipped), new Set(p.owned)));
   const title = COSMETIC_BY_ID[cosmetics.title ?? '']?.name ?? null;
-  return { id: p.id, name: p.name, level: p.level, rating: p.rating, title, avatar: p.equipped.avatar ?? null, favoriteMachine: p.favoriteMachine, cosmetics };
+  return { id: p.id, name: p.name, level: p.level, rating: p.rating, title, avatar: avatarOf(p), favoriteMachine: ownsMachine(p, p.favoriteMachine) ? p.favoriteMachine : STARTER_MACHINES[0], cosmetics };
 }
 
 /** Reads + migrates. A corrupt value is moved to `<key>:corrupt` and null is returned (first-run flow shows again). */
@@ -153,17 +168,23 @@ function migrate(raw: unknown): LocalProfile | null {
   const r = raw as Partial<LocalProfile>;
   if (r.v !== PROFILE_VERSION || typeof r.id !== 'string' || typeof r.name !== 'string') return null;
   const base = createProfile(r.name, r.id, r.createdAt ?? 0);
-  return { ...base, ...r, settings: { ...base.settings, ...r.settings }, stats: { ...base.stats, ...r.stats }, recentRooms: Array.isArray(r.recentRooms) ? r.recentRooms : [] } as LocalProfile;
+  return {
+    ...base, ...r, settings: { ...base.settings, ...r.settings }, stats: { ...base.stats, ...r.stats }, recentRooms: Array.isArray(r.recentRooms) ? r.recentRooms : [],
+    counters: { ...r.counters }, best: { ...base.best, ...r.best }, winsOn: { ...r.winsOn }, streak: r.streak ?? base.streak,
+  } as LocalProfile;
 }
 
-export interface CreditOutcome { profile: LocalProfile; credited: boolean; xpGained: number; coinsGained: number; levelsGained: number; ratingChange: number }
+export interface CreditOutcome {
+  profile: LocalProfile; credited: boolean; xpGained: number; coinsGained: number; levelsGained: number; ratingChange: number;
+  missionsDone: string[]; achievementsUnlocked: AchievementId[];
+}
 
 /**
  * Applies a finished match to THIS player's profile (every peer does it for itself from the host's `matchEnded`).
  * Idempotent per matchId. Players who aren't in `result.players` get nothing.
  */
 export function creditMatch(p: LocalProfile, result: MatchEndedMsg, others: Array<Pick<PeerProfile, 'id' | 'name' | 'level' | 'rating' | 'title'>> = []): CreditOutcome {
-  const none: CreditOutcome = { profile: p, credited: false, xpGained: 0, coinsGained: 0, levelsGained: 0, ratingChange: 0 };
+  const none: CreditOutcome = { profile: p, credited: false, xpGained: 0, coinsGained: 0, levelsGained: 0, ratingChange: 0, missionsDone: [], achievementsUnlocked: [] };
   if (p.credited.includes(result.matchId)) return none;
   const me: PlayerResult | undefined = result.players.find((x) => x.playerId === p.id);
   if (!me) return none;
@@ -193,7 +214,7 @@ export function creditMatch(p: LocalProfile, result: MatchEndedMsg, others: Arra
       title: info?.title ?? prev?.title ?? null, lastPlayedAt: result.endedAt, matchesTogether: (prev?.matchesTogether ?? 0) + 1, starred: prev?.starred ?? false,
     });
   }
-  const profile: LocalProfile = {
+  const credited: LocalProfile = {
     ...p,
     level: lv.level, xp: lv.xp, coins: p.coins + me.coins, rating: Math.max(RATING.floor, p.rating + ratingChange),
     stats: {
@@ -205,7 +226,12 @@ export function creditMatch(p: LocalProfile, result: MatchEndedMsg, others: Arra
     recentPlayers: [...recent.values()].sort((a, b) => Number(b.starred) - Number(a.starred) || b.lastPlayedAt - a.lastPlayedAt).slice(0, LIMITS.recentPlayers),
     credited: [result.matchId, ...p.credited].slice(0, LIMITS.credited),
   };
-  return { profile, credited: true, xpGained: me.xp, coinsGained: me.coins, levelsGained: lv.levelsGained, ratingChange };
+  const starredBefore = new Set(p.recentPlayers.filter((r) => r.starred).map((r) => r.id));
+  const prog = applyProgress(credited, result, me, starredBefore);
+  return {
+    profile: prog.profile, credited: true, xpGained: me.xp, coinsGained: me.coins, levelsGained: lv.levelsGained, ratingChange,
+    missionsDone: prog.missionsDone, achievementsUnlocked: prog.achievementsUnlocked,
+  };
 }
 
 export function purchase(p: LocalProfile, item: { id: string; priceCoins?: number; priceGems?: number }): Verdict<LocalProfile> {
@@ -216,11 +242,26 @@ export function purchase(p: LocalProfile, item: { id: string; priceCoins?: numbe
 }
 
 export function equip(p: LocalProfile, slot: string, itemId: string | null): Verdict<LocalProfile> {
+  if (slot === 'avatar') {
+    const m = itemId === null ? null : avatarMachine(itemId);
+    if (itemId !== null && (!m || !(m in MACHINES))) return { ok: false, reason: 'wrong slot' };
+    if (m && !ownsMachine(p, m)) return { ok: false, reason: 'not owned' };
+    const equipped = { ...p.equipped };
+    if (itemId === null) delete equipped.avatar; else equipped.avatar = itemId;
+    return { ok: true, value: { ...p, equipped } };
+  }
   if (itemId !== null && !p.owned.includes(itemId)) return { ok: false, reason: 'not owned' };
   if (itemId !== null && !fitsSlot(slot, itemId)) return { ok: false, reason: 'wrong slot' };
   const equipped = { ...p.equipped };
   if (itemId === null) delete equipped[slot]; else equipped[slot] = itemId;
   return { ok: true, value: { ...p, equipped } };
+}
+
+/** The machine lobbies start you on (Inventory → Battle Machines → EQUIP). */
+export function setFavoriteMachine(p: LocalProfile, id: MachineId): Verdict<LocalProfile> {
+  if (!(id in MACHINES)) return { ok: false, reason: 'unknown machine' };
+  if (!ownsMachine(p, id)) return { ok: false, reason: 'not owned' };
+  return { ok: true, value: { ...p, favoriteMachine: id } };
 }
 
 export function starPlayer(p: LocalProfile, playerId: string, starred: boolean): LocalProfile {

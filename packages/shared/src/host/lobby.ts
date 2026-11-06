@@ -93,6 +93,7 @@ export class HostLobby {
         break;
       }
       case 'setMachine': me.machine = intent.machine; break;
+      case 'setCosmetics': me.cosmetics = intent.cosmetics; me.title = intent.title; break;   // resolved + sanitised at match start
       case 'setReady': if (me.isHost) return no('the host does not ready up'); me.ready = intent.ready; break;
       case 'updateSettings':
         this.settings = { ...this.settings, ...intent.patch };

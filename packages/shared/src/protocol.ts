@@ -11,9 +11,9 @@ import type { UnitCosmetics } from './config/cosmetics.ts';
 /**
  * Bump when a message shape changes; the host refuses peers on another version ("Update the page").
  * v3: emotes, resolved cosmetics on matchStarted, burn zones on turnStarted, reconnect deadlines on matchState,
- * MVP line + match details on matchEnded, peer RTT on ping.
+ * MVP line + match details on matchEnded, peer RTT on ping. v4: per-player feats on matchEnded results, `setCosmetics`.
  */
-export const PROTOCOL_VERSION = 3;
+export const PROTOCOL_VERSION = 4;
 /** Hard cap on one inbound message (JSON chars). Larger messages are dropped. */
 export const MAX_PEER_MESSAGE_CHARS = 16_000;
 
@@ -48,7 +48,9 @@ export type LobbyIntent =
   | { t: 'updateSettings'; patch: Partial<MatchSettings> }          // host only
   | { t: 'kick'; playerId: string }                                  // host only
   | { t: 'startMatch' }                                              // host only
-  | { t: 'chat'; text: string };
+  | { t: 'chat'; text: string }
+  /** Your equipped loadout changed in the Inventory while in a lobby (v4). Same shape as PeerProfile.cosmetics/title. */
+  | { t: 'setCosmetics'; cosmetics: Record<string, string>; title: string | null };
 
 export type MatchIntent =
   | { t: 'aim'; angle: number; power: number; weaponId: WeaponId }  // cosmetic sync only, throttled ≤10/s
@@ -130,10 +132,21 @@ export interface MatchStartedMsg {
   cosmetics: Record<string, UnitCosmetics>;
 }
 
+/** Per-player feats the host counts during a match (achievements + daily missions; protocol v4). */
+export interface PlayerFeats {
+  directHits: number; burnDamage: number; carvedPx: number; friendlyHits: number; windHits: number;
+  /** Most machines one Lightning Strike chained through; most enemies frozen by one action. */
+  bestChain: number; bestFreeze: number;
+  /** Most enemies eliminated in a single turn. */
+  bestTurnElims: number; iceElims: number; guidedHits: number;
+}
+
 export interface PlayerResult {
   playerId: string; unitId: string; name: string; team: TeamId; machine: MachineId;
   damageDealt: number; damageReceived: number; eliminations: number; assists: number; accuracy: number; shots: number; hits: number;
   xp: number; coins: number; mvp: boolean; survived: boolean;
+  /** Absent in matches recorded before protocol v4 (old history entries). */
+  feats?: PlayerFeats;
 }
 
 /** Per-turn team damage and per-weapon usage for the Results "Match details" modal (host-computed). */

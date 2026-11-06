@@ -63,6 +63,13 @@ function wire(h: Handle, code: string): void {
     client.on('matchStarted', (m) => { if (m.t === 'matchStarted') useLobby.setState({ pendingMatch: m.data.matchId, countdownEndsAt: 0 }); }),
     client.on('rejected', (m) => { if (m.t === 'rejected' && !feedIntent(m.intent)) notify(capital(m.reason), 'error'); }),
     client.on('closed', (m) => { if (m.t === 'closed') useLobby.setState({ status: 'closed', closedReason: m.reason }); }),
+    // Inventory changes while you're in a lobby reach the host (they are resolved into the match at start).
+    useProfile.subscribe((next, prev) => {
+      if (!next.profile || !prev.profile || next.profile.equipped === prev.profile.equipped) return;
+      if (useLobby.getState().view?.phase !== 'open') return;
+      const peer = myPeerProfile();
+      if (peer) client.send({ t: 'setCosmetics', cosmetics: peer.cosmetics, title: peer.title });
+    }),
   ];
   const view = (): void => {
     const st = h.kind === 'guest' ? h.room.state() : client.status;

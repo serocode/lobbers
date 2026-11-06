@@ -69,11 +69,11 @@ function Battle(): JSX.Element {
   useEffect(() => () => useBattleUi.getState().reset(), []);
   useBattleKeys();
   useFpsProbe();
-  const layout = pickLayout(vp.w);
+  const layout = pickLayout(vp.w, vp.h);
   if (layout === 'phone' && vp.h > vp.w) return <RotateCard />;
   const L = LAYOUTS[layout];
   return (
-    <Stage width={L.stage.w} height={L.stage.h} label="Battlefield. Arrow keys aim and move, Q and E change power, Space fires, W armory, F focus camera, Z overview. Drag the field to look around.">
+    <Stage width={L.stage.w} height={L.stage.h} fit="contain" label="Battlefield. Arrow keys aim and move, Q and E change power, Space fires, W armory, F focus camera, Z overview. Drag the field to look around.">
       <div className="root" style={{ width: L.stage.w, height: L.stage.h, position: 'relative', overflow: 'hidden', background: '#101522', fontFamily: 'Fredoka,system-ui,sans-serif', color: '#F5F1E8' }}>
         {start && <Field key={layout} layout={layout} start={start} />}
         {layout === 'desktop' && <DesktopHud />}

@@ -193,7 +193,7 @@ export class HostMatch {
         const r = intent.t === 'move' ? walk(this.world, uid, intent.dir, intent.ticks, this.rng) : jump(this.world, uid, this.rng);
         if (r.durationTicks === 0 && r.events.length === 0) return reject(u.status.frozenTurns > 0 ? 'frozen' : intent.t === 'move' ? 'cannot move' : 'cannot jump');
         this.timeouts.delete(playerId);
-        this.tally.events(this.ts.turnNumber, r.events, this.world.units);
+        this.tally.events(this.ts.turnNumber, r.events, this.world.units, null, { actorId: uid });
         this.resolved(uid, intent.t, { events: r.events, durationTicks: r.durationTicks, terrainHash: this.world.terrain.hash() });
         if (!u.alive || matchWinner(this.world.units)) this.endTurnAfter(r.durationTicks);
         else this.changed();
@@ -205,7 +205,7 @@ export class HostMatch {
         const r = activateAbility(this.world, uid, intent.slot, this.rng);
         this.modifiers.push(...r.modifiers);
         turn.shotsLeft += r.modifiers.reduce((n, m) => n + (m.extraShots ?? 0), 0);
-        this.tally.events(this.ts.turnNumber, r.events, this.world.units);
+        this.tally.events(this.ts.turnNumber, r.events, this.world.units, null, { actorId: uid });
         this.resolved(uid, 'ability', { events: r.events, durationTicks: r.durationTicks, terrainHash: this.world.terrain.hash() });
         if (!u.alive || matchWinner(this.world.units)) this.endTurnAfter(r.durationTicks);
         else this.changed();
@@ -219,7 +219,7 @@ export class HostMatch {
         this.modifiers = [];   // ability modifiers apply to the next shot only
         turn.shotsLeft--;
         this.timeouts.delete(playerId);
-        this.tally.shot(this.ts.turnNumber, uid, v.value.weaponId, result.events, this.world.units);
+        this.tally.shot(this.ts.turnNumber, uid, v.value.weaponId, result.events, this.world.units, this.world.wind);
         this.resolved(uid, 'shot', result);
         if (turn.shotsLeft <= 0 || !u.alive || matchWinner(this.world.units)) this.endTurnAfter(result.durationTicks);
         else this.pauseTurnFor(result.durationTicks);
@@ -309,7 +309,7 @@ export class HostMatch {
     this.firstTurnStarted = true;
     const id = next.activeUnitId;
     const events: SimEvent[] = beginTurn(this.world, id, this.rng);
-    this.tally.events(this.ts.turnNumber, events, this.world.units);
+    this.tally.events(this.ts.turnNumber, events, this.world.units, null, { actorId: id });
     const u = unitById(this.world, id);
     const endsAt = this.opts.clock.now() + this.settings.turnSeconds * 1000;
     this.turn = { unitId: id, playerId: u.playerId, phase: 'acting', shotsLeft: TURN_RULES.shotsPerTurn, endsAt };
@@ -395,7 +395,8 @@ export class HostMatch {
     const now = this.opts.clock.now();
     this.ended = {
       matchId: this.matchId, mapId: this.settings.mapId, mode: this.settings.mode, winner, turns: this.ts.turnNumber,
-      durationSec: Math.round((now - this.startedAt) / 1000), endedAt: now, players: computeResults(this.world.units, winner),
+      durationSec: Math.round((now - this.startedAt) / 1000), endedAt: now,
+      players: computeResults(this.world.units, winner).map((p) => ({ ...p, feats: this.tally.feats(p.unitId) })),
       mvpHighlight: '', details: this.tally.details(),
     };
     this.ended.mvpHighlight = this.tally.highlight(this.ended.players.find((p) => p.mvp)?.unitId ?? '');

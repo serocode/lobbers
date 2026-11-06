@@ -39,12 +39,17 @@ export function cleanChat(v: unknown): string | null {
   return s.length ? s.replace(BLOCKED, (w) => w[0] + '*'.repeat(Math.max(0, w.length - 1))) : null;
 }
 
+function parseCosmetics(v: unknown): Record<string, string> {
+  const cosmetics: Record<string, string> = {};
+  if (isObj(v)) for (const [k, c] of Object.entries(v).slice(0, 24)) if (str(k, 40) && str(c, 60)) cosmetics[k] = c;
+  return cosmetics;
+}
+
 function parseProfile(v: unknown): PeerProfile | null {
   if (!isObj(v) || !str(v.id, 64) || !(v.id as string).length) return null;
   const name = cleanName(v.name);
   if (!name) return null;
-  const cosmetics: Record<string, string> = {};
-  if (isObj(v.cosmetics)) for (const [k, c] of Object.entries(v.cosmetics).slice(0, 24)) if (str(k, 40) && str(c, 60)) cosmetics[k] = c;
+  const cosmetics = parseCosmetics(v.cosmetics);
   return {
     id: v.id as string, name,
     level: num(v.level) ? clamp(Math.floor(v.level), 1, 999) : 1,
@@ -91,6 +96,7 @@ export function parsePeerMessage(raw: unknown): PeerMessage | null {
     case 'updateSettings': { const patch = parseSettingsPatch(m.patch); return patch ? { t: 'updateSettings', patch } : null; }
     case 'kick': return str(m.playerId, 64) ? { t: 'kick', playerId: m.playerId as string } : null;
     case 'chat': { const text = cleanChat(m.text); return text ? { t: 'chat', text } : null; }
+    case 'setCosmetics': return isObj(m.cosmetics) ? { t: 'setCosmetics', cosmetics: parseCosmetics(m.cosmetics), title: str(m.title, 40) ? (m.title as string) : null } : null;
     case 'aim': return num(m.angle) && num(m.power) && weapon(m.weaponId) ? { t: 'aim', angle: clamp(m.angle, 0, 180), power: clamp(m.power, 0, 100), weaponId: m.weaponId } : null;
     case 'move': return (m.dir === 1 || m.dir === -1) && num(m.ticks) ? { t: 'move', dir: m.dir, ticks: clamp(Math.round(m.ticks), 1, 10) } : null;
     case 'selectWeapon': return weapon(m.weaponId) ? { t: 'selectWeapon', weaponId: m.weaponId } : null;

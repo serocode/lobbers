@@ -40,7 +40,7 @@ interface HostSnapshot {
   savedAt: number;
 }
 
-const LOBBY_INTENTS = new Set<PeerMessage['t']>(['setTeam', 'setMachine', 'setReady', 'updateSettings', 'kick', 'startMatch', 'chat']);
+const LOBBY_INTENTS = new Set<PeerMessage['t']>(['setTeam', 'setMachine', 'setReady', 'updateSettings', 'kick', 'startMatch', 'chat', 'setCosmetics']);
 /** A saved host session older than this is ignored on reload. */
 const SNAPSHOT_MAX_AGE_MS = 10 * 60 * 1000;
 
@@ -84,6 +84,7 @@ export class HostSession {
       } else if (this.lobby.phase === 'inMatch') this.lobby.backToRoom();
     }
     this.armHeartbeat();
+    this.persist();   // a fresh room must survive a host F5 even before anyone joins
   }
 
   static storageKey(code: string): string { return `lobbers:host:${code}`; }

@@ -10,10 +10,13 @@ visual detail, the source wins. When they disagree on behaviour, this spec wins.
 
 ### Stage
 - Every menu screen is authored on a **1440×900** stage. Render it in a `<Stage>` wrapper that scales uniformly to fit
-  the window (`min(vw/1440, vh/900)`), centred, letterboxed with `#101522`. Never reflow menus.
+  the window (`min(vw/1440, vh/900)`), centred, letterboxed with `#101522`. Never reflow menus. On short landscape
+  screens (phones) where that scale would drop below 0.55 but the width allows ≥ 1.25× more, fit the **width** and let
+  the stage scroll vertically instead (DECISIONS: phone sizing).
 - The battlefield has three real layouts: desktop 1440×900 (`Battle.dc.html`), tablet 1024×768
   (`BattleTablet.dc.html`), phone landscape 844×390 (`BattleMobile.dc.html`). Pick by viewport: width ≥ 1200 →
-  desktop; ≥ 900 → tablet; else phone (and show a "rotate your phone" card in portrait using the panel style).
+  desktop; ≥ 900 → tablet; else phone — and a bigger layout only if it still renders at ≥ 0.7 scale (a ~915×360
+  landscape phone gets the phone layout, not a 47% tablet). Show a "rotate your phone" card in portrait using the panel style.
   Each layout is also stage-scaled to fit its class of viewport.
 - The battlefield **world is bigger than the screen** (2400–3000 × 1000–1100 depending on the map). The field area
   (1440×750 desktop, 1024×560 tablet, 844×390 phone) is a **camera viewport** onto it — see §2.4 Camera.
@@ -324,6 +327,19 @@ frozen, controls disabled; no scrim. `closed` reasons → one card in the modal 
   mono text area + Copy), Import save (paste → `importProfile` → confirm "Replace this device's progress?"), Reset
   progress (red, confirm). Plus "Connection: STUN only / TURN configured" read-only line from env.
 - **Lobby** host leaving = room closes (no host transfer). Kick stays (§3.6).
+
+### 3.10 Phase 4 additions (local profile) — build exactly like this
+- **Inventory**: "Unequip" secondary button (60 px, default button style) left of the main action when the selected item
+  is equipped and removable. Emotes: an "EMOTE WHEEL SLOT" row of 4 chips (40 px, `btn`, selected = yellow) above the
+  action — "1 GG", "2 Oops"… — and the action reads "EQUIP · SLOT n". Machines locked by a requirement show progress in the
+  source line ("Unlock: Reach level 40 (12 / 40)"); met requirements → blue "UNLOCK" (free).
+- **Machine Select**: unowned machines get the Inventory lock badge and greyed art; with one selected the footer's LOCK IN
+  becomes a blue "UNLOCK IN INVENTORY" link (Battle Machines). "Skins for {machine}" opens Machine Skins.
+- **Profile**: "Change title" opens a modal list of owned titles (`btn`, 48 px rows, current = yellow). Match History gets
+  ‹ n / N › paging (30 px buttons, mono count) left of the tabs. Rank shield colours per tier (`RANK_TIERS`).
+- **Friends**: the "Pending invites" block becomes "INVITES" + one line about links/codes. Popover buttons: "Invite to
+  room" (disabled outside a room) and ☆ Star / ★ Starred.
+- **Leaderboards**: last column = "LV n" (mono, muted) instead of win rate.
 
 ---------------------------------------------------------------------------------------------------------------------
 

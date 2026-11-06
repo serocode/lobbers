@@ -3,7 +3,7 @@
 // summary in profile.history on a revisit. Rewards are applied to YOUR local profile with creditMatch
 // (idempotent per match id) and the panel animates from what it returned.
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { MAPS, REWARDS, creditMatch, resultFromHistory, resultScore, type MatchEndedMsg, type PlayerResult } from '@lobbers/shared';
 import { Stage } from '../../app/Stage';
 import { Button, ErrorRow, MachineArt } from '../../components';
@@ -152,7 +152,7 @@ export default function Results(): JSX.Element {
           <Button disabled={!inLobby} title={inLobby ? undefined : 'The room has closed'} onClick={() => toLobby(false)} style={{ height: 60, padding: '0 22px', fontSize: 17 }}>Return to Lobby</Button>
           <Button onClick={home} style={{ height: 60, padding: '0 22px', fontSize: 17 }}>Return Home</Button>
           <div style={{ flex: 1 }} />
-          <Button disabled title="Profiles arrive with accounts (Phase 4)" style={{ height: 60, padding: '0 22px', fontSize: 17 }}>My Profile</Button>
+          <Link to="/profile" className="btn" style={{ height: 60, padding: '0 22px', fontSize: 17 }}>My Profile</Link>
           <Button onClick={() => setDetails(true)} style={{ height: 60, padding: '0 22px', fontSize: 17, background: '#2E3856' }}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></svg>View Match Details</Button>
         </footer>
         {details && <MatchDetailsModal details={result.details} onClose={() => setDetails(false)} />}

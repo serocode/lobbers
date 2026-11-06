@@ -3,7 +3,7 @@
 // default machine used for the next room. Teammates' live picks come from the LobbyRoom state.
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { MACHINES, MACHINE_LIST, type MachineId } from '@lobbers/shared';
+import { MACHINES, MACHINE_LIST, ownsMachine, type MachineId } from '@lobbers/shared';
 import { Stage } from '../../app/Stage';
 import { Button, MachineArt } from '../../components';
 import { lobbyService, useLobby } from '../../net/p2p/roomService';
@@ -19,6 +19,8 @@ export default function MachineSelect(): JSX.Element {
   const nav = useNavigate();
   const view = useLobby((v) => v.view);
   const defaultMachine = useProfile((v) => v.profile?.favoriteMachine ?? 'thumper');
+  const profile = useProfile((v) => v.profile);
+  const owns = (id: MachineId): boolean => !profile || ownsMachine(profile, id);
   const setDefault = (m: MachineId): void => useProfile.getState().update((p) => ({ ...p, favoriteMachine: m }));
   const myId = lobbyService.myId;
   const me = view?.players.find((p) => p.id === myId);
@@ -56,7 +58,7 @@ export default function MachineSelect(): JSX.Element {
           <h1 className="fd" style={{ margin: 0, fontSize: 42, lineHeight: 1 }}>CHOOSE YOUR MACHINE</h1>
           {inRoom && <span className="fd" style={{ background: TEAM_COLOR[team], color: '#101522', border: '3px solid #0B0F1A', borderRadius: 8, padding: '4px 12px', fontSize: 17 }}>TEAM {team.toUpperCase()}</span>}
           <div style={{ flex: 1 }} />
-          <button type="button" className="btn" disabled={locked} onClick={() => pick(MACHINE_LIST[Math.floor(Math.random() * MACHINE_LIST.length)].id)} style={{ height: 52, padding: '0 16px', fontSize: 16 }}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4" /><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" /><circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" /><circle cx="15.5" cy="8.5" r="1.5" fill="currentColor" /><circle cx="8.5" cy="15.5" r="1.5" fill="currentColor" /></svg>Random</button>
+          <button type="button" className="btn" disabled={locked} onClick={() => { const mine = MACHINE_LIST.filter((m) => owns(m.id)); pick(mine[Math.floor(Math.random() * mine.length)].id); }} style={{ height: 52, padding: '0 16px', fontSize: 16 }}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4" /><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" /><circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" /><circle cx="15.5" cy="8.5" r="1.5" fill="currentColor" /><circle cx="8.5" cy="15.5" r="1.5" fill="currentColor" /></svg>Random</button>
         </header>
 
         <div style={{ position: 'absolute', left: 24, top: 108, width: 824, display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: 16 }}>
@@ -64,10 +66,15 @@ export default function MachineSelect(): JSX.Element {
             const on = sel === m.id, by = !on ? takenBy(m.id) : undefined;
             const bar = (k: string, v: number, c: string): JSX.Element[] => [<span key={`${k}l`}>{k}</span>, <span key={k} style={{ height: 6, background: '#0E1320', borderRadius: 3, overflow: 'hidden', display: 'block' }}><span style={{ display: 'block', height: '100%', width: `${v * 10}%`, background: c }} /></span>];
             return (
-              <button key={m.id} type="button" className={`${s.card} ${on ? s.on : ''}`} onClick={() => pick(m.id)} aria-pressed={on} aria-label={`${m.name}, ${m.role}`} disabled={locked && !on} style={{ height: 318 }}>
+              <button key={m.id} type="button" className={`${s.card} ${on ? s.on : ''}`} onClick={() => pick(m.id)} aria-pressed={on} aria-label={`${m.name}, ${m.role}${owns(m.id) ? '' : ', locked'}`} disabled={locked && !on} style={{ height: 318 }}>
                 <div className={s.stripes} style={{ height: 168, backgroundColor: m.cardBg, borderBottom: '4px solid #0B0F1A', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', position: 'relative' }}>
                   <span className="mono" style={{ position: 'absolute', left: 8, top: 8, fontSize: 12, fontWeight: 700, background: '#101522', border: '2px solid #0B0F1A', borderRadius: 5, padding: '0 5px', color: '#A9B3CC' }}>{i + 1}</span>
-                  <div className={s.art} style={{ marginBottom: 4 }}><MachineArt kind={m.id} tint="#F45B55" size={168} aim={20} /></div>
+                  <div className={s.art} style={{ marginBottom: 4, filter: owns(m.id) ? 'none' : 'grayscale(.8) brightness(.6)' }}><MachineArt kind={m.id} tint="#F45B55" size={168} aim={20} /></div>
+                  {!owns(m.id) && !on && (
+                    <span style={{ position: 'absolute', right: 8, top: 8, width: 30, height: 30, borderRadius: 8, background: '#101522', border: '2px solid #0B0F1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg aria-label="Locked" role="img" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5F1E8" strokeWidth="3" strokeLinecap="round"><rect x="5" y="11" width="14" height="10" rx="2" fill="#F5F1E8" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+                    </span>
+                  )}
                   {on && <span className="fd" style={{ position: 'absolute', right: 8, top: 8, background: '#FFD166', color: '#101522', border: '2px solid #0B0F1A', borderRadius: 6, padding: '0 8px', fontSize: 13 }}>SELECTED</span>}
                   {by && <span style={{ position: 'absolute', right: 8, top: 8, background: '#101522', color: '#F5F1E8', border: '2px solid #0B0F1A', borderRadius: 6, padding: '0 8px', fontSize: 12, fontWeight: 600 }}>Picked by {by}</span>}
                 </div>
@@ -96,8 +103,10 @@ export default function MachineSelect(): JSX.Element {
           {inRoom && mates.length === 0 && <span style={{ fontSize: 13, color: '#A9B3CC' }}>No teammates yet</span>}
           <span style={{ fontSize: 13, color: '#C9D1E0', marginLeft: 8, maxWidth: 260, lineHeight: 1.3 }}>{inRoom ? hint : 'Your pick becomes the machine you bring into new rooms.'}</span>
           <div style={{ flex: 1 }} />
-          <button type="button" className="btn" disabled title="Skins arrive with the Inventory (Phase 4)" style={{ height: 58, padding: '0 18px', fontSize: 16 }}>Skins for {MACHINES[sel].name}</button>
-          {!locked
+          <Link to="/inventory?cat=1" className="btn" style={{ height: 58, padding: '0 18px', fontSize: 16 }}>Skins for {MACHINES[sel].name}</Link>
+          {!locked && !owns(sel)
+            ? <Link to="/inventory?cat=0" className="btn dark" style={{ height: 62, width: 230, background: '#4C9AFF', fontSize: 20 }}><span className="fd">UNLOCK IN INVENTORY</span></Link>
+            : !locked
             ? <Button className="dark" onClick={lockIn} style={{ height: 62, width: 230, background: '#FFD166', fontSize: 28 }}><span className="fd">LOCK IN</span></Button>
             : <Button className="dark" onClick={() => nav(back)} style={{ height: 62, width: 230, background: '#5ACB91', fontSize: 22 }}><span className="fd">{inRoom ? 'BACK TO LOBBY' : 'BACK TO HOME'}</span></Button>}
         </footer>

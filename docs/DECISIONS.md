@@ -238,3 +238,51 @@ The kit's decisions above apply. Our additions and deviations:
 - 2026-11-06 · **Build output at the repo root `dist/`** (`build.outDir` in `apps/client/vite.config.ts`; `vercel.json`
   `outputDirectory: "dist"`). The first Vercel deploys ignored `vercel.json#outputDirectory` and looked for `dist` at the
   root; writing the build there works with Vercel's defaults, `vercel.json` and dashboard overrides alike. · deploy
+- 2026-11-06 · **Phone sizing** (owner test on a Galaxy A54, landscape: "too small"). A54 Chrome is ~915×360 CSS px, so the
+  width-only rule picked the 1024×768 tablet battle layout at ~47%. Now `pickLayout(w, h)` uses a bigger layout only at
+  ≥ 0.7 scale → phone layout at ~92%. Menus on short landscape screens fit the width (0.64×) and scroll vertically
+  instead of shrinking to the height (0.40×); the battle never scrolls. On touch devices the first tap requests
+  fullscreen + landscape lock (`MobileFullscreen`, once per load; no-op on iPhone Safari) to win back the browser bar.
+  DESIGN_SPEC §0 Stage updated. Tests: `layouts.test.ts`, e2e `mobile.spec.ts` (A54 emulation). · Stage, Battle
+
+### Phase 4 — persistent features (2026-11-06)
+- 2026-11-06 · **Per-player feats are host-counted** (protocol **v4**): `MatchTally` counts direct hits, burn damage, carved px,
+  teammate hits, wind ≥ 10 hits, longest Lightning chain, most enemies frozen by one action, most eliminations in one
+  turn, ice-weapon eliminations and guided hits from the same events peers replay; they ride on `PlayerResult.feats`
+  and survive `snapshot()/restore()`. Achievements and missions never trust a peer's own counting. · host/match, tally
+- 2026-11-06 · **Progress engine** `persist/progress.ts` runs inside `creditMatch` (idempotent like rewards): lifetime
+  `counters`, `best` feats + win streak, `winsOn` per map, local play `streak`, the mockup's 5 **daily missions** (reset at
+  local midnight, Claim pays once) and **12 achievements** (unlock time recorded). · persist
+- 2026-11-06 · **Server-only requirements mapped to local goals** (owner-approved plan): Season pass level L → Reach level L;
+  Gold I / Platinum rank → rating 1,200 / 1,400; Season 2 top 500 / Season 3 top 1,000 → 100 / 50 wins; Harvest Havoc /
+  Season event → 30 / 15 daily missions; login streak 30 → play 30 days in a row; "Achievement reward" titles → the
+  linked achievement (Hill Breaker → carve 10,000 px). Requirement items unlock for free once met. · config/progression
+- 2026-11-06 · **Achievement copy for things our game doesn't have**: "Arc Bolt" → Lightning Strike; "Frost Nova" → any
+  single action ("Freeze 4 enemies at once"); Island Hopper (teleport onto islands — no machine teleports) → "Win 10
+  matches on Skyreach Isles"; Friendly Fire drops the mock player's name. Last Lobber needs a teammate who went down (a
+  solo 1v1 win doesn't count). · config/progression
+- 2026-11-06 · **Machines are ownable** (Inventory "Battle Machines"): 5 starters owned; Frostbite 6,000 coins, Whirligig
+  level 40, Boomba level 20 (mockup "Season 4 pass · level 20"). Machine Select greys out and lock-badges machines you
+  don't own (LOCK IN → UNLOCK IN INVENTORY); Hot Seat keeps all 8 (local, no rewards). `toPeerProfile` falls back to a
+  starter if a pre-Phase-4 save's favourite isn't owned. EQUIP on a machine = your favourite (lobby default). · Inventory
+- 2026-11-06 · **Avatars** = machine portraits (`avatar:<machine>`), owned with the machine, equipped in slot `avatar`, sent
+  in the hello profile; Profile/Home show the avatar machine with its equipped skin. · cosmetics, profile
+- 2026-11-06 · **Inventory additions** (DESIGN_SPEC §2.7): "Unequip" secondary button (skins/weapon skins come off; trail,
+  explosion, title fall back to the default); emotes get a 4-slot "EMOTE WHEEL SLOT" picker (chip style) because the
+  wheel has 4 slots and the mockup equips one per category. · Inventory
+- 2026-11-06 · **`setCosmetics` lobby intent** (v4): equipping in the Inventory while in a lobby updates your loadout on the
+  host (resolved and sanitised at match start, like the hello profile). Lobby "Customize" opens the Inventory (its back
+  button returns to the lobby). · protocol, roomService
+- 2026-11-06 · **Rank tiers from rating** (`rankFor`): Bronze 1,000, Silver 1,100, Gold 1,200, Platinum 1,400, Diamond
+  1,600; divisions I → III inside a tier (Gold I = 1,200 to match the requirement). New players are Bronze I. · Profile
+- 2026-11-06 · **Profile**: "Change title" opens a picker of owned titles (spec) rather than the mockup's cycle; history is
+  8 per page with ‹ › paging in the header; a row opens Results from history. "Share profile" copies a text summary + the
+  game link (no profile pages without a server). WINS sub = best win streak (tracked from Phase 4 on). · Profile
+- 2026-11-06 · **Friends** (§3.9): tabs Starred / Recent players; a row's machine = what they played the last time you met
+  (history), Thumper if unknown; no presence dots. "Pending invites" can't be tracked without a server → an INVITES note
+  ("anyone with the link or code can join"). Not in a room → "Create a room to invite friends" + CREATE ROOM (opens Home's
+  Create Room modal via navigation state). · Friends
+- 2026-11-06 · **Leaderboards**: Friends tab = you + recent players by rating; the last column shows **LV** instead of win
+  rate (we don't know other players' win rates). Global disabled: "Needs a server — not in this version". · Home
+- 2026-11-06 · **Hosted room saved at creation** (bug found by the Friends e2e): `HostSession` only wrote its snapshot on
+  lobby changes, so a host F5 before anyone joined lost the room. It now persists once when created. · host/session

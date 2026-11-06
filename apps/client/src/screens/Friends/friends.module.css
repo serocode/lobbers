@@ -1,0 +1,12 @@
+/* Friends.dc.html helmet classes (screen-specific; .scrim/.modal come from the shared Modal). */
+.bg { background-color: #101522; background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.025) 0 14px, transparent 14px 28px); }
+.tab { height: 46px; padding: 0 16px; font-size: 16px; }
+.tab.on { background: #F5F1E8; color: #101522; }
+.tab.on:hover { color: #101522; }
+.row { animation: row .35s cubic-bezier(.2,1.3,.4,1) both; }
+@keyframes row { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+.toast { animation: row .3s both; }
+.inp { height: 48px; border: 3px solid #0B0F1A; border-radius: 10px; background: #0E1320; color: #F5F1E8; padding: 0 14px; font-family: Fredoka, sans-serif; font-size: 16px; }
+.inp:focus { outline: 3px solid #4C9AFF; }
+.stripes { background-image: repeating-linear-gradient(135deg, rgba(0,0,0,.2) 0 10px, transparent 10px 20px); }
+@media (prefers-reduced-motion: reduce) { .row, .toast { animation: none; } }

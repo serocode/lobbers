@@ -1,6 +1,7 @@
 // Cosmetics shown in matches (Inventory.dc.html categories: Machine Skins, Weapon Skins, Projectile
 // Trails, Explosion Effects, Emotes, Titles). Ids, names, rarities and copy come from the mockup.
 // Cosmetics never change the simulation. Machine unlocks and avatars are Inventory (Phase 4) concerns.
+import type { Requirement } from './progression.ts';
 import type { MachineId, WeaponCategory } from '../types.ts';
 
 export type Rarity = 'Common' | 'Rare' | 'Epic' | 'Legendary';
@@ -8,7 +9,7 @@ export type TrailStyle = 'smoke' | 'sparks' | 'bubbles' | 'dash' | 'rainbow' | '
 export type ExplosionStyle = 'classic' | 'confetti' | 'plasma' | 'pixel' | 'sakura' | 'blackhole';
 
 /** How an item is obtained. Guests own every `default` item until accounts and the store arrive (Phase 4). */
-export type Unlock = { kind: 'default' } | { kind: 'coins' | 'gems'; price: number } | { kind: 'requirement'; text: string };
+export type Unlock = { kind: 'default' } | { kind: 'coins' | 'gems'; price: number } | { kind: 'requirement'; need: Requirement };
 
 interface Base { id: string; name: string; rarity: Rarity; description: string; bg: string; unlock: Unlock }
 export type CosmeticItem =
@@ -21,40 +22,40 @@ export type CosmeticItem =
 export type CosmeticSlot = CosmeticItem['slot'];
 
 const def: Unlock = { kind: 'default' };
-const req = (text: string): Unlock => ({ kind: 'requirement', text });
+const req = (need: Requirement): Unlock => ({ kind: 'requirement', need });
 const coins = (price: number): Unlock => ({ kind: 'coins', price });
 const gems = (price: number): Unlock => ({ kind: 'gems', price });
 
 export const COSMETICS: CosmeticItem[] = [
   // Machine skins (paint replaces the body colour)
-  { id: 's-arctic', slot: 'skin', machine: 'thumper', paint: '#B9C7A0', name: 'Arctic Camo Thumper', rarity: 'Rare', bg: '#2E3A2A', description: 'Sage-and-frost plating that hides you nicely on Glacier Rift. Nicely.', unlock: req('Season 3 pass, level 12') },
-  { id: 's-ash', slot: 'skin', machine: 'cinder', paint: '#6E5A60', name: 'Ashfall Cinder', rarity: 'Epic', bg: '#2A1A1E', description: 'Soot-black furnace plating with a cooled-lava sheen.', unlock: req('Season event reward') },
-  { id: 's-neon', slot: 'skin', machine: 'sprocket', paint: '#39E59A', name: 'Neon Sprocket', rarity: 'Rare', bg: '#123A2C', description: 'Glow-in-the-dark bodywork for night maps.', unlock: req('50 wins with Sprocket') },
+  { id: 's-arctic', slot: 'skin', machine: 'thumper', paint: '#B9C7A0', name: 'Arctic Camo Thumper', rarity: 'Rare', bg: '#2E3A2A', description: 'Sage-and-frost plating that hides you nicely on Glacier Rift. Nicely.', unlock: req({ kind: 'level', n: 12 }) },
+  { id: 's-ash', slot: 'skin', machine: 'cinder', paint: '#6E5A60', name: 'Ashfall Cinder', rarity: 'Epic', bg: '#2A1A1E', description: 'Soot-black furnace plating with a cooled-lava sheen.', unlock: req({ kind: 'counter', counter: 'missionsCompleted', n: 15, text: 'Complete 15 daily missions' }) },
+  { id: 's-neon', slot: 'skin', machine: 'sprocket', paint: '#39E59A', name: 'Neon Sprocket', rarity: 'Rare', bg: '#123A2C', description: 'Glow-in-the-dark bodywork for night maps.', unlock: req({ kind: 'winsWith', machine: 'sprocket', n: 50 }) },
   { id: 's-coral', slot: 'skin', machine: 'mollusk', paint: '#FF8A7A', name: 'Coral Mollusk', rarity: 'Rare', bg: '#4A2626', description: 'A reef-pink shell. Same tungsten, friendlier colour.', unlock: coins(1200) },
   { id: 's-thunder', slot: 'skin', machine: 'voltaic', paint: '#7C88C2', name: 'Thunderhead Voltaic', rarity: 'Epic', bg: '#252A48', description: 'Storm-cloud plating with crackling copper coils.', unlock: gems(300) },
-  { id: 's-midnight', slot: 'skin', machine: 'boomba', paint: '#3A4466', name: 'Midnight Boomba', rarity: 'Legendary', bg: '#1A1E34', description: 'The classic cartoon bomb, finally in its true colours.', unlock: req('Season 4 pass · level 50') },
-  { id: 's-gild', slot: 'skin', machine: 'thumper', paint: '#E8C25A', name: 'Gilded Thumper', rarity: 'Legendary', bg: '#3E3418', description: 'Solid-gold siege plating for players who never miss. Or say so.', unlock: req('Reach Gold I rank') },
+  { id: 's-midnight', slot: 'skin', machine: 'boomba', paint: '#3A4466', name: 'Midnight Boomba', rarity: 'Legendary', bg: '#1A1E34', description: 'The classic cartoon bomb, finally in its true colours.', unlock: req({ kind: 'level', n: 50 }) },
+  { id: 's-gild', slot: 'skin', machine: 'thumper', paint: '#E8C25A', name: 'Gilded Thumper', rarity: 'Legendary', bg: '#3E3418', description: 'Solid-gold siege plating for players who never miss. Or say so.', unlock: req({ kind: 'rating', n: 1200 }) },
   // Weapon skins (shell colour for every weapon in that Armory category)
-  { id: 'w-gild', slot: 'weaponSkin', category: 'Explosive', color: '#E8C25A', name: 'Gilded Shell', rarity: 'Legendary', bg: '#3E3418', description: 'Your explosive shells, but make it treasure.', unlock: req('Season 2 top 500') },
-  { id: 'w-candy', slot: 'weaponSkin', category: 'Explosive', color: '#FF7EB6', name: 'Candy Stripe Mortar', rarity: 'Rare', bg: '#4A2440', description: 'Pink-and-white striped explosive rounds.', unlock: req('Daily login streak 30') },
-  { id: 'w-pump', slot: 'weaponSkin', category: 'Cluster', color: '#F28C38', name: 'Pumpkin Bomb', rarity: 'Epic', bg: '#4A2E1E', description: 'Cluster bomblets carved like tiny pumpkins.', unlock: req('Event: Harvest Havoc 2026') },
+  { id: 'w-gild', slot: 'weaponSkin', category: 'Explosive', color: '#E8C25A', name: 'Gilded Shell', rarity: 'Legendary', bg: '#3E3418', description: 'Your explosive shells, but make it treasure.', unlock: req({ kind: 'wins', n: 100 }) },
+  { id: 'w-candy', slot: 'weaponSkin', category: 'Explosive', color: '#FF7EB6', name: 'Candy Stripe Mortar', rarity: 'Rare', bg: '#4A2440', description: 'Pink-and-white striped explosive rounds.', unlock: req({ kind: 'streak', n: 30 }) },
+  { id: 'w-pump', slot: 'weaponSkin', category: 'Cluster', color: '#F28C38', name: 'Pumpkin Bomb', rarity: 'Epic', bg: '#4A2E1E', description: 'Cluster bomblets carved like tiny pumpkins.', unlock: req({ kind: 'counter', counter: 'missionsCompleted', n: 30, text: 'Complete 30 daily missions' }) },
   { id: 'w-circuit', slot: 'weaponSkin', category: 'Electric', color: '#5ACB91', name: 'Circuit Bolt', rarity: 'Epic', bg: '#1E3E33', description: 'Lightning shells with a green circuit-board glow.', unlock: gems(250) },
   { id: 'w-jade', slot: 'weaponSkin', category: 'Ice', color: '#6EE0B0', name: 'Jade Spear', rarity: 'Rare', bg: '#1E3E33', description: 'Ice shells carved from polished jade.', unlock: coins(900) },
-  { id: 'w-comet', slot: 'weaponSkin', category: 'Guided', color: '#8FE3FF', name: 'Comet Hornet', rarity: 'Rare', bg: '#1B3A48', description: 'A guided missile with a comet tail.', unlock: req('Mission: 20 guided hits') },
+  { id: 'w-comet', slot: 'weaponSkin', category: 'Guided', color: '#8FE3FF', name: 'Comet Hornet', rarity: 'Rare', bg: '#1B3A48', description: 'A guided missile with a comet tail.', unlock: req({ kind: 'counter', counter: 'guidedHits', n: 20, text: 'Land 20 guided hits' }) },
   // Projectile trails
   { id: 't-smoke', slot: 'trail', style: 'smoke', color: '#A9B3CC', name: 'Smoke Ring', rarity: 'Common', bg: '#2A3045', description: 'The default puff of grey smoke.', unlock: def },
-  { id: 't-ember', slot: 'trail', style: 'sparks', color: '#FF8A3D', name: 'Ember Sparks', rarity: 'Epic', bg: '#4A221C', description: 'Your shots leave a fizzing streak of embers.', unlock: req('Season 3 pass, level 40') },
-  { id: 't-bubble', slot: 'trail', style: 'bubbles', color: '#8FE3FF', name: 'Bubble Stream', rarity: 'Rare', bg: '#1B3A48', description: 'A wobbly trail of soap bubbles.', unlock: req('200 matches played') },
+  { id: 't-ember', slot: 'trail', style: 'sparks', color: '#FF8A3D', name: 'Ember Sparks', rarity: 'Epic', bg: '#4A221C', description: 'Your shots leave a fizzing streak of embers.', unlock: req({ kind: 'level', n: 40 }) },
+  { id: 't-bubble', slot: 'trail', style: 'bubbles', color: '#8FE3FF', name: 'Bubble Stream', rarity: 'Rare', bg: '#1B3A48', description: 'A wobbly trail of soap bubbles.', unlock: req({ kind: 'matches', n: 200 }) },
   { id: 't-pixel', slot: 'trail', style: 'dash', color: '#5ACB91', name: 'Pixel Dash', rarity: 'Rare', bg: '#1E3E33', description: 'Chunky retro dashes behind every shot.', unlock: coins(600) },
   { id: 't-rainbow', slot: 'trail', style: 'rainbow', color: '#FF7EB6', name: 'Rainbow Ribbon', rarity: 'Legendary', bg: '#4A2440', description: 'A shimmering ribbon that cycles colours mid-flight.', unlock: gems(1500) },
-  { id: 't-star', slot: 'trail', style: 'stars', color: '#FFD166', name: 'Starfall', rarity: 'Epic', bg: '#3E3820', description: 'Twinkling stars that linger after the shot lands.', unlock: req('Win 10 matches on Glacier Rift') },
+  { id: 't-star', slot: 'trail', style: 'stars', color: '#FFD166', name: 'Starfall', rarity: 'Epic', bg: '#3E3820', description: 'Twinkling stars that linger after the shot lands.', unlock: req({ kind: 'winsOn', map: 'glacier', n: 10 }) },
   // Explosion effects
   { id: 'b-classic', slot: 'explosion', style: 'classic', color: '#FFB547', name: 'Classic Kaboom', rarity: 'Common', bg: '#4A2E1E', description: 'Orange fireball. Timeless.', unlock: def },
-  { id: 'b-confetti', slot: 'explosion', style: 'confetti', color: '#FF7EB6', name: 'Confetti Pop', rarity: 'Legendary', bg: '#4A2440', description: 'Every impact is a party. The crater is still very real.', unlock: req('Season 3 top 1,000') },
+  { id: 'b-confetti', slot: 'explosion', style: 'confetti', color: '#FF7EB6', name: 'Confetti Pop', rarity: 'Legendary', bg: '#4A2440', description: 'Every impact is a party. The crater is still very real.', unlock: req({ kind: 'wins', n: 50 }) },
   { id: 'b-plasma', slot: 'explosion', style: 'plasma', color: '#4C9AFF', name: 'Blue Plasma', rarity: 'Epic', bg: '#1E2D4E', description: 'A crackling sphere of blue plasma.', unlock: gems(400) },
   { id: 'b-pixel', slot: 'explosion', style: 'pixel', color: '#5ACB91', name: 'Pixel Burst', rarity: 'Rare', bg: '#1E3E33', description: 'An 8-bit explosion with square debris.', unlock: coins(800) },
   { id: 'b-sakura', slot: 'explosion', style: 'sakura', color: '#FFB3D1', name: 'Cherry Blossom', rarity: 'Epic', bg: '#4A2440', description: 'A soft burst of petals drifting on the wind.', unlock: gems(400) },
-  { id: 'b-hole', slot: 'explosion', style: 'blackhole', color: '#B07CF2', name: 'Black Hole', rarity: 'Legendary', bg: '#33264E', description: 'The blast collapses inward before it detonates.', unlock: req('Reach Platinum rank') },
+  { id: 'b-hole', slot: 'explosion', style: 'blackhole', color: '#B07CF2', name: 'Black Hole', rarity: 'Legendary', bg: '#33264E', description: 'The blast collapses inward before it detonates.', unlock: req({ kind: 'rating', n: 1400 }) },
   // Emotes (speech bubbles over your machine)
   { id: 'e-gg', slot: 'emote', text: 'GG, well lobbed!', name: 'GG, well lobbed!', rarity: 'Common', bg: '#2A3045', description: 'The polite post-match classic.', unlock: def },
   { id: 'e-oops', slot: 'emote', text: 'Oops.', name: 'Oops.', rarity: 'Common', bg: '#2A3045', description: 'For friendly fire. Use often.', unlock: def },
@@ -64,11 +65,11 @@ export const COSMETICS: CosmeticItem[] = [
   { id: 'e-ready', slot: 'emote', text: 'Ready when you are', name: 'Ready when you are', rarity: 'Rare', bg: '#1E2D4E', description: 'A lobby favourite for impatient hosts.', unlock: coins(600) },
   // Titles (lobby slot, results)
   { id: 'ti-rookie', slot: 'title', name: 'Rookie', rarity: 'Common', bg: '#2A3045', description: 'Everyone starts somewhere.', unlock: def },
-  { id: 'ti-hill', slot: 'title', name: 'Hill Breaker', rarity: 'Rare', bg: '#2A3045', description: 'Destroy 10,000 px of terrain in a single match.', unlock: req('Achievement reward') },
-  { id: 'ti-wind', slot: 'title', name: 'Wind Whisperer', rarity: 'Epic', bg: '#1E2D4E', description: 'Land a hit in wind 10 or stronger.', unlock: req('Achievement reward') },
-  { id: 'ti-crater', slot: 'title', name: 'Crater Maker', rarity: 'Rare', bg: '#4A2E1E', description: 'Destroy 50,000 px of terrain overall.', unlock: req('Achievement reward') },
-  { id: 'ti-last', slot: 'title', name: 'Last Lobber Standing', rarity: 'Legendary', bg: '#3E3418', description: 'Win as the last machine alive on your team.', unlock: req('Achievement reward') },
-  { id: 'ti-ff', slot: 'title', name: 'Friendly Fire Expert', rarity: 'Rare', bg: '#4A2440', description: 'Hit teammates 10 times.', unlock: req('Hit teammates 10 times') },
+  { id: 'ti-hill', slot: 'title', name: 'Hill Breaker', rarity: 'Rare', bg: '#2A3045', description: 'Destroy 10,000 px of terrain in a single match.', unlock: req({ kind: 'counter', counter: 'carvedPx', n: 10_000, text: 'Destroy 10,000 px of terrain' }) },
+  { id: 'ti-wind', slot: 'title', name: 'Wind Whisperer', rarity: 'Epic', bg: '#1E2D4E', description: 'Land a hit in wind 10 or stronger.', unlock: req({ kind: 'achievement', id: 'wind-whisperer' }) },
+  { id: 'ti-crater', slot: 'title', name: 'Crater Maker', rarity: 'Rare', bg: '#4A2E1E', description: 'Destroy 50,000 px of terrain overall.', unlock: req({ kind: 'achievement', id: 'crater-maker' }) },
+  { id: 'ti-last', slot: 'title', name: 'Last Lobber Standing', rarity: 'Legendary', bg: '#3E3418', description: 'Win as the last machine alive on your team.', unlock: req({ kind: 'achievement', id: 'last-lobber' }) },
+  { id: 'ti-ff', slot: 'title', name: 'Friendly Fire Expert', rarity: 'Rare', bg: '#4A2440', description: 'Hit teammates 10 times.', unlock: req({ kind: 'counter', counter: 'friendlyHits', n: 10, text: 'Hit teammates 10 times' }) },
 ];
 
 export const COSMETIC_BY_ID: Record<string, CosmeticItem> = Object.fromEntries(COSMETICS.map((c) => [c.id, c]));
@@ -155,6 +156,9 @@ export type EquippedSlots = Record<string, string>;
 /** Inventory id of a machine (ownership checks use this form everywhere). */
 export const machineItemId = (id: MachineId): string => `machine:${id}`;
 export const emoteSlot = (i: number): string => `emote:${i + 1}`;
+/** Avatar ids ("avatar:<machine>", equipped in slot "avatar"): you own a machine's portrait when you own the machine. */
+export const avatarItemId = (id: MachineId): string => `avatar:${id}`;
+export const avatarMachine = (itemId: string): MachineId | null => (itemId.startsWith('avatar:') ? (itemId.slice(7) as MachineId) : null);
 
 export function equippedFromLoadout(l: CosmeticLoadout): EquippedSlots {
   const out: EquippedSlots = { trail: l.trail, explosion: l.explosion, title: l.title };

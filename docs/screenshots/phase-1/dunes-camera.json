@@ -1,28 +1,28 @@
 [
   {
-    "x": 62,
-    "y": 36,
+    "x": 75,
+    "y": 31,
     "zoom": 1,
     "mode": "follow",
     "fit": false
   },
   {
-    "x": 585,
+    "x": 622,
     "y": 1,
     "zoom": 1,
     "mode": "follow",
     "fit": false
   },
   {
-    "x": 1154,
+    "x": 1210,
     "y": 0,
     "zoom": 1,
     "mode": "follow",
     "fit": false
   },
   {
-    "x": 1543,
-    "y": 56,
+    "x": 1550,
+    "y": 99,
     "zoom": 1,
     "mode": "follow",
     "fit": false
@@ -50,14 +50,14 @@
   },
   {
     "x": 1558,
-    "y": 214,
+    "y": 219,
     "zoom": 1,
     "mode": "focus",
     "fit": false
   },
   {
     "x": 1560,
-    "y": 246,
+    "y": 250,
     "zoom": 1,
     "mode": "focus",
     "fit": false

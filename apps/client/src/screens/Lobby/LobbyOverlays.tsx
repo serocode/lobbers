@@ -1,5 +1,5 @@
 // Countdown 3-2-1 + DEPLOYING! (driven by the server's countdownEndsAt / match seat), Invite Friends
-// (friends arrive in Phase 4 — the modal offers the room link instead) and the host's kick confirm.
+// (no presence without a server — the modal offers the room link; starred players live on Friends) and the host's kick confirm.
 import { MAPS, type LobbyPlayer, type LobbyView } from '@lobbers/shared';
 import { Button, CloseButton, Modal } from '../../components';
 import s from './lobby.module.css';

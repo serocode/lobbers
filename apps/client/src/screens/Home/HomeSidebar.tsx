@@ -1,18 +1,19 @@
 // Right panel (Main.dc.html aside): profile card, Recent Activity, Your Crew — all from the local
-// profile (level, XP, coins, gems, rating, equipped title, match history). The Profile screen is Phase 4.
+// profile (level, XP, coins, gems, rating, equipped title, match history); the card opens Profile.
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { COSMETIC_BY_ID, MAPS, REWARDS, starPlayer, type MachineId } from '@lobbers/shared';
 import { useLobby } from '../../net/p2p/roomService';
 import { inviteLink } from '../Lobby/LobbyOverlays';
 import { MachineArt } from '../../components';
 import { useProfile } from '../../state/profile';
 import { ago } from '../../state/format';
+import { avatarKind } from '../Profile/model';
 import s from './home.module.css';
 
 const ICON = { win: 'M7 3h10v5a5 5 0 0 1-10 0zM10 15h4v3h3v3H7v-3h3z', loss: 'M5 5l14 14M19 5 5 19', draw: 'M4 9h16M4 15h16' };
 const COL = { win: '#FFD166', loss: '#F45B55', draw: '#A9B3CC' };
 const LABEL = { win: 'Victory', loss: 'Defeat', draw: 'Draw' };
-const PHASE4 = 'The Profile screen arrives in Phase 4';
 const fmt = (n: number): string => n.toLocaleString('en-US');
 
 export function HomeSidebar(): JSX.Element {
@@ -25,10 +26,10 @@ export function HomeSidebar(): JSX.Element {
   const title = COSMETIC_BY_ID[user?.equipped.title ?? '']?.name ?? 'Rookie';
   return (
     <aside className="panel" style={{ position: 'absolute', left: 1060, top: 24, width: 356, height: 856, padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div className="btn" aria-disabled="true" title={PHASE4} style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'flex-start', gap: 12, padding: 14, background: '#1C2338', textAlign: 'left', color: '#F5F1E8', cursor: 'default' }}>
+      <Link to="/profile" className="btn" aria-label="Your profile" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'flex-start', gap: 12, padding: 14, background: '#1C2338', textAlign: 'left', color: '#F5F1E8' }}>
         <span style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <span style={{ position: 'relative', width: 76, height: 76, flex: 'none', background: '#2E3856', border: '3px solid #0B0F1A', clipPath: 'polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <MachineArt kind={machine} size={68} tint="#F45B55" />
+            <MachineArt kind={user ? avatarKind(user) : machine} size={68} tint="#F45B55" />
           </span>
           <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
             <span className="fd" style={{ fontSize: 24, lineHeight: 1.05 }}>{user?.name ?? '—'}</span>
@@ -44,7 +45,7 @@ export function HomeSidebar(): JSX.Element {
           <span style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0E1320', border: '2px solid #0B0F1A', borderRadius: 8, padding: '6px 10px' }}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="#FFD166" stroke="#0B0F1A" strokeWidth="2.5" /><path d="M10 5v10M7 7.5h4.5a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3H13" fill="none" stroke="#8A5A00" strokeWidth="1.6" /></svg><span className="mono" data-testid="profile-coins" style={{ fontSize: 15, fontWeight: 700 }}>{fmt(user?.coins ?? 0)}</span></span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0E1320', border: '2px solid #0B0F1A', borderRadius: 8, padding: '6px 10px' }}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20"><path d="M10 2 18 8 10 18 2 8Z" fill="#B07CF2" stroke="#0B0F1A" strokeWidth="2.5" strokeLinejoin="round" /><path d="M2 8h16M10 2 7 8l3 10 3-10z" fill="none" stroke="#E6D4FF" strokeWidth="1.2" /></svg><span className="mono" style={{ fontSize: 15, fontWeight: 700 }}>{fmt(user?.gems ?? 0)}</span></span>
         </span>
-      </div>
+      </Link>
 
       <section aria-label="Recent activity" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <h2 style={{ margin: 0, fontSize: 13, letterSpacing: 2, color: '#A9B3CC', fontWeight: 700 }}>RECENT ACTIVITY</h2>
@@ -80,7 +81,7 @@ function YourCrew(): JSX.Element {
     <section aria-label="Your crew" style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minHeight: 0 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 style={{ margin: 0, fontSize: 13, letterSpacing: 2, color: '#A9B3CC', fontWeight: 700 }}>YOUR CREW <span className="mono" style={{ color: '#5ACB91' }}>{profile?.recentPlayers.length ?? 0}</span></h2>
-        <span aria-disabled="true" title="The Friends screen arrives in Phase 4" style={{ fontSize: 14, fontWeight: 600, color: '#5B6378', cursor: 'not-allowed' }}>See all</span>
+        <Link to="/friends" style={{ fontSize: 14, fontWeight: 600, color: '#FFD166' }}>See all</Link>
       </div>
       {crew.length === 0 && <span style={{ fontSize: 14, color: '#A9B3CC', padding: '6px 4px' }}>Everyone you finish a match with shows up here. Star the ones you play with most.</span>}
       {crew.map((f) => (

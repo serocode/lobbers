@@ -1,5 +1,5 @@
 // Hot-seat (dev harness) cosmetic presets per team, so every trail / explosion / skin / weapon skin
-// can be seen in a real match before the Inventory lets players equip them (Phase 4). Local only.
+// can be seen in a real hot-seat match (Hot Seat ignores the profile). Local only.
 import { COSMETICS, DEFAULT_LOADOUT, type CosmeticLoadout, type MachineId } from '@lobbers/shared';
 
 export type PresetId = 'default' | 'embers' | 'bubbles' | 'pixel' | 'rainbow' | 'stars';

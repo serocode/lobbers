@@ -221,8 +221,55 @@ invite, close confirm, closed card, Machine Select; `screens-report.json` = mean
 - No host migration: if the host closes the tab for good, the room ends (a refresh is fine).
 - `docs/screenshots/phase-2/home-quick-match.png` shows the removed Quick Match modal (Phase 2 history).
 
-## Phase 4 — Persistence
-_not started_
+## Phone sizing fix ✅ (2026-11-06, owner report: Galaxy A54 landscape "too small")
+- Battle layout is picked from width **and** height (`pickLayout(w, h)`: a bigger layout only at ≥ 0.7 scale), so a
+  ~915×360 landscape phone gets the 844×390 phone layout at ~92% instead of the tablet layout at ~47%.
+- Menus on short landscape screens fit the width (0.64×) and scroll vertically instead of shrinking to 0.40×; the battle
+  never scrolls. Touch devices go fullscreen + landscape-lock on the first tap (`MobileFullscreen`).
+- Verify: `layouts.test.ts`; e2e `mobile.spec.ts` (A54 emulation 915×360 / 915×412, DPR 2.625, touch; portrait → rotate
+  card); screenshots `docs/screenshots/mobile/a54-*`.
+
+## Phase 4 — Persistent features ✅ (2026-11-06)
+**Works**
+- **Host-counted feats** (protocol v4): direct hits, burn damage, carved terrain, teammate hits, wind ≥ 10 hits, Lightning
+  chain length, enemies frozen at once, eliminations in one turn, ice eliminations, guided hits — on every player's
+  result, kept across a host refresh.
+- **Progress engine** (`persist/progress.ts`, inside `creditMatch`): lifetime counters, best feats, win streak, wins per
+  map, play streak, **5 daily missions** (reset at local midnight, Claim once), **12 achievements**, typed unlock
+  requirements (`config/progression.ts`), rank tiers from rating.
+- **Inventory** (`/inventory`, 07): 8 categories / 53 items with owned counts, collection meters, All/Owned/Locked,
+  previews per type, EQUIP / EQUIPPED / UNLOCK · price / NOT ENOUGH / LOCKED + progress, Unequip, emote wheel slots.
+  Machines are bought (Frostbite 6,000 coins) or unlocked by level; avatars come with the machine.
+- **Machine Select** locks machines you don't own (→ Inventory); Skins button opens Machine Skins.
+- **Profile** (`/profile`, 06): identity (avatar + skin, level, rank shield + SR, title, member since, XP), equipped
+  cosmetics, career stats (win-rate ring, favourite = most played), history 8/page with tabs → Results from history,
+  achievements with progress + detail, title picker, Share profile (summary copied). Home's profile card opens it.
+- **Friends** (`/friends`, 08): Starred / Recent players, star → Home "Your Crew", popover, Join by code, Your Room card
+  (live room, share/copy invite link, OPEN LOBBY) or Create Room.
+- **Missions** + **Leaderboards** modals on Home (01d): claim badge on the nav, reset countdown; Friends leaderboard by
+  rating, Global disabled with the reason. Lobby "Customize" and Results "My Profile" are live; equipping in a lobby
+  sends `setCosmetics` to the host.
+- Bug fixed on the way: a hosted room is now saved at creation (F5 before anyone joined used to lose it).
+
+**How to verify**
+- `pnpm test:core` — 60 (adds `feats.test.ts`, `progress.test.ts`: missions/claim/midnight reset, achievements,
+  requirements, machine purchase, streaks, old saves, setCosmetics, room saved at creation).
+- `pnpm --filter @lobbers/client test` — 24 (Inventory, Profile, Friends models; layouts).
+- e2e `inventory.spec.ts`, `profile.spec.ts`, `social.spec.ts` (Friends, Missions, Leaderboards, Friends while hosting).
+- Manual: Home → Inventory → Battle Machines → Frostbite (needs 6,000 coins) · Profile → Change title · Home → Missions.
+
+**Results (2026-11-06)** — core 60/60 · client 24/24 · `smoke:p2p` pass (32 turns, host refresh resumed, no page errors)
+· Playwright **43/43** on the dev server (matrix 1v1–4v4: 16/21/29/37 turns, 0 hash mismatches) · `deploy.spec.ts` on the
+production build pass; `/profile`, `/inventory`, `/friends` deep links 200.
+
+**Evidence** — `docs/screenshots/phase-4/`: `inventory.png` (vs 07: 5.2%), `inventory-explosions.png` (vs 07b: 5.7%),
+`profile.png` (vs 06: 6.3%), `friends.png` (vs 08: 8.3%), `friends-profile.png` (vs 08b: 3.1%), `missions.png` (vs 01d:
+3.7%); mean pixel difference with the mockup's demo data (names, numbers, items) — layouts match panel for panel.
+
+**Known gaps**
+- Ownership and coins are local (edit-able in devtools); the host only checks ids and slots — the documented trust model.
+- Gems only come from missions; nothing sells gems. Other players' win rates aren't known (Leaderboards show LV).
+- Results doesn't announce newly finished missions/achievements yet (they appear on Home/Profile).
 
 ## Phase 5 — Quality
 _not started_

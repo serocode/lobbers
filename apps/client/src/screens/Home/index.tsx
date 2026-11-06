@@ -1,7 +1,7 @@
 // Home / main menu — ported from design/mockup/Main.dc.html (screenshots/01-home*.png).
 // PLAY NOW / Create Room host a room in this tab (PeerJS); Join Room joins one by code (DESIGN_SPEC §2.1, §3.9).
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { MACHINE_LIST, SEASON } from '@lobbers/shared';
 import { Stage } from '../../app/Stage';
 import { MachineArt, PlayButton, SceneBackdrop, Toast } from '../../components';
@@ -13,10 +13,12 @@ import { FirstRunModal } from './modals/FirstRunModal';
 import { HotSeatIcon, HotSeatModal } from './modals/HotSeatModal';
 import { JoinRoomModal } from './modals/JoinRoomModal';
 import { SettingsModal } from './modals/SettingsModal';
+import { MissionsModal } from './modals/MissionsModal';
+import { LeaderboardsModal } from './modals/LeaderboardsModal';
 import { HomeNav } from './HomeNav';
 import s from './home.module.css';
 
-type ModalId = 'create' | 'join' | 'settings' | 'hotseat' | null;
+type ModalId = 'create' | 'join' | 'settings' | 'hotseat' | 'missions' | 'leaders' | null;
 
 function seasonLeft(now: number): string {
   const ms = Math.max(0, Date.parse(SEASON.endsAt) - now);
@@ -31,7 +33,9 @@ export default function Home(): JSX.Element {
   const nav = useNavigate();
   const status = useProfile((v) => v.status);
   const storageOk = useProfile((v) => v.storageOk);
-  const [modal, setModal] = useState<ModalId>(null);
+  const loc = useLocation();
+  // Other screens can open a Home modal: nav('/', { state: { modal: 'create' } }) (Friends → Create Room).
+  const [modal, setModal] = useState<ModalId>(() => ((loc.state as { modal?: ModalId } | null)?.modal ?? null));
   const [feat, setFeat] = useState(0);
   const notice = useNotice((v) => v.notice);
   const fm = MACHINE_LIST[feat];
@@ -113,13 +117,15 @@ export default function Home(): JSX.Element {
           <button type="button" className="btn" aria-label="Next machine" onClick={() => cycle(1)} style={{ position: 'absolute', right: 0, top: 420, width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5F1E8" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5l7 7-7 7" /></svg></button>
         </div>
 
-        <HomeNav onSettings={() => setModal('settings')} />
+        <HomeNav onSettings={() => setModal('settings')} onMissions={() => setModal('missions')} onLeaders={() => setModal('leaders')} />
         <HomeSidebar />
 
         {modal === 'hotseat' && <HotSeatModal onClose={() => setModal(null)} />}
         {modal === 'create' && <CreateRoomModal onClose={() => setModal(null)} onCreated={toLobby} />}
         {modal === 'join' && <JoinRoomModal onClose={() => setModal(null)} onJoined={toLobby} />}
         {modal === 'settings' && <SettingsModal onClose={() => setModal(null)} />}
+        {modal === 'missions' && <MissionsModal onClose={() => setModal(null)} />}
+        {modal === 'leaders' && <LeaderboardsModal onClose={() => setModal(null)} />}
         {status === 'needsName' && <FirstRunModal />}
         {notice && <Toast key={notice.id} message={notice.text} kind={notice.kind} />}
       </div>

@@ -32,7 +32,18 @@ export const LAYOUTS: Record<LayoutId, LayoutSpec> = {
   },
 };
 
-/** DESIGN_SPEC §0: width ≥ 1200 → desktop; ≥ 900 → tablet; else phone. */
-export function pickLayout(w: number): LayoutId {
-  return w >= 1200 ? 'desktop' : w >= 900 ? 'tablet' : 'phone';
+/** Smallest stage scale a bigger layout may render at before we fall back to a smaller one. */
+export const MIN_LAYOUT_SCALE = 0.7;
+
+const fitScale = (id: LayoutId, w: number, h: number): number => Math.min(w / LAYOUTS[id].stage.w, h / LAYOUTS[id].stage.h);
+
+/**
+ * DESIGN_SPEC §0: width ≥ 1200 → desktop; ≥ 900 → tablet; else phone — and a bigger layout is used only if it still
+ * renders at ≥ MIN_LAYOUT_SCALE. Phones in landscape are often ~915×360 CSS px: wide enough for "tablet" by width,
+ * but the 1024×768 tablet stage would shrink to ~47%; the 844×390 phone layout fits at ~92%.
+ */
+export function pickLayout(w: number, h: number): LayoutId {
+  if (w >= 1200 && fitScale('desktop', w, h) >= MIN_LAYOUT_SCALE) return 'desktop';
+  if (w >= 900 && fitScale('tablet', w, h) >= MIN_LAYOUT_SCALE) return 'tablet';
+  return 'phone';
 }

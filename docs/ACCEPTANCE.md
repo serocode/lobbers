@@ -27,7 +27,8 @@ Tick only with evidence (test name, Playwright report, or screenshot path).
 ## Multiplayer (peer-to-peer)
 - [x] Create room (code `LOB-XXXX`, PeerJS id registered), join by code, invite link `/?join=`, Recent rooms, leave
       _(host.test "lobby over the wire"; e2e `multiplayer.spec.ts`, `deploy.spec.ts` invite link, `screens-p2p.spec.ts`)_
-- [ ] Works between two real devices on different networks (Wi-Fi + mobile data); TURN configured if needed
+- [x] Works between two real devices on different networks (Wi-Fi + mobile data); TURN configured if needed
+      _(owner, 2026-11-06: Galaxy A54 vs laptop on the Vercel deploy, played as intended — networks not stated; no TURN needed so far)_
       _(owner, on the Vercel deploy. Verified so far: two browser windows over the PeerJS cloud server — 1v1 to victory)_
 - [x] 8 max, 4 per team, 2 min, host-only start, everyone ready; wrong code / full / version cards
       _(host.test lobby test; e2e "lobby validation" (9th → "Room is full"), screens-p2p "Room not found")_
@@ -47,22 +48,25 @@ Tick only with evidence (test name, Playwright report, or screenshot path).
 - [x] First run creates a profile; reload keeps level/coins/history _(e2e `storage.spec.ts`)_
 - [x] Rewards credited exactly once per match _(host.test profile: `creditMatch` twice → once; smoke:p2p every peer
       credited once; e2e 2v2 coins on Home after Results)_
-- [ ] Purchase / equip / unequip; equipped cosmetics visible to everyone in a match
-      _(engine done: `purchase`/`equip`, cosmetics resolved into `matchStarted`, rendered for everyone — host.test emotes/
-      cosmetics, e2e `cosmetics.spec.ts`; the Inventory screen to do it from is Phase 4)_
+- [x] Purchase / equip / unequip; equipped cosmetics visible to everyone in a match
+      _(e2e `inventory.spec.ts` buy Frostbite + equip/unequip; core `setCosmetics` → resolved into `matchStarted`; host.test cosmetics; e2e `cosmetics.spec.ts`)_
+- [x] Daily missions (local midnight reset, claim once) and achievements from host-counted feats
+      _(core `progress.test.ts`, `feats.test.ts`; e2e `social.spec.ts` claim, `profile.spec.ts` achievements)_
 - [x] Export save → Import on another browser restores everything (same player id) _(e2e storage "export save → import")_
 - [x] Empty, corrupt and blocked storage: the game still starts (banner when it can't save) _(e2e `storage.spec.ts`)_
 
 ## Screens (each compared with its screenshot)
-- [ ] Home (+ 6 modals: 4 built, Missions/Leaderboards → Phase 4) · [x] Lobby · [x] Machine Select · [x] Battle desktop · [x] Battle tablet · [x] Battle phone
+- [x] Home (+ 6 modals) · [x] Lobby · [x] Machine Select · [x] Battle desktop · [x] Battle tablet · [x] Battle phone _(phone sizing: `mobile.spec.ts`)_
       _(battle: phase-1 screenshots vs 04*, `layout-report.json`)_
-- [x] Results (real stats, host-computed MVP line + details, XP/coins credited to the local profile, revisits from history) _(phase-2 `results*.png`)_ · [ ] Profile · [ ] Inventory (equip/unequip/locked/purchase) · [ ] Friends
+- [x] Results (real stats, host-computed MVP line + details, XP/coins credited locally, revisits from history) · [x] Profile · [x] Inventory (equip/unequip/locked/purchase) · [x] Friends
+      _(phase-4 `profile.png`, `inventory*.png`, `friends*.png`, `missions.png` vs 06/07/07b/08/08b/01d)_
 - [ ] Every button performs its action (or is disabled with a reason logged in DECISIONS)
 
 ## Quality
 - [x] `pnpm test:core`, `pnpm smoke:p2p`, client tests green; Playwright suites green
-      _(2026-11-06 after the P2P migration: core 46, client 9, smoke pass, Playwright all green incl. the 1v1–4v4 matrix)_
-- [ ] Deployed on Vercel (static); deep links and refresh on `/lobby/:code` work
+      _(2026-11-06 Phase 4: core 60, client 24, smoke pass, Playwright 43/43 incl. the 1v1–4v4 matrix + deploy spec on the production build)_
+- [x] Deployed on Vercel (static); deep links and refresh on `/lobby/:code` work
+      _(owner deployed after setting Root Directory to the repo root; deep links/refresh verified on the production build with `deploy.spec.ts`)_
       _(locally verified on the production build with `deploy.spec.ts`, local PeerServer and PeerJS cloud; Vercel import: owner)_
 - [x] No `any`; strict TS passes in all workspaces _(`pnpm typecheck`)_
 - [ ] 55+ fps battlefield with 8 units; works in Chrome, Firefox, Safari, mobile Safari/Chrome
