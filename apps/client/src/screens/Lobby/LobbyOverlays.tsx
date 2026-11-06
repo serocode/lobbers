@@ -1,14 +1,14 @@
 // Countdown 3-2-1 + DEPLOYING! (driven by the server's countdownEndsAt / match seat), Invite Friends
 // (friends arrive in Phase 4 — the modal offers the room link instead) and the host's kick confirm.
-import { MAPS, type LobbyPlayerView, type LobbyView } from '@lobbers/shared';
+import { MAPS, type LobbyPlayer, type LobbyView } from '@lobbers/shared';
 import { Button, CloseButton, Modal } from '../../components';
 import s from './lobby.module.css';
 
 const big = { fontSize: 200, lineHeight: 1, WebkitTextStroke: '10px #0B0F1A', paintOrder: 'stroke fill', textShadow: '0 10px 0 #0B0F1A' } as const;
 
-export function Countdown({ view, now, deploying, onEnter }: { view: LobbyView; now: number; deploying: boolean; onEnter: () => void }): JSX.Element | null {
+export function Countdown({ view, now, endsAt, deploying, onEnter }: { view: LobbyView; now: number; endsAt: number; deploying: boolean; onEnter: () => void }): JSX.Element | null {
   if (view.phase === 'open') return null;
-  const left = Math.ceil((view.countdownEndsAt - now) / 1000);
+  const left = Math.ceil((endsAt - now) / 1000);
   const counting = view.phase === 'starting' && left > 0;
   return (
     <div className="scrim" style={{ flexDirection: 'column', gap: 20, background: 'rgba(8,11,20,.9)' }} role="dialog" aria-label="Match starting">
@@ -34,23 +34,37 @@ export function InviteModal({ view, onClose, onCopyLink }: { view: LobbyView; on
         <h2 className="fd" style={{ margin: 0, fontSize: 32 }}>Invite Friends</h2>
         <CloseButton onClick={onClose} />
       </div>
-      <span style={{ fontSize: 14, color: '#A9B3CC' }}>{open} open {open === 1 ? 'slot' : 'slots'} · friends lists and in-game invites arrive with accounts</span>
+      <span style={{ fontSize: 14, color: '#A9B3CC' }}>{open} open {open === 1 ? 'slot' : 'slots'} · send your friends the invite link</span>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#1C2338', border: '3px solid #0B0F1A', borderRadius: 10, padding: '10px 12px' }}>
         <span style={{ flex: 1, display: 'flex', flexDirection: 'column' }}><span style={{ fontWeight: 600 }}>Share the room code</span><span className="mono" style={{ fontSize: 18, color: '#FFD166', letterSpacing: 2 }}>{view.code}</span></span>
-        <Button variant="info" onClick={onCopyLink} style={{ height: 40, padding: '0 14px', fontSize: 14 }}>Copy invite link</Button>
+        <Button variant="info" onClick={onCopyLink} style={{ height: 40, padding: '0 14px', fontSize: 14 }}>{typeof navigator.share === 'function' ? 'Share invite link' : 'Copy invite link'}</Button>
       </div>
-      <span style={{ fontSize: 13, color: '#A9B3CC' }}>Friends open the link or enter the code under Join Room.</span>
+      <span style={{ fontSize: 13, color: '#A9B3CC' }}>Friends open the link (it joins this room) or enter the code under Join Room.</span>
     </Modal>
   );
 }
 
-export function KickConfirm({ p, onCancel, onConfirm }: { p: LobbyPlayerView; onCancel: () => void; onConfirm: () => void }): JSX.Element {
+export function KickConfirm({ p, onCancel, onConfirm }: { p: LobbyPlayer; onCancel: () => void; onConfirm: () => void }): JSX.Element {
   return (
     <Modal label={`Remove ${p.name}?`} onClose={onCancel} style={{ width: 440, padding: 26, display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'center' }}>
       <h2 className="fd" style={{ margin: '0 0 6px', fontSize: 34 }}>REMOVE {p.name.toUpperCase()}?</h2>
       <p style={{ margin: 0, color: '#C9D1E0' }}>They leave the room and can rejoin with the code.</p>
       <Button variant="danger" onClick={onConfirm} style={{ height: 54, fontSize: 18 }}><span className="fd">REMOVE PLAYER</span></Button>
       <Button onClick={onCancel} style={{ height: 48, fontSize: 16 }}>Cancel</Button>
+    </Modal>
+  );
+}
+
+/** Invite link (DESIGN_SPEC §2.2): opening it joins the room after the first-run name if needed. */
+export const inviteLink = (code: string): string => `${location.origin}/?join=${code}`;
+
+export function CloseRoomConfirm({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }): JSX.Element {
+  return (
+    <Modal label="Close the room for everyone?" onClose={onCancel} style={{ width: 460, padding: 26, display: 'flex', flexDirection: 'column', gap: 12, textAlign: 'center' }}>
+      <h2 className="fd" style={{ margin: '0 0 6px', fontSize: 34 }}>CLOSE THE ROOM?</h2>
+      <p style={{ margin: 0, color: '#C9D1E0' }}>You are hosting. Leaving closes the room for everyone in it.</p>
+      <Button variant="danger" onClick={onConfirm} style={{ height: 54, fontSize: 18 }}><span className="fd">CLOSE ROOM</span></Button>
+      <Button onClick={onCancel} style={{ height: 48, fontSize: 16 }}>Stay</Button>
     </Modal>
   );
 }

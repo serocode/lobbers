@@ -10,14 +10,14 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "e2e": "playwright test",
-    "skin-templates": "node --import ../server/node_modules/tsx/dist/esm/index.mjs scripts/export-skin-templates.tsx"
+    "skin-templates": "tsx scripts/export-skin-templates.tsx"
   },
   "dependencies": {
-    "@lobbers/shared": "workspace:*",
     "@fontsource/fredoka": "^5.1.0",
     "@fontsource/jetbrains-mono": "^5.1.0",
     "@fontsource/lilita-one": "^5.1.0",
-    "colyseus.js": "^0.16.0",
+    "@lobbers/shared": "workspace:*",
+    "peerjs": "^1.5.5",
     "phaser": "^3.87.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -26,12 +26,13 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
+    "@types/node": "^22.10.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "tsx": "^4.23.15",
     "typescript": "^5.7.2",
     "vite": "^6.0.3",
-    "vitest": "^2.1.8",
-    "@types/node": "^22.10.0"
+    "vitest": "^2.1.8"
   }
 }

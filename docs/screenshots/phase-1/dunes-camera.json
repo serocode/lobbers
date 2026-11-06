@@ -1,28 +1,28 @@
 [
   {
-    "x": 51,
-    "y": 40,
+    "x": 62,
+    "y": 36,
     "zoom": 1,
     "mode": "follow",
     "fit": false
   },
   {
-    "x": 567,
+    "x": 585,
     "y": 1,
     "zoom": 1,
     "mode": "follow",
     "fit": false
   },
   {
-    "x": 1136,
+    "x": 1154,
     "y": 0,
     "zoom": 1,
     "mode": "follow",
     "fit": false
   },
   {
-    "x": 1541,
-    "y": 46,
+    "x": 1543,
+    "y": 56,
     "zoom": 1,
     "mode": "follow",
     "fit": false
@@ -57,7 +57,7 @@
   },
   {
     "x": 1560,
-    "y": 247,
+    "y": 246,
     "zoom": 1,
     "mode": "focus",
     "fit": false

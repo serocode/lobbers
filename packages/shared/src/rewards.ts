@@ -22,7 +22,7 @@ export function computeResults(units: UnitState[], winner: TeamId | 'draw'): Pla
     return {
       playerId: u.playerId, unitId: u.id, name: u.name, team: u.team, machine: u.machine,
       damageDealt: u.stats.damageDealt, damageReceived: u.stats.damageReceived, eliminations: u.stats.eliminations, assists: u.stats.assists,
-      accuracy: u.stats.shots ? Math.round((u.stats.hits / u.stats.shots) * 100) : 0,
+      accuracy: u.stats.shots ? Math.round((u.stats.hits / u.stats.shots) * 100) : 0, shots: u.stats.shots, hits: u.stats.hits,
       xp: Math.round(xp), coins, mvp, survived: u.alive,
     };
   });

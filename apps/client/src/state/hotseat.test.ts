@@ -1,15 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MACHINES, WEAPONS, canUseWeapon, predictTrajectory, unitById, type AimInput, type ServerMessage, type World } from '@lobbers/shared';
-import { LocalMatchController } from '../net/local/LocalMatchController';
+import { WEAPONS, predictTrajectory, unitById, type AimInput, type ServerMessage, type WeaponId, type World } from '@lobbers/shared';
+import { HotSeat } from '../net/local/HotSeat';
 import { ClientMatch } from './ClientMatch';
-import { decodeLocalConfig, seatsFor, settingsFor } from './localMatchConfig';
+import { decodeLocalConfig, hotSeatSeats, settingsFor } from './localMatchConfig';
 
 /** Picks the preview aim that lands closest to the nearest enemy (uses the client mirror world). */
 function aimAtNearest(w: World, id: string): AimInput | null {
   const me = unitById(w, id);
   const foe = w.units.filter((u) => u.alive && u.team !== me.team).sort((a, b) => Math.abs(a.x - me.x) - Math.abs(b.x - me.x))[0];
   if (!foe) return null;
-  const usable = MACHINES[me.machine].loadout.filter((id) => canUseWeapon(w, me.id, id).ok && WEAPONS[id].behavior.kind === 'impact');
+  const usable = (Object.keys(me.ammo) as WeaponId[]).filter((wid) => (me.ammo[wid] ?? 0) !== 0 && !me.weaponCooldowns[wid] && WEAPONS[wid].behavior.kind === 'impact');
   const weaponId = usable.sort((a, b) => WEAPONS[b].damage - WEAPONS[a].damage)[0] ?? 'standard-rocket';
   let best: AimInput = { angle: 45, power: 60, weaponId }, bd = Infinity;
   const angle = foe.x > me.x ? 55 : 125;
@@ -22,21 +22,23 @@ function aimAtNearest(w: World, id: string): AimInput | null {
   return best;
 }
 
-describe('hot-seat match (LocalMatchController → ClientMatch)', () => {
+describe('hot seat (HostSession + one loopback PeerClient per seat → ClientMatch)', () => {
   beforeEach(() => { vi.useFakeTimers(); });
   afterEach(() => { vi.useRealTimers(); });
 
   it('plays a 2v2 to victory with identical terrain hashes and rejects out-of-phase intents', async () => {
     const cfg = decodeLocalConfig(new URLSearchParams('map=cobalt&red=thumper,boomba&blue=cinder,voltaic&wind=off&turn=45&seed=7'));
-    const ctrl = new LocalMatchController({ settings: settingsFor(cfg), seats: seatsFor(cfg), seed: cfg.seed, introDelayMs: 0 });
-    const match = new ClientMatch(ctrl);
+    const hot = new HotSeat({ settings: settingsFor(cfg), seats: hotSeatSeats(cfg), seed: cfg.seed });
+    const match = new ClientMatch(hot);
     const seen: ServerMessage['t'][] = [];
     const rejected: string[] = [];
-    ctrl.subscribe({ message: (m) => { seen.push(m.t); if (m.t === 'rejected') rejected.push(m.reason); }, state: () => undefined });
+    hot.subscribe({ message: (m) => { seen.push(m.t); if (m.t === 'rejected') rejected.push(m.reason); }, state: () => undefined });
     match.start(false);
     const step = async (): Promise<void> => { await vi.advanceTimersByTimeAsync(100); match.replay.advance(100); };
-    const ready = (): boolean => { const v = match.store.getState(); return !!v.result || (v.sync.phase === 'acting' && !match.replay.busy && !!v.activeUnitId); };
     const until = async (cond: () => boolean, maxMs = 20_000): Promise<void> => { for (let t = 0; t < maxMs && !cond(); t += 100) await step(); };
+    await until(() => match.store.getState().ready);
+    hot.ready();   // the battle scene finished loading
+    const ready = (): boolean => { const v = match.store.getState(); return !!v.result || (v.sync.phase === 'acting' && !match.replay.busy && !!v.activeUnitId); };
     let turns = 0;
     while (!match.store.getState().result && turns < 120) {
       await until(ready);
@@ -53,11 +55,13 @@ describe('hot-seat match (LocalMatchController → ClientMatch)', () => {
     await until(() => !!match.store.getState().result);
     const v = match.store.getState();
     expect(v.result?.winner === 'red' || v.result?.winner === 'blue').toBe(true);
+    expect(v.result?.details.damageByTurn.length).toBeGreaterThan(0);
     expect(v.hash.checks).toBeGreaterThan(turns);
     expect(v.hash.mismatches).toBe(0);
     expect(rejected).toContain('not accepting actions');
     expect(seen).toContain('matchEnded');
     expect(v.log.length).toBeGreaterThan(0);
     match.dispose();
+    hot.dispose();
   }, 120_000);
 });

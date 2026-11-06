@@ -29,8 +29,8 @@ so view them through the screenshots in `../screenshots/` or the original canvas
 - `<dc-import name="Machine" kind="…">` — mounts the sibling component file `Machine.dc.html` with props.
 - `onClick="{{handler}}"` — event handlers (React-style camelCase).
 - `class Component extends DCLogic { renderVals() { … } }` — local state + **mock data**. The mock data shows shape
-  and realistic values; in the real app it comes from the server/DB. Game numbers come from `packages/shared/src/config`.
+  and realistic values; in the real app it comes from the host (via `PeerClient`) or the local profile. Game numbers come from `packages/shared/src/config`.
 - `<a href="Lobby.dc.html">` — navigation between screens → React Router routes (see `../DESIGN_SPEC.md § Navigation`).
 
 The battle mockup contains a throwaway local simulation (simple physics, AI turns). **Do not port that logic**; it is
-replaced by `@lobbers/shared` + the server. Port its visuals and interaction states only.
+replaced by `@lobbers/shared` (the host engine). Port its visuals and interaction states only.

@@ -21,6 +21,25 @@ export const CONNECTION_RULES = {
   maxConsecutiveTimeouts: 3,
 } as const;
 
+/** Peer-to-peer host behaviour (the host's browser is the authority). */
+export const HOST_RULES = {
+  /** Start the first turn after this long even if some peers have not sent `loaded`. */
+  loadTimeoutMs: 10_000,
+  /** Aim relay throttle per player (≤ 10 updates/s). */
+  aimRelayMs: 100,
+  /** After a host refresh: wait this long for the previously-connected players to reconnect before resuming. */
+  restoreGraceMs: 15_000,
+  /** After a host refresh the active player gets at least this much turn time back. */
+  restoreMinTurnMs: 10_000,
+  /** Countdown shown on every screen between Start and the battlefield. */
+  startCountdownSec: 3,
+  /** Peers ping the host every N ms (clock offset + liveness). The host treats a peer as gone after `peerTimeoutMs`. */
+  pingIntervalMs: 2_000,
+  peerTimeoutMs: 8_000,
+  /** PeerJS id = prefix + room code, e.g. "lobbers-v2-LOB-7Q4K". Change the prefix to isolate test/dev rooms. */
+  peerIdPrefix: 'lobbers-v2-',
+} as const;
+
 /** Emotes: one every this many ms per player (speech bubble stays EMOTE_BUBBLE_MS). */
 export const EMOTE_RULES = { cooldownMs: 2500, bubbleMs: 2600 } as const;
 

@@ -9,7 +9,7 @@ for (const m of MAP_LIST) {
     const errors: string[] = [];
     watchErrors(page, errors);
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(`/match/local?map=${m.id}&red=thumper,voltaic&blue=mollusk,cinder&seed=2`);
+    await page.goto(`/hotseat?map=${m.id}&red=thumper,voltaic&blue=mollusk,cinder&seed=2`);
     expect(await waitForMyTurn(page)).toBe(true);
     await page.keyboard.press('z');
     await page.waitForTimeout(1200);

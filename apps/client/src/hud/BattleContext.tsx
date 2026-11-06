@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useStore } from 'zustand';
 import { MACHINES, WEAPONS, type MachineDef, type UnitState, type WeaponDef, type WeaponId } from '@lobbers/shared';
 import type { ClientMatch } from '../state/ClientMatch';
@@ -59,13 +59,17 @@ export function useTurnSeconds(): number {
   const { match } = useBattle();
   const endsAt = useMatch((v) => v.endsAt);
   const phase = useMatch((v) => v.sync.phase);
+  const paused = useMatch((v) => v.sync.paused);
+  const frozen = useRef(0);
   const [now, setNow] = useState(() => match.transport.serverNow());
   useEffect(() => {
     const t = setInterval(() => setNow(match.transport.serverNow()), 250);
     return () => clearInterval(t);
   }, [match]);
   if (!endsAt || phase === 'waiting' || phase === 'ended') return 0;
-  return Math.max(0, Math.ceil((endsAt - now) / 1000));
+  // Host refreshed: the timer ring freezes until the host resumes (it then sends a fresh endsAt).
+  if (!paused) frozen.current = Math.max(0, Math.ceil((endsAt - now) / 1000));
+  return frozen.current;
 }
 
 export interface WeaponInfo { def: WeaponDef; dmgTxt: string; rad: number; ammoTxt: string; ammo: number; cooldown: number }

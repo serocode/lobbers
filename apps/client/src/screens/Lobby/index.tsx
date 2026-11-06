@@ -2,42 +2,32 @@
 // /lobby/:code joins (or resumes) the room with that code; every control sends a LobbyIntent.
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { LobbyPlayerView } from '@lobbers/shared';
+import type { LobbyPlayer } from '@lobbers/shared';
 import { Stage } from '../../app/Stage';
 import { CheckIcon, ErrorIcon } from '../../components';
-import { lobbyService, useLobby } from '../../net/online/lobbyService';
+import { lobbyService, useLobby } from '../../net/p2p/roomService';
 import { showNotice } from '../../state/notice';
-import { useSession } from '../../state/session';
+import { useProfile } from '../../state/profile';
 import { FirstRunModal } from '../Home/modals/FirstRunModal';
 import { CenterPanel } from './CenterPanel';
 import { LobbyFooter, LobbyHeader } from './LobbyChrome';
-import { Countdown, InviteModal, KickConfirm } from './LobbyOverlays';
+import { CloseRoomConfirm, Countdown, InviteModal, KickConfirm, inviteLink } from './LobbyOverlays';
 import { TeamColumn } from './TeamColumn';
-import { derive, useServerClock } from './useLobbyView';
+import { derive, useClock } from './useLobbyView';
 import s from './lobby.module.css';
 
-/** Joins / resumes the room behind /lobby/:code; bounces home with a reason when that fails. */
+/** Joins (or rejoins with the stored token) the room behind /lobby/:code. When it ends, the app-wide ClosedCard explains why. */
 export function useLobbyConnection(code: string): void {
   const nav = useNavigate();
-  const ready = useSession((v) => v.status === 'ready');
-  const status = useLobby((v) => v.status);
-  const kicked = useLobby((v) => v.kicked);
+  const ready = useProfile((v) => v.status === 'ready');
+  const current = useLobby((v) => v.code);
+  const name = useLobby((v) => v.view?.name);
   useEffect(() => {
-    if (!ready || !code) return;
-    let alive = true;
-    void (async () => {
-      const resumed = await lobbyService.resume();
-      if (!alive || resumed === code) return;
-      try { await lobbyService.joinByCode(code); } catch (e) {
-        if (!alive) return;
-        showNotice(e instanceof Error ? e.message : String(e), 'error');
-        nav('/', { replace: true });
-      }
-    })();
-    return () => { alive = false; };
-  }, [code, ready, nav]);
-  useEffect(() => { if (kicked) { showNotice(kicked, 'error'); nav('/', { replace: true }); } }, [kicked, nav]);
-  useEffect(() => { if (status === 'lost') { showNotice('Lost the connection to the room', 'error'); nav('/', { replace: true }); } }, [status, nav]);
+    // A tab that hosts this code is resumed at app start (NetworkWatcher); never join your own room.
+    if (!ready || !code || current === code || lobbyService.hostsCode(code)) return;
+    lobbyService.join(code).catch((e: unknown) => { showNotice(e instanceof Error ? e.message : String(e), 'error'); nav('/', { replace: true }); });
+  }, [code, ready, current, nav]);
+  useEffect(() => { if (name && current === code) lobbyService.noteRoomName(name); }, [name, current, code]);
 }
 
 async function copy(text: string): Promise<boolean> {
@@ -47,15 +37,18 @@ async function copy(text: string): Promise<boolean> {
 export default function LobbyScreen(): JSX.Element {
   const { code = '' } = useParams();
   const nav = useNavigate();
-  const needsName = useSession((v) => v.status === 'needsName');
+  const needsName = useProfile((v) => v.status === 'needsName');
+  const countdownEndsAt = useLobby((v) => v.countdownEndsAt);
+  const hosting = useLobby((v) => v.hosting);
   const view = useLobby((v) => v.view);
   const notice = useLobby((v) => v.notice);
   const pending = useLobby((v) => v.pendingMatch);
-  const now = useServerClock();
+  const now = useClock();
   const [toast, setToast] = useState<{ id: number; text: string; kind: 'ok' | 'error' } | null>(null);
   const [copied, setCopied] = useState(false);
   const [invite, setInvite] = useState(false);
-  const [kick, setKick] = useState<LobbyPlayerView | null>(null);
+  const [kick, setKick] = useState<LobbyPlayer | null>(null);
+  const [confirmClose, setConfirmClose] = useState(false);
   useLobbyConnection(code.toUpperCase());
 
   useEffect(() => { if (notice) { setToast(notice); lobbyService.clearNotice(); } }, [notice]);
@@ -81,20 +74,25 @@ export default function LobbyScreen(): JSX.Element {
   const d = derive(view);
   const say = (text: string, kind: 'ok' | 'error' = 'ok'): void => setToast({ id: Date.now(), text, kind });
   const copyCode = (): void => { void copy(view.code).then((ok) => { setCopied(ok); say(ok ? 'Room code copied' : 'Copy failed — code is ' + view.code, ok ? 'ok' : 'error'); }); };
-  const copyLink = (): void => { void copy(`${view.code} · ${location.origin}/lobby/${view.code}`).then((ok) => say(ok ? 'Invite link copied' : 'Copy failed — code is ' + view.code, ok ? 'ok' : 'error')); };
-  const leave = (): void => { void lobbyService.leave(); nav('/'); };
+  // Invite: the share sheet when the browser has one (phones), else copy the link.
+  const shareLink = (): void => { if (navigator.share) { navigator.share({ title: 'Join my Lobbers room', text: `Room ${view.code}`, url: inviteLink(view.code) }).catch(() => undefined); } else copyLink(); };
+  const copyLink = (): void => { void copy(inviteLink(view.code)).then((ok) => say(ok ? 'Invite link copied' : 'Copy failed — code is ' + view.code, ok ? 'ok' : 'error')); };
+  const leaveNow = (): void => { void lobbyService.leave(); nav('/'); };
+  // Host: leaving closes the room for everyone (no host transfer in P2P) — confirm first.
+  const leave = (): void => { if (hosting) setConfirmClose(true); else leaveNow(); };
 
   return (
     <Stage width={1440} height={900} label={`Lobby ${view.name}`}>
       <div className={s.bg} style={{ width: 1440, height: 900, position: 'relative', overflow: 'hidden', fontFamily: 'Fredoka,system-ui,sans-serif', color: '#F5F1E8' }}>
         <LobbyHeader d={d} copied={copied} onCopy={copyCode} onLeave={leave} />
-        <TeamColumn team="red" slots={d.team('red')} myId={d.me?.id ?? ''} isHost={d.isHost} now={now} onInvite={() => setInvite(true)} onKick={setKick} />
-        <TeamColumn team="blue" slots={d.team('blue')} myId={d.me?.id ?? ''} isHost={d.isHost} now={now} onInvite={() => setInvite(true)} onKick={setKick} />
+        <TeamColumn team="red" slots={d.team('red')} myId={d.me?.id ?? ''} isHost={d.isHost} onInvite={() => setInvite(true)} onKick={setKick} />
+        <TeamColumn team="blue" slots={d.team('blue')} myId={d.me?.id ?? ''} isHost={d.isHost} onInvite={() => setInvite(true)} onKick={setKick} />
         <CenterPanel view={view} isHost={d.isHost} myId={d.me?.id ?? ''} />
         <LobbyFooter d={d} onInvite={() => setInvite(true)} onCopyLink={copyLink} />
-        {invite && <InviteModal view={view} onClose={() => setInvite(false)} onCopyLink={copyLink} />}
+        {invite && <InviteModal view={view} onClose={() => setInvite(false)} onCopyLink={shareLink} />}
+        {confirmClose && <CloseRoomConfirm onCancel={() => setConfirmClose(false)} onConfirm={leaveNow} />}
         {kick && <KickConfirm p={kick} onCancel={() => setKick(null)} onConfirm={() => { lobbyService.send({ t: 'kick', playerId: kick.id }); setKick(null); }} />}
-        <Countdown view={view} now={now} deploying={!!pending} onEnter={() => { if (pending) { lobbyService.consumePendingMatch(); nav(`/match/${pending}`); } }} />
+        <Countdown view={view} now={now} endsAt={countdownEndsAt} deploying={!!pending} onEnter={() => { if (pending) { lobbyService.consumePendingMatch(); nav(`/match/${pending}`); } }} />
         {toast && (
           <div key={toast.id} className={`panel ${s.toast}`} role={toast.kind === 'error' ? 'alert' : 'status'} style={toast.kind === 'error' ? { width: 'auto', minWidth: 240, left: 720, transform: 'translateX(-50%)' } : undefined}>
             {toast.kind === 'error' ? <ErrorIcon size={18} /> : <CheckIcon size={18} />}{toast.text}

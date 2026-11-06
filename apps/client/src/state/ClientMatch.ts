@@ -144,6 +144,9 @@ export class ClientMatch {
         const w = this.world;
         if (!w) return;
         w.units = a.units.map((u) => structuredClone(u));
+        // The host's prop snapshot wins (barrels/crates moved, exploded or collected during the action).
+        w.props = a.props.map((p) => ({ ...p }));
+        this.store.setState({ props: w.props.map((p) => ({ ...p })) });
         const client = w.terrain.hash();
         const server = a.result.terrainHash;
         if (client !== server) console.warn(`[lobbers] terrain desync after action ${a.actionId}: client ${client} ≠ server ${server}`);

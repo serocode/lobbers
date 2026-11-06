@@ -145,3 +145,37 @@ export function resolveCosmetics(l: CosmeticLoadout, machine: MachineId): UnitCo
 }
 
 export const DEFAULT_COSMETICS: UnitCosmetics = resolveCosmetics(DEFAULT_LOADOUT, 'thumper');
+
+// ---------------------------------------------------------------- equipped slots (profile.equipped / PeerProfile.cosmetics)
+// One flat map, keys named after the catalog's slots: "trail", "explosion", "title", "emote:1".."emote:4",
+// "skin:<machine>", "weaponSkin:<category>". Machines are owned as "machine:<id>" (persist/profile.ts STARTER_ITEMS).
+
+export type EquippedSlots = Record<string, string>;
+
+/** Inventory id of a machine (ownership checks use this form everywhere). */
+export const machineItemId = (id: MachineId): string => `machine:${id}`;
+export const emoteSlot = (i: number): string => `emote:${i + 1}`;
+
+export function equippedFromLoadout(l: CosmeticLoadout): EquippedSlots {
+  const out: EquippedSlots = { trail: l.trail, explosion: l.explosion, title: l.title };
+  l.emotes.slice(0, EMOTE_SLOTS).forEach((id, i) => { out[emoteSlot(i)] = id; });
+  for (const [m, id] of Object.entries(l.skins)) if (id) out[`skin:${m}`] = id;
+  for (const [c, id] of Object.entries(l.weaponSkins)) if (id) out[`weaponSkin:${c}`] = id;
+  return out;
+}
+
+/** Back to a loadout (unknown keys ignored); run `sanitizeLoadout` afterwards to drop bad ids. */
+export function loadoutFromEquipped(e: EquippedSlots): CosmeticLoadout {
+  const skins: Record<string, string> = {}, weaponSkins: Record<string, string> = {};
+  for (const [k, v] of Object.entries(e)) {
+    if (k.startsWith('skin:')) skins[k.slice(5)] = v;
+    else if (k.startsWith('weaponSkin:')) weaponSkins[k.slice(11)] = v;
+  }
+  const emotes: string[] = [];
+  for (let i = 0; i < EMOTE_SLOTS; i++) { const id = e[emoteSlot(i)]; if (id) emotes.push(id); }
+  return { skins, weaponSkins, trail: e.trail ?? '', explosion: e.explosion ?? '', title: e.title ?? '', emotes };
+}
+
+export const DEFAULT_EQUIPPED: EquippedSlots = equippedFromLoadout(DEFAULT_LOADOUT);
+/** Every catalog id — the host can't see what a peer owns, so it only checks ids and slots. */
+export const ALL_COSMETIC_IDS: ReadonlySet<string> = new Set(COSMETICS.map((c) => c.id));

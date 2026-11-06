@@ -34,14 +34,15 @@ function TopBar(): JSX.Element {
   const mine = useMatch(canControl);
   const act = useMatch((v) => unitOf(v, v.activeUnitId));
   const hotseat = useMatch((v) => v.localPlayerIds.length > 1);
-  const title = mine && !hotseat ? 'YOUR TURN' : (act?.name ?? '').toUpperCase();
+  const paused = useMatch((v) => v.sync.paused);
+  const title = paused ? 'HOST RECONNECTING…' : mine && !hotseat ? 'YOUR TURN' : (act?.name ?? '').toUpperCase();
   return (
     <div style={{ position: 'absolute', left: 8, top: 8, width: 828, display: 'flex', alignItems: 'center', gap: 8 }}>
       <button type="button" className="btn" aria-label="Pause" onClick={() => useBattleUi.getState().set({ paused: true })} style={{ width: 44, height: 44, padding: 0 }}><PauseIcon size={16} /></button>
       <Mini team="red" />
       <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
         <div className="hud" role="status" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px', border: '2px solid #0B0F1A', borderRadius: 10 }}>
-          <span className="fd" style={{ fontSize: 18, color: mine && !hotseat ? '#FFD166' : act?.team === 'blue' ? '#4C9AFF' : '#F45B55', maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</span>
+          <span className={`fd ${paused ? s.wait : ''}`} style={{ fontSize: 18, color: paused || (mine && !hotseat) ? '#FFD166' : act?.team === 'blue' ? '#4C9AFF' : '#F45B55', maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</span>
           <span className="mono" style={{ fontSize: 18, fontWeight: 700, background: '#0E1320', borderRadius: 6, padding: '0 6px', color: timerColor(secs) }}>{secs}</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 13, fontWeight: 700 }}><svg aria-hidden="true" width="22" height="12" viewBox="0 0 70 34" style={{ transform: `scaleX(${wind < 0 ? -1 : 1})` }}><path d="M4 12 H46 V4 L66 17 L46 30 V22 H4 Z" fill="#FFD166" stroke="#0B0F1A" strokeWidth="4" /></svg><span className="mono">{Math.abs(wind)}</span></span>
         </div>

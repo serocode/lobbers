@@ -1,16 +1,14 @@
-// Results — ported from design/mockup/Results.dc.html (screenshots/05*.png). Everything shown is the
-// server's MatchEndedMsg (computeResults + match tally): from the match just played, or
-// GET /api/matches/:id on a revisit. Saving XP/coins to a profile arrives with accounts (Phase 4).
+// Results — ported from design/mockup/Results.dc.html (screenshots/05*.png). Everything shown is the host's
+// MatchEndedMsg (computeResults + MatchTally): from the match just played (the room's feed), or the compact
+// summary in profile.history on a revisit. Rewards are applied to YOUR local profile with creditMatch
+// (idempotent per match id) and the panel animates from what it returned.
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { MAPS, REWARDS, applyXp, resultScore, type MatchEndedMsg, type PlayerResult } from '@lobbers/shared';
+import { MAPS, REWARDS, creditMatch, resultFromHistory, resultScore, type MatchEndedMsg, type PlayerResult } from '@lobbers/shared';
 import { Stage } from '../../app/Stage';
 import { Button, ErrorRow, MachineArt } from '../../components';
-import { api } from '../../net/api';
-import { lobbyService, useLobby } from '../../net/online/lobbyService';
-import { matchService } from '../../net/online/matchService';
-import { recordMatch } from '../../state/history';
-import { useSession } from '../../state/session';
+import { codeOfMatch, lobbyService, useLobby } from '../../net/p2p/roomService';
+import { useProfile } from '../../state/profile';
 import { TEAM_COLOR } from '../../state/matchStore';
 import { MatchDetailsModal } from './MatchDetailsModal';
 import { ResultsTable } from './ResultsTable';
@@ -21,32 +19,43 @@ const BURST = { red: ['#3A1F2C', '#2A1824'], blue: ['#1E2D4E', '#16223C'], draw:
 const CONF = ['#F45B55', '#4C9AFF', '#FFD166', '#5ACB91', '#FF7EB6', '#F5F1E8'];
 const PODIUM = [{ x: 330, b: 130, size: 150, fs: 26, dl: 0 }, { x: 175, b: 100, size: 124, fs: 20, dl: 0.15 }, { x: 485, b: 84, size: 118, fs: 18, dl: 0.22 }, { x: 20, b: 70, size: 110, fs: 18, dl: 0.3 }];
 
-function useResult(matchId: string): { result: MatchEndedMsg | null; error: string } {
-  const [result, setResult] = useState<MatchEndedMsg | null>(() => (matchService.current?.matchId === matchId ? matchService.current.result : null));
-  const [error, setError] = useState('');
+interface Rewards { level: number; xp: number; xpFrom: number; levelsGained: number; xpGained: number; coinsGained: number; rating: number; ratingChange: number }
+
+/** The result (live from the room, or from history) and the rewards it gave this profile. */
+function useResult(matchId: string): { result: MatchEndedMsg | null; error: string; rewards: Rewards | null } {
+  const [state, set] = useState<{ result: MatchEndedMsg | null; error: string; rewards: Rewards | null }>({ result: null, error: '', rewards: null });
   useEffect(() => {
-    if (result) { void matchService.leave(); return; }
-    api<{ match: MatchEndedMsg }>(`/api/matches/${encodeURIComponent(matchId)}`).then((r) => setResult(r.match)).catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
-  }, [matchId, result]);
-  return { result, error };
+    const live = lobbyService.client?.ended;
+    const profile = useProfile.getState().profile;
+    if (!profile) return;
+    if (live && live.matchId === matchId) {
+      const others = (useLobby.getState().view?.players ?? []).map((p) => ({ id: p.id, name: p.name, level: p.level ?? 1, rating: p.rating ?? 1000, title: p.title ?? null }));
+      const out = creditMatch(profile, live, others);
+      if (out.credited) useProfile.getState().update(() => out.profile);
+      const after = out.credited ? out.profile : profile;
+      set({ result: live, error: '', rewards: { level: after.level, xp: after.xp, xpFrom: out.levelsGained ? 0 : profile.xp, levelsGained: out.levelsGained, xpGained: out.xpGained, coinsGained: out.coinsGained, rating: after.rating, ratingChange: out.ratingChange } });
+      return;
+    }
+    const entry = profile.history.find((h) => h.matchId === matchId);
+    const past = entry ? resultFromHistory(entry) : null;
+    if (!past) { set({ result: null, error: 'This match isn’t in your history on this device.', rewards: null }); return; }
+    set({ result: past, error: '', rewards: { level: profile.level, xp: profile.xp, xpFrom: profile.xp, levelsGained: 0, xpGained: entry?.xp ?? 0, coinsGained: entry?.coins ?? 0, rating: profile.rating, ratingChange: 0 } });
+  }, [matchId]);
+  return state;
 }
 
 export default function Results(): JSX.Element {
   const { matchId = '' } = useParams();
   const nav = useNavigate();
-  const myId = useSession((v) => v.user?.id ?? '');
+  const myId = useProfile((v) => v.profile?.id ?? '');
   const lobby = useLobby((v) => v.view);
-  const { result, error } = useResult(matchId);
+  const { result, error, rewards } = useResult(matchId);
   const [details, setDetails] = useState(false);
   const [t, setT] = useState(0);
   const confetti = useMemo(() => { let seed = 3; const rnd = (): number => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }; return Array.from({ length: 30 }, (_, i) => ({ x: Math.round(rnd() * 1440), col: CONF[i % 6], d: (4 + rnd() * 4).toFixed(1), dl: (-rnd() * 8).toFixed(1) })); }, []);
   useEffect(() => { const iv = setInterval(() => setT((v) => (v >= 40 ? v : v + 1)), 40); return () => clearInterval(iv); }, []);
 
   const me = result?.players.find((p) => p.playerId === myId);
-  useEffect(() => {
-    if (!result || !me) return;
-    recordMatch({ matchId, outcome: result.winner === 'draw' ? 'draw' : result.winner === me.team ? 'win' : 'loss', mapId: result.mapId, xp: me.xp, coins: me.coins, at: Date.now() });
-  }, [result, me, matchId]);
 
   if (!result) {
     return (
@@ -67,9 +76,10 @@ export default function Results(): JSX.Element {
   const mvp = result.players.find((p) => p.mvp);
   const dur = `${Math.floor(result.durationSec / 60)}:${String(result.durationSec % 60).padStart(2, '0')}`;
   const ease = 1 - Math.pow(1 - Math.min(1, t / 40), 3);
-  const xp = applyXp(1, 0, me?.xp ?? 0);
+  const xp = { level: rewards?.level ?? 1, xp: rewards?.xp ?? 0, levelsGained: rewards?.levelsGained ?? 0 };
   const need = REWARDS.xpForLevel(xp.level);
-  const inLobby = !!lobby && lobby.phase === 'open';
+  const fromPct = `${(((rewards?.xpFrom ?? 0) / need) * 100).toFixed(1)}%`;
+  const inLobby = !!lobby && lobby.phase === 'open' && lobby.code === codeOfMatch(matchId);
   const toLobby = (ready: boolean): void => {
     if (!lobby) return;
     if (ready && !lobby.players.find((p) => p.id === myId)?.isHost) lobbyService.send({ t: 'setReady', ready: true });
@@ -126,14 +136,14 @@ export default function Results(): JSX.Element {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span className={`fd ${xp.levelsGained ? s.levelUp : ''}`} style={{ background: '#FFD166', color: '#101522', border: '2px solid #0B0F1A', borderRadius: 6, padding: '0 8px', fontSize: 16 }}>LV {xp.level}</span>
             <span style={{ flex: 1, height: 20, border: '3px solid #0B0F1A', borderRadius: 10, background: '#0E1320', overflow: 'hidden', display: 'block', position: 'relative' }}>
-              <span className={s.xp} style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${((xp.xp / need) * 100).toFixed(1)}%`, background: '#5ACB91', ['--xp-from' as string]: '0%' }} />
+              <span className={s.xp} style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${((xp.xp / need) * 100).toFixed(1)}%`, background: '#5ACB91', ['--xp-from' as string]: fromPct }} />
             </span>
-            <span className="mono" style={{ fontSize: 14, width: 130, textAlign: 'right' }}>{Math.round(xp.xp * ease).toLocaleString('en-US')} / {need.toLocaleString('en-US')}</span>
+            <span className="mono" style={{ fontSize: 14, width: 130, textAlign: 'right' }}>{Math.round((rewards?.xpFrom ?? 0) + (xp.xp - (rewards?.xpFrom ?? 0)) * ease).toLocaleString('en-US')} / {need.toLocaleString('en-US')}</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 10 }}>
-            <div style={{ background: '#1C2338', border: '3px solid #0B0F1A', borderRadius: 10, padding: '8px 12px', display: 'flex', flexDirection: 'column' }}><span style={{ fontSize: 11, fontWeight: 700, color: '#A9B3CC', letterSpacing: 1 }}>EXPERIENCE</span><span className="mono" style={{ fontSize: 26, fontWeight: 700, color: '#5ACB91' }}>+{Math.round((me?.xp ?? 0) * ease)}</span></div>
-            <div style={{ background: '#1C2338', border: '3px solid #0B0F1A', borderRadius: 10, padding: '8px 12px', display: 'flex', flexDirection: 'column' }}><span style={{ fontSize: 11, fontWeight: 700, color: '#A9B3CC', letterSpacing: 1 }}>COINS</span><span className="mono" style={{ fontSize: 26, fontWeight: 700, color: '#FFD166' }}>+{Math.round((me?.coins ?? 0) * ease)}</span></div>
-            <div style={{ background: '#1C2338', border: '3px solid #0B0F1A', borderRadius: 10, padding: '8px 12px', display: 'flex', flexDirection: 'column' }}><span style={{ fontSize: 11, fontWeight: 700, color: '#A9B3CC', letterSpacing: 1 }}>GUEST PROGRESS</span><span style={{ fontSize: 14, fontWeight: 700 }}>Not saved yet</span><span style={{ fontSize: 12, color: '#A9B3CC' }}>Accounts arrive in Phase 4</span></div>
+            <div style={{ background: '#1C2338', border: '3px solid #0B0F1A', borderRadius: 10, padding: '8px 12px', display: 'flex', flexDirection: 'column' }}><span style={{ fontSize: 11, fontWeight: 700, color: '#A9B3CC', letterSpacing: 1 }}>EXPERIENCE</span><span className="mono" style={{ fontSize: 26, fontWeight: 700, color: '#5ACB91' }}>+{Math.round((rewards?.xpGained ?? me?.xp ?? 0) * ease)}</span></div>
+            <div style={{ background: '#1C2338', border: '3px solid #0B0F1A', borderRadius: 10, padding: '8px 12px', display: 'flex', flexDirection: 'column' }}><span style={{ fontSize: 11, fontWeight: 700, color: '#A9B3CC', letterSpacing: 1 }}>COINS</span><span className="mono" style={{ fontSize: 26, fontWeight: 700, color: '#FFD166' }}>+{Math.round((rewards?.coinsGained ?? me?.coins ?? 0) * ease)}</span></div>
+            <div style={{ background: '#1C2338', border: '3px solid #0B0F1A', borderRadius: 10, padding: '8px 12px', display: 'flex', flexDirection: 'column' }}><span style={{ fontSize: 11, fontWeight: 700, color: '#A9B3CC', letterSpacing: 1 }}>RATING</span><span className="mono" style={{ fontSize: 26, fontWeight: 700 }}>{(rewards?.rating ?? 1000).toLocaleString('en-US')} <span style={{ fontSize: 14, color: (rewards?.ratingChange ?? 0) >= 0 ? '#5ACB91' : '#F45B55' }}>{(rewards?.ratingChange ?? 0) >= 0 ? '+' : ''}{rewards?.ratingChange ?? 0}</span></span></div>
           </div>
         </section>
 

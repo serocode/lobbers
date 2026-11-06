@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_QUICK_SLOTS, MACHINE_LIST, ROOM_LIMITS, arsenalFor } from '@lobbers/shared';
-import { decodeLocalConfig, encodeLocalConfig, seatsFor, DEFAULT_LOCAL } from './localMatchConfig';
+import { decodeLocalConfig, encodeLocalConfig, hotSeatSeats, DEFAULT_LOCAL } from './localMatchConfig';
 import { elevationOf, quickSlots } from './battleControls';
 
 describe('hot-seat config', () => {
@@ -18,10 +18,11 @@ describe('hot-seat config', () => {
     expect(c.wind).toBe(DEFAULT_LOCAL.wind);
     expect(c.seed).toBe(DEFAULT_LOCAL.seed);
   });
-  it('seats every player in slot order per team', () => {
-    const seats = seatsFor({ ...DEFAULT_LOCAL, red: ['thumper', 'voltaic'], blue: ['mollusk'] });
-    expect(seats.map((s) => `${s.team}-${s.slot}`)).toEqual(['red-0', 'red-1', 'blue-0']);
-    expect(new Set(seats.map((s) => s.playerId)).size).toBe(3);
+  it('lists hot-seat seats red then blue with readable names and their team preset', () => {
+    const seats = hotSeatSeats({ ...DEFAULT_LOCAL, red: ['thumper', 'voltaic'], blue: ['mollusk'], look: { red: 'embers', blue: 'default' } });
+    expect(seats.map((s) => `${s.team}:${s.name}:${s.machine}`)).toEqual(['red:Red 1:thumper', 'red:Red 2:voltaic', 'blue:Blue 1:mollusk']);
+    expect(seats[0].cosmetics.trail).toBe('t-ember');
+    expect(seats[2].cosmetics.trail).toBe('t-smoke');
   });
 });
 

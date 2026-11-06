@@ -1,17 +1,17 @@
-// Create Room (Main.dc.html): name, battlefield (6 maps), mode, private switch → LobbyRoom.
+// Create Room (Main.dc.html, DESIGN_SPEC §2.1): name, battlefield (6 maps), mode → this tab hosts the room
+// over PeerJS. Every room is private (joined by code or invite link), so the private switch is gone.
 import { useState } from 'react';
-import { MAP_LIST, type MapId } from '@lobbers/shared';
+import { DEFAULT_SETTINGS, MAP_LIST, type MapId } from '@lobbers/shared';
 import { Button, CloseButton, ErrorRow, Modal, SceneBackdrop } from '../../../components';
-import { lobbyService } from '../../../net/online/lobbyService';
-import { useSession } from '../../../state/session';
+import { lobbyService } from '../../../net/p2p/roomService';
+import { useProfile } from '../../../state/profile';
 import s from '../home.module.css';
 import { MODES } from './modes';
 
 export function CreateRoomModal({ onClose, onCreated }: { onClose: () => void; onCreated: (code: string) => void }): JSX.Element {
-  const user = useSession((v) => v.user);
+  const user = useProfile((v) => v.profile);
   const [name, setName] = useState(`${user?.name ?? 'Lobber'}'s Brawl`.slice(0, 24));
   const [mapId, setMapId] = useState<MapId>('cobalt');
-  const [priv, setPriv] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const nameOk = name.trim().length >= 3 && name.trim().length <= 24;
@@ -20,7 +20,7 @@ export function CreateRoomModal({ onClose, onCreated }: { onClose: () => void; o
     setBusy(true);
     setError('');
     try {
-      onCreated(await lobbyService.create({ name: name.trim(), mapId, mode: 'team-deathmatch', isPrivate: priv }));
+      onCreated(await lobbyService.host({ roomName: name.trim(), settings: { ...DEFAULT_SETTINGS, mapId, mode: 'team-deathmatch', isPrivate: true } }));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setBusy(false);
@@ -55,8 +55,8 @@ export function CreateRoomModal({ onClose, onCreated }: { onClose: () => void; o
       </div>
       {error && <ErrorRow>{error}</ErrorRow>}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 12, fontWeight: 600 }}><span className="sw"><input type="checkbox" checked={priv} onChange={() => setPriv(!priv)} /><span /></span>Private room (code only)</label>
-        <Button variant="primary" onClick={() => void create()} disabled={busy || !nameOk} title={nameOk ? undefined : 'Room names are 3–24 characters'} style={{ height: 56, padding: '0 30px', fontSize: 20 }}>{busy ? 'Creating…' : 'Create & Open Lobby'}</Button>
+        <span style={{ fontSize: 14, fontWeight: 600, color: '#A9B3CC' }}>Friends join with the room code or your invite link</span>
+        <Button variant="primary" onClick={() => void create()} disabled={busy || !nameOk} title={nameOk ? undefined : 'Room names are 3–24 characters'} style={{ height: 56, padding: '0 30px', fontSize: 20 }}>{busy ? 'Opening room…' : 'Create & Open Lobby'}</Button>
       </div>
     </Modal>
   );

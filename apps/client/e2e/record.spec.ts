@@ -9,7 +9,7 @@ test.use({ video: { mode: 'on', size: { width: 1440, height: 900 } }, viewport: 
 test('record: heavy bomb crater + fall', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.goto('/match/local?map=cobalt&red=thumper&blue=frostbite,mollusk,cinder,voltaic&wind=off&seed=4');
+  await page.goto('/hotseat?map=cobalt&red=thumper&blue=frostbite,mollusk,cinder,voltaic&wind=off&seed=4');
   await waitForMyTurn(page);
   await page.waitForTimeout(1000);
   await page.locator('button[aria-label^="Special ability"]').click();

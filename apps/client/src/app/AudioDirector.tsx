@@ -19,7 +19,7 @@ export function AudioDirector(): null {
     }, true);
   }, []);
   useEffect(() => {
-    const battle = loc.pathname.startsWith('/match/');
+    const battle = loc.pathname.startsWith('/match/') || loc.pathname === '/hotseat';
     playMusic(loc.pathname.startsWith('/dev/') ? null : battle ? 'battle' : 'menu');
   }, [loc.pathname]);
   return null;

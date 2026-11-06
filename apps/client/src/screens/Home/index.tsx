@@ -1,23 +1,22 @@
 // Home / main menu — ported from design/mockup/Main.dc.html (screenshots/01-home*.png).
-// PLAY NOW and Quick Match join the real matchmaker; Create/Join Room open real LobbyRooms.
+// PLAY NOW / Create Room host a room in this tab (PeerJS); Join Room joins one by code (DESIGN_SPEC §2.1, §3.9).
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MACHINE_LIST, SEASON, type PublicRoomInfo } from '@lobbers/shared';
+import { MACHINE_LIST, SEASON } from '@lobbers/shared';
 import { Stage } from '../../app/Stage';
-import { Button, ErrorRow, MachineArt, PlayButton, SceneBackdrop, Toast } from '../../components';
-import { api } from '../../net/api';
-import { useSession } from '../../state/session';
+import { MachineArt, PlayButton, SceneBackdrop, Toast } from '../../components';
+import { useProfile } from '../../state/profile';
 import { clearNotice, useNotice } from '../../state/notice';
 import { HomeSidebar } from './HomeSidebar';
 import { CreateRoomModal } from './modals/CreateRoomModal';
 import { FirstRunModal } from './modals/FirstRunModal';
+import { HotSeatIcon, HotSeatModal } from './modals/HotSeatModal';
 import { JoinRoomModal } from './modals/JoinRoomModal';
-import { QuickMatchModal } from './modals/QuickMatchModal';
 import { SettingsModal } from './modals/SettingsModal';
 import { HomeNav } from './HomeNav';
 import s from './home.module.css';
 
-type ModalId = 'play' | 'quick' | 'create' | 'join' | 'settings' | null;
+type ModalId = 'create' | 'join' | 'settings' | 'hotseat' | null;
 
 function seasonLeft(now: number): string {
   const ms = Math.max(0, Date.parse(SEASON.endsAt) - now);
@@ -30,23 +29,18 @@ const Pop = ({ star, core }: { star: string; core: string }): JSX.Element => <sv
 
 export default function Home(): JSX.Element {
   const nav = useNavigate();
-  const session = useSession();
+  const status = useProfile((v) => v.status);
+  const storageOk = useProfile((v) => v.storageOk);
   const [modal, setModal] = useState<ModalId>(null);
   const [feat, setFeat] = useState(0);
-  const [ranked, setRanked] = useState<number | null>(null);
   const notice = useNotice((v) => v.notice);
   const fm = MACHINE_LIST[feat];
-  const ready = session.status === 'ready';
+  const ready = status === 'ready';
 
-  useEffect(() => {
-    if (!ready) return;
-    api<{ rooms: PublicRoomInfo[] }>('/api/rooms').then((r) => setRanked(r.rooms.filter((x) => x.ranked).length)).catch(() => setRanked(null));
-  }, [ready]);
   useEffect(() => { if (!notice) return; const t = setTimeout(clearNotice, 2200); return () => clearTimeout(t); }, [notice]);
 
   const toLobby = (code: string): void => { setModal(null); if (code) nav(`/lobby/${code}`); };
   const cycle = (d: number): void => setFeat((f) => (f + d + MACHINE_LIST.length) % MACHINE_LIST.length);
-  const playSub = ranked === null ? 'Ranked 4v4' : ranked > 0 ? `Ranked 4v4 · ${ranked} ${ranked === 1 ? 'room' : 'rooms'} filling` : 'Ranked 4v4 · opens a new room';
 
   return (
     <Stage width={1440} height={900} label="Lobbers home">
@@ -76,14 +70,18 @@ export default function Home(): JSX.Element {
           </div>
         </div>
 
+        {!storageOk && (
+          <div role="status" data-testid="storage-banner" style={{ position: 'absolute', left: 56, top: 366, width: 470, background: '#FFD166', color: '#101522', border: '3px solid #0B0F1A', borderRadius: 10, boxShadow: '0 4px 0 #0B0F1A', padding: '8px 14px', fontWeight: 700, fontSize: 15 }}>
+            Progress can’t be saved in this browser (private mode?)
+          </div>
+        )}
         <div style={{ position: 'absolute', left: 56, top: 430, width: 470, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {session.status === 'offline' && <ErrorRow action={<Button onClick={() => void session.restore()} style={{ height: 34, padding: '0 12px', fontSize: 14 }}>Retry</Button>}>{session.error}</ErrorRow>}
-          <PlayButton title="PLAY NOW" subtitle={playSub} disabled={!ready} onClick={() => setModal('play')}
+          <PlayButton title="PLAY NOW" subtitle="Host a room for your friends" disabled={!ready} onClick={() => setModal('create')}
             icon={<svg aria-hidden="true" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#101522" strokeWidth="2.6" strokeLinecap="round"><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="2.5" fill="#101522" /><path d="M12 1v5M12 18v5M1 12h5M18 12h5" /></svg>} />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 14 }}>
-            <button type="button" className={`btn ${s.tile}`} disabled={!ready} onClick={() => setModal('quick')}>
-              <span style={{ width: 38, height: 38, borderRadius: 8, background: '#4C9AFF', border: '3px solid #0B0F1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="#101522"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg></span>
-              <span>Quick Match</span>
+            <button type="button" className={`btn ${s.tile}`} disabled={!ready} onClick={() => setModal('hotseat')}>
+              <span style={{ width: 38, height: 38, borderRadius: 8, background: '#4C9AFF', border: '3px solid #0B0F1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><HotSeatIcon /></span>
+              <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>Hot Seat<span style={{ fontSize: 11, fontWeight: 600, color: '#A9B3CC' }}>Pass &amp; play on one screen</span></span>
             </button>
             <button type="button" className={`btn ${s.tile}`} disabled={!ready} onClick={() => setModal('create')}>
               <span style={{ width: 38, height: 38, borderRadius: 8, background: '#5ACB91', border: '3px solid #0B0F1A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#101522" strokeWidth="3.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg></span>
@@ -118,11 +116,11 @@ export default function Home(): JSX.Element {
         <HomeNav onSettings={() => setModal('settings')} />
         <HomeSidebar />
 
-        {(modal === 'quick' || modal === 'play') && <QuickMatchModal ranked={modal === 'play'} onClose={() => setModal(null)} onEnter={toLobby} />}
+        {modal === 'hotseat' && <HotSeatModal onClose={() => setModal(null)} />}
         {modal === 'create' && <CreateRoomModal onClose={() => setModal(null)} onCreated={toLobby} />}
         {modal === 'join' && <JoinRoomModal onClose={() => setModal(null)} onJoined={toLobby} />}
         {modal === 'settings' && <SettingsModal onClose={() => setModal(null)} />}
-        {session.status === 'needsName' && <FirstRunModal />}
+        {status === 'needsName' && <FirstRunModal />}
         {notice && <Toast key={notice.id} message={notice.text} kind={notice.kind} />}
       </div>
     </Stage>

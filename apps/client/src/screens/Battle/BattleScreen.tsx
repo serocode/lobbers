@@ -36,7 +36,7 @@ function Field({ layout, start }: { layout: LayoutId; start: MatchStartedMsg }):
     let game: Phaser.Game | null = null, cancelled = false;
     const stageScale = el.getBoundingClientRect().width / L.field.w || 1;
     void import('../../game/PhaserHost').then(({ mountBattle }) => mountBattle(el, { match, controls, start, layout: L, stageScale })).then((g) => {
-      if (cancelled) g.destroy(true); else game = g;
+      if (cancelled) g.destroy(true); else { game = g; match.transport.ready(); }
     });
     const ro = new ResizeObserver(() => game?.scale.refresh());
     ro.observe(el);

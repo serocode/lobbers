@@ -24,27 +24,45 @@ Tick only with evidence (test name, Playwright report, or screenshot path).
 - [x] Turn queue alternates teams, timer expires turns, eliminated players removed, match ends with a winner
       _(hot-seat: e2e "2v2 hot-seat played to victory" + vitest `hotseat.test.ts`; `desktop-report.json`)_
 
-## Multiplayer
-- [x] Create room (code `LOB-XXXX`), join by code, public room list, leave
-      _(server `rooms.test.ts`; e2e `multiplayer.spec.ts`, `screens-phase2.spec.ts` quick match)_
-- [x] 8 max, 4 per team, 2 min, host-only start, everyone ready _(rooms.test.ts; e2e "lobby validation")_
-- [x] Machine selection saved to the seat _(Machine Select → `setMachine`; `machine-select*.png`)_
-- [x] Server-authoritative: out-of-turn and forged intents rejected; clients never set HP/damage
-      _(rooms.test.ts, flow.test.ts, e2e "out-of-turn + forged intents")_
-- [x] Identical HP/positions/terrain hash across all clients after every action (1v1, 2v2, 3v3, 4v4)
-      _(`phase-2/matrix-report.json`: 0 mismatches)_
-- [x] Disconnect → indicator, turns skipped, reconnect resumes seat with full snapshot; forfeit after window
-      _(flow.test.ts, rooms.test.ts, e2e disconnect test)_
-- [x] Host transfer keeps settings _(rooms.test.ts; e2e "host leaves the lobby")_
+## Multiplayer (peer-to-peer)
+- [x] Create room (code `LOB-XXXX`, PeerJS id registered), join by code, invite link `/?join=`, Recent rooms, leave
+      _(host.test "lobby over the wire"; e2e `multiplayer.spec.ts`, `deploy.spec.ts` invite link, `screens-p2p.spec.ts`)_
+- [ ] Works between two real devices on different networks (Wi-Fi + mobile data); TURN configured if needed
+      _(owner, on the Vercel deploy. Verified so far: two browser windows over the PeerJS cloud server — 1v1 to victory)_
+- [x] 8 max, 4 per team, 2 min, host-only start, everyone ready; wrong code / full / version cards
+      _(host.test lobby test; e2e "lobby validation" (9th → "Room is full"), screens-p2p "Room not found")_
+- [x] Machine selection saved to the seat _(Machine Select → `setMachine`; p2p `machine-select.png`)_
+- [x] Host-authoritative: out-of-turn and forged guest intents rejected; no UI code (host's included) sets HP/damage
+      _(host.test + ports.test "out-of-turn and illegal intents", codec test; e2e "out-of-turn + forged intents")_
+- [x] Identical HP/positions/terrain hash on every peer after every action (1v1, 2v2, 3v3, 4v4) — `pnpm smoke:p2p`
+      _(`phase-2/matrix-report.json`: 16/21/31/37 turns, 0 mismatches; smoke:p2p pass)_
+- [x] Guest disconnect → indicator, turns skipped, rejoin resumes the seat with a full snapshot; forfeit after window
+      _(ports.test disconnect + window tests; e2e disconnect/rejoin/forfeit)_
+- [x] Host refresh mid-match → "Host reconnecting…", same turn resumes, same terrain hash
+      _(host.test/ports.test host refresh; e2e "host refreshes mid-match"; smoke:p2p host refresh)_
+- [x] Host leaves → every guest sees "The host closed the room"; no rewards credited _(host.test; e2e "host leaves")_
+- [x] Hot Seat: 2–8 local players on one screen to a winner _(e2e `hotseat.spec.ts`; vitest `hotseat.test.ts`)_
+
+## Saved data (localStorage)
+- [x] First run creates a profile; reload keeps level/coins/history _(e2e `storage.spec.ts`)_
+- [x] Rewards credited exactly once per match _(host.test profile: `creditMatch` twice → once; smoke:p2p every peer
+      credited once; e2e 2v2 coins on Home after Results)_
+- [ ] Purchase / equip / unequip; equipped cosmetics visible to everyone in a match
+      _(engine done: `purchase`/`equip`, cosmetics resolved into `matchStarted`, rendered for everyone — host.test emotes/
+      cosmetics, e2e `cosmetics.spec.ts`; the Inventory screen to do it from is Phase 4)_
+- [x] Export save → Import on another browser restores everything (same player id) _(e2e storage "export save → import")_
+- [x] Empty, corrupt and blocked storage: the game still starts (banner when it can't save) _(e2e `storage.spec.ts`)_
 
 ## Screens (each compared with its screenshot)
 - [ ] Home (+ 6 modals: 4 built, Missions/Leaderboards → Phase 4) · [x] Lobby · [x] Machine Select · [x] Battle desktop · [x] Battle tablet · [x] Battle phone
       _(battle: phase-1 screenshots vs 04*, `layout-report.json`)_
-- [x] Results (real stats, MVP, XP/coins computed; persisted in Phase 4) _(phase-2 `results*.png`)_ · [ ] Profile · [ ] Inventory (equip/unequip/locked/purchase) · [ ] Friends
+- [x] Results (real stats, host-computed MVP line + details, XP/coins credited to the local profile, revisits from history) _(phase-2 `results*.png`)_ · [ ] Profile · [ ] Inventory (equip/unequip/locked/purchase) · [ ] Friends
 - [ ] Every button performs its action (or is disabled with a reason logged in DECISIONS)
 
 ## Quality
-- [x] `pnpm test:core`, server and client tests green; Playwright suites green
-      _(2026-11-06: core 35, server 12, client 6, Playwright 27/27 incl. the 1v1–4v4 matrix)_
+- [x] `pnpm test:core`, `pnpm smoke:p2p`, client tests green; Playwright suites green
+      _(2026-11-06 after the P2P migration: core 46, client 9, smoke pass, Playwright all green incl. the 1v1–4v4 matrix)_
+- [ ] Deployed on Vercel (static); deep links and refresh on `/lobby/:code` work
+      _(locally verified on the production build with `deploy.spec.ts`, local PeerServer and PeerJS cloud; Vercel import: owner)_
 - [x] No `any`; strict TS passes in all workspaces _(`pnpm typecheck`)_
 - [ ] 55+ fps battlefield with 8 units; works in Chrome, Firefox, Safari, mobile Safari/Chrome

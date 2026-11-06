@@ -1,8 +1,9 @@
 // Settings (Main.dc.html): volumes, shake, trajectory preview, damage numbers, graphics quality.
-// Persisted locally; the battlefield and sound read the same store.
+// Saved in the local profile; the battlefield and sound read the same store. Plus Save data (§3.9).
 import { CloseButton, Modal } from '../../../components';
 import { useSettings, type GraphicsQuality } from '../../../state/uiStores';
 import s from '../home.module.css';
+import { SaveData } from './SaveData';
 
 const GFX: Array<{ id: GraphicsQuality; label: string }> = [{ id: 'low', label: 'Low' }, { id: 'medium', label: 'Medium' }, { id: 'high', label: 'High' }];
 const row = { display: 'grid', gridTemplateColumns: '140px 1fr 44px', alignItems: 'center', gap: 12, fontWeight: 600 } as const;
@@ -33,6 +34,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }): JSX.Element
         <span style={{ fontWeight: 600 }}>Graphics quality</span>
         <div style={{ display: 'flex', gap: 10 }}>{GFX.map((g) => <button key={g.id} type="button" className={`btn seg ${st.graphics === g.id ? 'on' : ''}`} aria-pressed={st.graphics === g.id} onClick={() => st.set({ graphics: g.id })}>{g.label}</button>)}</div>
       </div>
+      <SaveData />
       <div style={{ fontSize: 13, color: '#A9B3CC', background: '#0E1320', border: '2px solid #0B0F1A', borderRadius: 8, padding: '10px 12px', lineHeight: 1.5 }}>
         <span className="mono" style={key}>↑ ↓</span> angle · <span className="mono" style={key}>← →</span> move · <span className="mono" style={key}>Q / E</span> power · <span className="mono" style={key}>Space</span> fire · <span className="mono" style={key}>W</span> armory
       </div>

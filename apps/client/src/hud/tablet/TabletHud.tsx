@@ -45,10 +45,13 @@ function TurnPill(): JSX.Element {
   const act = useMatch((v) => unitOf(v, v.activeUnitId));
   const hotseat = useMatch((v) => v.localPlayerIds.length > 1);
   const title = mine && !hotseat ? 'YOUR TURN' : (act?.name ?? '').toUpperCase();
+  const paused = useMatch((v) => v.sync.paused);
   return (
     <section aria-label="Current turn" className="hud" style={{ width: 230, order: 1, display: 'flex', alignItems: 'center', gap: 10, padding: '6px 10px' }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <span className="mono" style={{ fontSize: 11, color: '#A9B3CC', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>TURN {turn} · {MAPS[map].name.toUpperCase()}</span>
+        {paused
+          ? <span className={`mono ${s.wait}`} style={{ fontSize: 11, color: '#FFD166', fontWeight: 700 }}>HOST RECONNECTING…</span>
+          : <span className="mono" style={{ fontSize: 11, color: '#A9B3CC', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>TURN {turn} · {MAPS[map].name.toUpperCase()}</span>}
         <span className="fd" style={{ fontSize: 22, color: mine && !hotseat ? '#FFD166' : act ? (act.team === 'red' ? '#F45B55' : '#4C9AFF') : '#FFD166', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</span>
       </div>
       <TimerRing seconds={secs} total={total} size={52} pulse={mine} />

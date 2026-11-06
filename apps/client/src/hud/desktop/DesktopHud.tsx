@@ -17,8 +17,9 @@ function WaitChip(): JSX.Element | null {
   const act = useMatch((v) => unitOf(v, v.activeUnitId));
   const phase = useMatch((v) => v.sync.phase);
   const replaying = useMatch((v) => v.replaying);
+  const paused = useMatch((v) => v.sync.paused);
   if (mine) return null;
-  const txt = over ? 'Match over' : !act ? 'Get ready…' : phase === 'resolving' || replaying ? 'Shot in flight…' : `${act.name} is taking their turn…`;
+  const txt = paused ? 'Host reconnecting…' : over ? 'Match over' : !act ? 'Get ready…' : phase === 'resolving' || replaying ? 'Shot in flight…' : `${act.name} is taking their turn…`;
   return <div className="fd" style={{ position: 'absolute', left: '50%', top: -20, transform: 'translateX(-50%)', background: '#101522', border: '3px solid #0B0F1A', borderRadius: 10, padding: '4px 16px', fontSize: 18, color: '#C9D1E0', zIndex: 3, whiteSpace: 'nowrap' }}>{txt}</div>;
 }
 

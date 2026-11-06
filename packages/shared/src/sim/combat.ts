@@ -70,13 +70,13 @@ export function eliminate(ctx: SimContext, victim: UnitState, by: UnitState | nu
   const world = ctx.world;
   // Hazard / fall deaths are credited to the most recent enemy damager.
   let killer = by && by.team !== victim.team ? by : null;
-  if (!killer) {
+  if (!killer && cause !== 'forfeit') {
     const recent = Object.entries(world.recentDamage[victim.id] ?? {}).sort((a, b) => b[1] - a[1])[0];
     const cand = recent ? world.units.find((u) => u.id === recent[0]) : undefined;
     if (cand && cand.team !== victim.team && world.turnNumber - recent[1] <= COMBAT.assistWindowTurns) killer = cand;
   }
   if (killer) killer.stats.eliminations++;
-  const helpers = world.recentDamage[victim.id] ?? {};
+  const helpers = cause === 'forfeit' ? {} : world.recentDamage[victim.id] ?? {};
   for (const [aid, turn] of Object.entries(helpers)) {
     if (aid === killer?.id || world.turnNumber - turn > COMBAT.assistWindowTurns) continue;
     const a = world.units.find((u) => u.id === aid);

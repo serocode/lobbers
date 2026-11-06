@@ -50,4 +50,7 @@
 .pad { touch-action: none; cursor: crosshair; }
 .sheet { animation: sheet .28s cubic-bezier(.2,1.2,.4,1) both; }
 @keyframes sheet { from { transform: translateY(100%); } to { transform: none; } }
-@media (prefers-reduced-motion: reduce) { .arrow, .vbob, .edge, .pulse { animation: none; } }
+/* Lobby.dc.html .wait — "Host reconnecting…" (DESIGN_SPEC §3.8). */
+.wait { animation: wait 1.4s ease-in-out infinite; }
+@keyframes wait { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .arrow, .vbob, .edge, .pulse, .wait { animation: none; } }
