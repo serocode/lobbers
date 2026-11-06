@@ -8,11 +8,13 @@ export interface Snap {
   hash: { client: number; server: number; checks: number; mismatches: number };
   units: Array<{ id: string; hp: number; alive: boolean; x: number; y: number }>;
   offline: string[];
+  link: string;
 }
 
 const IGNORED = [/Failed to load resource/, /WebSocket connection .* failed/, /ERR_CONNECTION_REFUSED/];
 
 export function watchErrors(page: Page, errors: string[]): void {
+  if (process.env.P2P_DEBUG) page.on('console', (m) => { if (m.text().startsWith('[p2p]')) console.log(new Date().toISOString().slice(11, 19), page.url().slice(-14), m.text()); });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error' && !IGNORED.some((r) => r.test(m.text()))) errors.push(m.text()); });
 }
@@ -29,11 +31,12 @@ export async function newPlayer(browser: Browser, name: string): Promise<Player>
   return { name, ctx, page, errors };
 }
 
-export async function createRoom(p: Player, opts: { isPrivate?: boolean } = {}): Promise<string> {
+/** The player hosts a room in their own tab (PeerJS) and lands in its lobby. */
+export async function createRoom(p: Player): Promise<string> {
   await p.page.getByRole('button', { name: 'Create Room' }).click();
-  if (opts.isPrivate === false) await p.page.getByText('Private room (code only)').click();
   await p.page.getByRole('button', { name: 'Create & Open Lobby' }).click();
-  await p.page.waitForURL(/\/lobby\/LOB-/);
+  await p.page.waitForURL(/\/lobby\/LOB-/, { timeout: 20_000 });
+  await expect(p.page.getByTestId('room-code')).toHaveText(/LOB-/, { timeout: 20_000 });
   return (await p.page.getByTestId('room-code').textContent()) ?? '';
 }
 
@@ -42,6 +45,7 @@ export async function joinByCode(p: Player, code: string): Promise<void> {
   await p.page.getByPlaceholder('LOB-XXXX').fill(code);
   await p.page.getByRole('button', { name: `Join ${code}` }).click();
   await p.page.waitForURL(new RegExp(`/lobby/${code}`));
+  await expect(p.page.getByTestId('room-code')).toHaveText(code, { timeout: 20_000 });
 }
 
 export const countText = (p: Player): Promise<string | null> => p.page.getByTestId('player-count').textContent();
@@ -75,7 +79,7 @@ export async function settled(players: Player[], timeout = 40_000): Promise<Snap
     const s = await Promise.all(players.map(snap));
     const same = s.every((x) => x.turn === s[0].turn && !x.replaying && (x.result !== null || x.phase === 'acting') && x.result === s[0].result);
     if (same && (s[0].result !== null || s.some((x) => x.mine))) return s;
-    if (Date.now() - t0 > timeout) throw new Error(`clients never settled: ${JSON.stringify(s.map((x) => [x.turn, x.phase, x.replaying, x.result, x.mine]))}`);
+    if (Date.now() - t0 > timeout) throw new Error(`clients never settled: ${JSON.stringify(s.map((x) => [x.turn, x.phase, x.replaying, x.result, x.mine, x.link]))}`);
     await players[0].page.waitForTimeout(150);
   }
 }

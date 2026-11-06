@@ -12,6 +12,13 @@ export interface LobbyPlayer {
   connected: boolean;
   isHost: boolean;
   joinedAt: number;
+  /** Display data from the peer's local profile (optional, cosmetic). */
+  level?: number;
+  rating?: number;
+  title?: string | null;
+  cosmetics?: Record<string, string>;
+  /** Last round trip to the host reported by the peer (ms), for the slot's ping bars. */
+  ping?: number;
 }
 
 type Result = { ok: true } | { ok: false; reason: string };

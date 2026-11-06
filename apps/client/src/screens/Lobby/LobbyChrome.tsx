@@ -2,7 +2,7 @@
 import { Link } from 'react-router-dom';
 import type { LobbyView } from '@lobbers/shared';
 import { Button } from '../../components';
-import { lobbyService } from '../../net/online/lobbyService';
+import { lobbyService, useLobby } from '../../net/p2p/roomService';
 import type { LobbyDerived } from './useLobbyView';
 
 const Copy = ({ size }: { size: number }): JSX.Element => <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinejoin="round"><rect x="8" y="8" width="13" height="13" rx="2" /><path d="M16 8V4H3v13h5" /></svg>;
@@ -11,17 +11,15 @@ const MODE = { 'team-deathmatch': 'Team Deathmatch', 'capture-the-hill': 'Captur
 export function LobbyHeader({ d, copied, onCopy, onLeave }: { d: LobbyDerived; copied: boolean; onCopy: () => void; onLeave: () => void }): JSX.Element {
   const v: LobbyView = d.view;
   const host = v.players.find((p) => p.id === v.hostId);
-  const ping = d.me?.ping ?? 0;
-  const privacy = v.ranked ? 'Ranked room' : v.isPrivate ? 'Private room' : 'Public room';
+  const hosting = useLobby((x) => x.hosting);
+  const rtt = useLobby((x) => x.rtt);
   return (
     <header style={{ position: 'absolute', left: 24, top: 20, width: 1392, height: 64, display: 'flex', alignItems: 'center', gap: 16 }}>
       <button type="button" className="btn" onClick={onLeave} style={{ height: 52, padding: '0 16px', fontSize: 16 }}><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 5l-7 7 7 7" /></svg>Leave</button>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <h1 className="fd" style={{ margin: 0, fontSize: 32, lineHeight: 1 }}>{v.name}</h1>
         <span style={{ fontSize: 13, color: '#A9B3CC', fontWeight: 600 }}>
-          {MODE[v.settings.mode]} · {d.isHost && !v.ranked
-            ? <button type="button" className="privToggle" style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'inherit', cursor: 'pointer', textDecoration: 'underline dotted' }} title={`Make the room ${v.isPrivate ? 'public' : 'private'}`} onClick={() => lobbyService.send({ t: 'updateSettings', patch: { isPrivate: !v.isPrivate } })}>{privacy}</button>
-            : privacy} · Host: {host?.name ?? '—'}
+          {MODE[v.settings.mode]} · Private room · Host: {host?.name ?? '—'}
         </span>
       </div>
       <div style={{ flex: 1 }} />
@@ -35,8 +33,8 @@ export function LobbyHeader({ d, copied, onCopy, onLeave }: { d: LobbyDerived; c
         <span className="fd" data-testid="player-count" style={{ fontSize: 28 }}>{v.players.length}/8</span>
       </div>
       <div className="panel" style={{ height: 56, display: 'flex', alignItems: 'center', gap: 8, padding: '0 14px' }}>
-        <span style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 16 }} aria-hidden="true"><span style={{ width: 4, height: 6, background: '#5ACB91' }} /><span style={{ width: 4, height: 11, background: ping < 100 ? '#5ACB91' : '#3B4257' }} /><span style={{ width: 4, height: 16, background: ping < 60 ? '#5ACB91' : '#3B4257' }} /></span>
-        <span className="mono" style={{ fontSize: 14 }}>PING · {ping}ms</span>
+        <span style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 16 }} aria-hidden="true"><span style={{ width: 4, height: 6, background: '#5ACB91' }} /><span style={{ width: 4, height: 11, background: hosting || rtt < 100 ? '#5ACB91' : '#3B4257' }} /><span style={{ width: 4, height: 16, background: hosting || rtt < 60 ? '#5ACB91' : '#3B4257' }} /></span>
+        <span className="mono" data-testid="link-status" style={{ fontSize: 14 }}>{hosting ? 'You are hosting' : `P2P · ${rtt} ms`}</span>
       </div>
     </header>
   );

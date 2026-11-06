@@ -159,3 +159,79 @@ Append-only. Format: date · decision · reason · affects.
 - 2026-11-06 · **Sound is synthesised in code** (`apps/client/src/audio`: WebAudio oscillators + filtered noise, a look-ahead
   step sequencer for two music loops). No third-party audio files, so there are no licences to list. Audio unlocks on the first
   pointer/key press (browser autoplay rules). · Phase 3 plan · client
+
+### P2P switch (kit)
+- P2P switch · **Multiplayer is peer-to-peer**: the room host's browser runs the authoritative `HostSession`
+  (lobby + match), players connect over WebRTC data channels (PeerJS; free cloud signaling by default; STUN, optional
+  TURN). Supersedes the brief's server/Colyseus/Postgres/Redis requirements and the earlier "Stack" decision. ·
+  Hobby game for friends; must host free on Vercel with no backend. · all multiplayer, AGENTS.md, rules
+- P2P switch · All saved data in **localStorage** (`persist/profile.ts`): no accounts, no DB, no REST API. Export/Import
+  save code for backups and new devices. · No server to store it · Home, Profile, Inventory, Results, Friends
+- P2P switch · Trust model: guests can't change outcomes (host validates everything); the host *could* cheat and local
+  coins can be edited. Accepted — friends-only. · No neutral server exists · rules
+- P2P switch · Host leaving ends the room (no host migration in v1); a host refresh resumes from a localStorage
+  snapshot (match paused up to 15 s). · Migration needs every peer to hold full authoritative state + re-signaling;
+  revisit later · NETWORK.md
+- P2P switch · Removed (need a server): matchmaking queue (PLAY NOW now hosts a room; Quick Match tile → Hot Seat),
+  public room list (→ Recent rooms), global leaderboard (disabled tab; Friends tab = local), presence / friend requests
+  / pushed invites (→ Recent players + Starred + share links), lock-in timer, ranked queue. · DESIGN_SPEC §3.9 · Home,
+  Lobby, Friends, Machine Select
+- P2P switch · Protocol v2: match message names/payloads unchanged (renderer untouched); new session messages
+  (`hello`, `welcome`, `ping/pong`, `lobbyState`, `matchState`, `closed`), `forfeit` intent, `matchId`/`props` on
+  match messages. · Minimal client churn · protocol.ts
+- P2P switch · Items On now really means the full arsenal (`createUnit(…, fullArsenal)`); Items Off = machine loadout. ·
+  The spec said so but the rules only allowed the loadout · world.ts, rules.ts
+
+### P2P migration (2026-11-06, branch `p2p-migration`, migration steps 1–7)
+The kit's decisions above apply. Our additions and deviations:
+- 2026-11-06 · **Kit merge location**: the kit was unzipped at `design/lobbers/` only as an input. The design source of truth
+  stays the top-level `design/` (DESIGN_SPEC §2.4 camera, §2.x data wiring, §3.7–3.9, 6-map mockups, screenshots and map art
+  were merged into it; files changed since the first kit were diffed first). `design/lobbers/` is `git rm`'d at the end. · owner
+- 2026-11-06 · **pnpm stays** (owner): `packageManager: pnpm@10.28.0` in the root `package.json` (Vercel uses the same pnpm),
+  root scripts use `pnpm --filter`, `peer` is a root devDependency run with `pnpm exec peerjs` (`pnpm peer:local`);
+  `vercel.json` installs with `pnpm install --frozen-lockfile` and builds with `pnpm --filter @lobbers/client build`.
+  `tools/p2p-smoke` resolves esbuild/ws/playwright from the root devDependencies. · build, deploy
+- 2026-11-06 · **Our cosmetics catalog wins over the kit's sample ids** (owner). `STARTER_ITEMS` = starter machines as
+  `machine:<id>` + our default items; `createProfile()` equips `DEFAULT_EQUIPPED`; equipped slot names are the catalog's
+  (`trail`, `explosion`, `title`, `emote:1..4`, `skin:<machine>`, `weaponSkin:<category>`); every machine-ownership check
+  uses `machine:<id>` (`machineItemId`, `ownsMachine`). The host only checks ids and slots (`ALL_COSMETIC_IDS`, `fitsSlot`);
+  `toPeerProfile` drops items the player doesn't own before sending. · persist, config/cosmetics, host
+- 2026-11-06 · **Results tally is host-computed** (better than the spec's per-peer tally; owner-approved). `HostMatch` keeps a
+  `MatchTally` and puts `mvpHighlight` + `details` on `MatchEndedMsg`; **PROTOCOL_VERSION 2 → 3**. The tally is part of
+  `HostMatch.snapshot()/restore()`, so a host F5 mid-match keeps it, and a peer that rejoined mid-match gets identical details
+  (both tested in `host.test.ts`). `creditMatch` stores a compact `summary` in `profile.history` (last 14 turns of damage,
+  top-4 weapons, per-player results) so revisiting `/results/:id` works offline (`resultFromHistory`). DESIGN_SPEC §2.5. ·
+  protocol, host/match, match/tally, persist
+- 2026-11-06 · **Ports from our Colyseus build into the host engine** (protocol v3): emote intent/message with the server
+  cooldown (`EMOTE_RULES`), `MatchStartedMsg.cosmetics` resolved per unit, `burnZones` on `turnStarted`, `reconnectUntil`
+  on `MatchView` (reconnect countdown badge), lobby slot ping from the measured RTT (`ping {rtt}` → `HostLobby.setPing`),
+  chat profanity mask, `shots`/`hits` in results, no kill credit on forfeit. `ports.test.ts` covers them. `match/flow.ts`
+  (the Colyseus-era `MatchFlow`) is gone — `HostMatch` replaces it. · shared
+- 2026-11-06 · **Server tests → host tests**: every `apps/server` room/API case has a host-engine equivalent (lobby rules,
+  chat, kick, 9th player, out-of-turn, drop/rejoin, forfeit, lobby reopening after a match). Not ported, by design: host-crown
+  transfer (P2P closes the room instead), "clients can't create match rooms" (only the host tab starts a match), guest JWT
+  auth (→ local profile tests). · tests
+- 2026-11-06 · **Nothing existing calls a server**: guest auth → local profile + first-run modal (§3.7); Home profile header,
+  Results rewards (`creditMatch`), Settings, Machines favourite → localStorage. `apps/client` has no `/api`, `colyseus` or
+  server `fetch(` (the only `fetch` loads a static skin template from `public/assets`). · client
+- 2026-11-06 · **Client transport**: `MatchFeed` implements the battle screen's `MatchTransport` over the room's `PeerClient`
+  and seeds itself from the client's current state (`started`, `actions`, `turn`, `ended`, `match`) — a resumed host's
+  loopback messages arrive before React subscribes. Room actions (host/join/resume) are single-flight: React StrictMode's
+  double effect otherwise opened two PeerJS peers that kicked each other. · net/p2p
+- 2026-11-06 · **Hot Seat** is a `HostSession` with no network (`net/local/HotSeat.ts`) on `/hotseat`, launched from a Home
+  tile + modal in the Create Room style (2–8 named seats, map, mode); banner "PASS TO {NAME}"; no rewards. Replaces the
+  Colyseus-era `LocalMatchController` so local play runs the same engine as online. · Home, Battle
+- 2026-11-06 · **PLAY NOW** opens Create Room (no matchmaking). Create Room has no Private switch (every room is private —
+  only the code or the link gets in); the lobby shows "Private room" and "You are hosting". Invite link `/?join=LOB-XXXX`. ·
+  DESIGN_SPEC §3.9 · Home, Lobby
+- 2026-11-06 · **Home "Your Crew"** lists `recentPlayers` (starred first) in the Friends panel's place; **Join Room** shows
+  Recent rooms (`profile.recentRooms`, last 4). · §3.9 · Home
+- 2026-11-06 · **Closed-room card** (global, any screen): "Room is full", "The host closed the room", "Room not found",
+  "Version mismatch", "Kicked" — with Back to Home. Host Leave asks to confirm ("CLOSE ROOM"). · §3.8 · app
+- 2026-11-06 · **Host reconnecting**: while the match is `paused` after a host F5, guests' HUD shows "Host reconnecting…" in
+  the turn panel and the timer freezes; input is disabled. · §2.6 · HUD
+- 2026-11-06 · **Deleted**: `apps/server`, `docker-compose.yml`, Postgres/Redis/JWT env vars, `dev:server`/`db:*` scripts,
+  the client's Colyseus/REST services (`net/api.ts`, `net/online/*`, `net/config.ts`), Quick Match modal. `.env.example`
+  is client-only (`VITE_ICE_SERVERS`, `VITE_PEER_*`). · all
+- 2026-11-06 · **Vercel caching**: only top-level `/assets/*` files (Vite's content-hashed bundles) are `immutable`; the
+  hand-exported art under `/assets/machines|maps|weapons/` has no hashes, so it keeps default caching. · vercel.json

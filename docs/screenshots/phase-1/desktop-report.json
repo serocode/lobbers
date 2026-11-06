@@ -1,15 +1,15 @@
 {
   "perf": {
-    "carves": 13,
-    "maxCarveMs": 0.1
+    "carves": 19,
+    "maxCarveMs": 0.2
   },
-  "turns": 13,
+  "turns": 19,
   "winner": "red",
-  "hashChecks": 14,
+  "hashChecks": 20,
   "hashMismatches": 0,
   "fps": {
     "min": 60,
     "avg": 60
   },
-  "diffVs04": 4.24
+  "diffVs04": 3.36
 }

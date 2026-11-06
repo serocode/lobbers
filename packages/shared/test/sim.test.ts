@@ -226,8 +226,7 @@ test('turns alternate teams, rotate players and skip eliminated/disconnected', (
 });
 
 test('intent validation rejects out-of-turn, bad weapons and empty ammo', () => {
-  const w = world1v1();
-  w.settings = { ...w.settings, itemsEnabled: false };
+  const w = createWorld({ ...DEFAULT_SETTINGS, mapId: 'cobalt', wind: 'off', itemsEnabled: false }, [{ playerId: 'a', name: 'A', team: 'red', machine: 'thumper', slot: 0 }, { playerId: 'b', name: 'B', team: 'blue', machine: 'mollusk', slot: 0 }]);
   const turn: ActiveTurn = { unitId: 'red-0', playerId: 'a', phase: 'acting', shotsLeft: 1, endsAt: 1e15 };
   assert.equal(validateFire(w, turn, 'b', { angle: 45, power: 50, weaponId: 'standard-rocket' }, 0).ok, false);
   assert.equal(validateFire(w, turn, 'a', { angle: 45, power: 50, weaponId: 'ice-bomb' }, 0).ok, false);

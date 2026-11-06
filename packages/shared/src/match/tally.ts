@@ -7,11 +7,30 @@ import type { SimEvent } from '../sim/events.ts';
 
 interface BigHit { unitId: string; amount: number; weaponId: WeaponId | null }
 
+/** Plain-JSON form for HostMatch.snapshot() (host refresh keeps the tally). */
+export interface TallySnapshot {
+  byTurn: Array<[number, { red: number; blue: number }]>;
+  weapons: Array<[WeaponId, { shots: number; damage: number }]>;
+  biggest: Array<[string, BigHit]>;
+  finalBlow: { unitId: string; victim: string } | null;
+}
+
 export class MatchTally {
   private byTurn = new Map<number, { red: number; blue: number }>();
   private weapons = new Map<WeaponId, { shots: number; damage: number }>();
   private biggest = new Map<string, BigHit>();
   private finalBlow: { unitId: string; victim: string } | null = null;
+
+  snapshot(): TallySnapshot {
+    return { byTurn: [...this.byTurn].map(([k, v]) => [k, { ...v }]), weapons: [...this.weapons].map(([k, v]) => [k, { ...v }]), biggest: [...this.biggest].map(([k, v]) => [k, { ...v }]), finalBlow: this.finalBlow ? { ...this.finalBlow } : null };
+  }
+
+  static restore(s: TallySnapshot | undefined): MatchTally {
+    const t = new MatchTally();
+    if (!s) return t;
+    t.byTurn = new Map(s.byTurn); t.weapons = new Map(s.weapons); t.biggest = new Map(s.biggest); t.finalBlow = s.finalBlow;
+    return t;
+  }
 
   shot(turn: number, shooterId: string, weaponId: WeaponId, events: SimEvent[], units: UnitState[]): void {
     const w = this.weapons.get(weaponId) ?? { shots: 0, damage: 0 };

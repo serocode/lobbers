@@ -2,6 +2,9 @@
 
 Update at the end of every phase: what works, how to verify it (commands, URLs, test names), screenshots, known gaps.
 
+> Phases 0–3 were built on Colyseus + Postgres, then migrated to peer-to-peer (section **P2P migration** below). Their
+> server/REST notes are history; `apps/server` no longer exists.
+
 ## Phase 0 — Bootstrap ✅ (2026-11-05)
 **Works**
 - pnpm workspace (`pnpm install` resolves every kit range unchanged; see DECISIONS). `pnpm test:core` 24/24.
@@ -157,6 +160,66 @@ presets (all trails, explosion styles, skins, weapon-skin shells, bubbles); `arm
 - Players can't change cosmetics in the UI until the Inventory screen (Phase 4); the hot-seat harness has presets to see them.
 - Unlock prices/requirements for items the mockup shows as already owned are placeholders until the store exists.
 - Void maps have no animated hazard strip (none in the mockup).
+
+## P2P migration ✅ (2026-11-06, branch `p2p-migration`)
+Colyseus + Postgres → peer-to-peer (the room host's tab is the authority, WebRTC via PeerJS) + localStorage + static Vercel
+deploy, in seven steps (merge shared code → transport → persistence → screens → delete backend → deploy → verify).
+
+**What replaced what**
+| Before (Colyseus + Postgres) | Now |
+|---|---|
+| `apps/server` `LobbyRoom` | `packages/shared/src/host/lobby.ts` `HostLobby` (in the host's tab) |
+| `apps/server` `MatchRoom` + `match/flow.ts` `MatchFlow` | `host/match.ts` `HostMatch` (+ our ports: emotes, cosmetics, burn zones, reconnect deadline, tally) |
+| Colyseus transport, zod intents, JWT `onAuth` | `host/session.ts` `HostSession` + `net/codec.ts` `parsePeerMessage` + PeerJS data channels |
+| Colyseus reconnection | rejoin token in `lobbers:rejoin:<code>`; host F5 → `lobbers:host:<code>` snapshot → `HostSession.restore` |
+| `client/net/online/*` (colyseus client, lobbyService, matchService, storage) | `net/p2p/peerjs.ts`, `net/p2p/roomService.ts`, `net/p2p/MatchFeed.ts` |
+| `client/net/local/LocalMatchController` | `net/local/HotSeat.ts` (a `HostSession` with no network, one loopback client per seat) |
+| `POST /api/auth/guest` (guest JWT) | local profile (`persist/profile.ts`) + first-run modal (§3.7) |
+| `GET /api/matches/:id`, Postgres history, rewards | `creditMatch` on each peer's own profile; `resultFromHistory` for revisits |
+| `/api/rooms` public list, Quick Match queue | Recent rooms, share link `/?join=`, PLAY NOW → Create Room, Hot Seat tile |
+| Postgres / Redis / docker-compose / JWT env | nothing — `.env.example` is client-only (`VITE_ICE_SERVERS`, `VITE_PEER_*`) |
+| server vitest + `@colyseus/testing` | `test/host.test.ts` + `test/ports.test.ts` (in-process loopback, `ManualClock`) + `smoke:p2p` |
+
+**Screens changed** (§3.7–3.9): first-run modal (+ "I have a save code"), Home (PLAY NOW → Create Room, Hot Seat tile +
+modal, storage banner, real profile header, Your Crew), Create Room (no Private switch), Join Room (Recent rooms),
+Settings (save data export/import/reset), Lobby (Private room · You are hosting, ping from RTT, invite link, host Close
+Room confirm), global room-closed card, Battle HUD "Host reconnecting…" + frozen timer, Results (local credit, details
+from history).
+
+**How to verify**
+- `pnpm test:core` — 46 tests (host engine, ports, profile, physics, rules).
+- `pnpm --filter @lobbers/client test` — 9 (HotSeat, profile store, config).
+- `pnpm smoke:p2p` — 4 real Chromium over WebRTC (local signaling): host F5 mid-match resumes, identical terrain hashes,
+  everyone credited once.
+- Multiplayer e2e (skill `multiplayer-e2e`): `pnpm peer:local`, `apps/client/.env.local` with `VITE_PEER_HOST=localhost …`,
+  `pnpm dev:client`, then `pnpm --filter @lobbers/client exec playwright test e2e/multiplayer.spec.ts`.
+- Production build: `pnpm build && pnpm --filter @lobbers/client preview --port 4180`, then
+  `E2E_BASE_URL=http://localhost:4180 pnpm --filter @lobbers/client exec playwright test e2e/deploy.spec.ts`.
+
+**Results (2026-11-06)**
+| Suite | Result |
+|---|---|
+| test:core / client unit | 46/46 · 9/9 |
+| smoke:p2p (4 browsers, cobalt) | pass — 31 turns, winner red, host refresh resumed with identical terrain hash, all credited |
+| Matrix 1v1 / 2v2 / 3v3 / 4v4 | pass — 16 / 21 / 31 / 37 turns, 0 hash mismatches (`docs/screenshots/phase-2/matrix-report.json`) |
+| Lobby validation · host leaves · host refresh mid-match · out-of-turn/forged + drop/rejoin/forfeit | pass |
+| Storage (reload, empty, corrupt, blocked, export → import in another browser) · screens-p2p (3) · hot seat / devkit / cosmetics / maps / sound / record | pass — 35 Playwright tests in all |
+| Production build + local PeerServer: deep link, refresh on `/lobby/:code` (guest + host), `/?join=` | pass |
+| **PeerJS cloud** (no `VITE_PEER_HOST`): same deploy checks on the production build + a full 1v1 match in two windows | pass — 1v1 16 turns, 0 mismatches |
+
+Fixed during verification: battle music now also plays on `/hotseat` (the route was `/match/local`).
+
+**Evidence** — walkthrough https://claude.ai/artifact/7Vh3M2UgaUW6ZMiQLHNq5k · `docs/screenshots/p2p/` (`battle-guest-lost-host.png`, first run, Home, Hot Seat, Create/Join Room, Settings save data, Lobby host/guest,
+invite, close confirm, closed card, Machine Select; `screens-report.json` = mean pixel difference vs `design/screenshots`),
+`docs/screenshots/phase-2/sync-2v2-*.png`, `results*.png`.
+
+**Known gaps**
+- Two real devices on different networks (Wi-Fi + mobile data) on the Vercel deploy: owner to run. If a device can't
+  connect, set `VITE_ICE_SERVERS` with a TURN server.
+- Match e2e drives turns through the dev-only `window.__lobbersDev` hook, so full matches are tested on the dev server;
+  the production bundle is covered by `deploy.spec.ts` (rooms, deep links, refresh, invite).
+- No host migration: if the host closes the tab for good, the room ends (a refresh is fine).
+- `docs/screenshots/phase-2/home-quick-match.png` shows the removed Quick Match modal (Phase 2 history).
 
 ## Phase 4 — Persistence
 _not started_

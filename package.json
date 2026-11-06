@@ -6,22 +6,26 @@
   "scripts": {
     "dev": "pnpm -r --parallel --if-present dev",
     "dev:client": "pnpm --filter @lobbers/client dev",
-    "dev:server": "pnpm --filter @lobbers/server dev",
     "build": "pnpm -r --if-present build",
     "test": "pnpm -r --if-present test",
     "test:core": "node --experimental-strip-types --no-warnings --test packages/shared/test/*.test.ts",
     "typecheck": "pnpm -r --if-present typecheck",
     "e2e": "pnpm --filter @lobbers/client e2e",
-    "db:up": "docker compose up -d postgres redis",
-    "db:migrate": "pnpm --filter @lobbers/server db:migrate"
+    "smoke:p2p": "node tools/p2p-smoke/run.mjs 4 cobalt",
+    "peer:local": "pnpm exec peerjs --port 9000 --path /"
   },
   "engines": {
     "node": ">=22.6"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "esbuild",
-      "msgpackr-extract"
+      "esbuild"
     ]
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.2",
+    "peer": "^1.0.2",
+    "playwright": "^1.64.1",
+    "ws": "^8.22.1"
   }
 }

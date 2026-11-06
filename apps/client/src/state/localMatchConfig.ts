@@ -1,9 +1,10 @@
-// Hot-seat match setup, encoded in the URL (/match/local?map=…&red=…&blue=…) so a match is linkable
-// and reproducible (seed). Phase 2 replaces this with real lobby seats.
+// Hot Seat setup (DESIGN_SPEC §3.9), encoded in the URL (/hotseat?map=…&red=…&blue=…&rn=…&bn=…) so a local
+// match is linkable and reproducible (seed). Names are optional ("Red 1", "Blue 2" by default).
 import { PRESETS, isPreset, type PresetId } from './cosmeticPresets';
+import type { HotSeatSeat } from '../net/local/HotSeat';
 import {
-  COSMETICS, DEFAULT_SETTINGS, MACHINES, MAPS, ROOM_LIMITS, SETTING_OPTIONS, sanitizeLoadout, type CosmeticLoadout,
-  type MachineId, type MapId, type MatchSettings, type SeatInput, type TeamId, type WindSetting,
+  ALL_COSMETIC_IDS, DEFAULT_SETTINGS, MACHINES, MAPS, ROOM_LIMITS, SETTING_OPTIONS, equippedFromLoadout, sanitizeLoadout,
+  type MachineId, type MapId, type MatchSettings, type TeamId, type WindSetting,
 } from '@lobbers/shared';
 
 export interface LocalMatchConfig {
@@ -17,13 +18,20 @@ export interface LocalMatchConfig {
   itemsEnabled: boolean;
   /** Cosmetic preset per team (dev harness). */
   look: Record<TeamId, PresetId>;
+  /** Player names per team, in seat order ('' = default "Red 1"…). */
+  names: Record<TeamId, string[]>;
+  mode: MatchSettings['mode'];
 }
 
 export const DEFAULT_LOCAL: LocalMatchConfig = {
   mapId: 'cobalt', red: ['thumper', 'voltaic'], blue: ['frostbite', 'mollusk'],
   turnSeconds: DEFAULT_SETTINGS.turnSeconds, wind: DEFAULT_SETTINGS.wind, friendlyFire: DEFAULT_SETTINGS.friendlyFire, seed: 1,
-  itemsEnabled: DEFAULT_SETTINGS.itemsEnabled, look: { red: 'default', blue: 'default' },
+  itemsEnabled: DEFAULT_SETTINGS.itemsEnabled, look: { red: 'default', blue: 'default' }, names: { red: [], blue: [] }, mode: 'team-deathmatch',
 };
+
+/** Same rule as profile names (3–16 visible characters). */
+const cleanSeatName = (n: string): string => { const s = n.replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16); return s.length >= 3 ? s : ''; };
+const names = (raw: string | null): string[] => (raw ? raw.split(',').map(cleanSeatName).slice(0, ROOM_LIMITS.maxPerTeam) : []);
 
 const isMachine = (v: string): v is MachineId => v in MACHINES;
 const isMap = (v: string): v is MapId => v in MAPS;
@@ -48,18 +56,24 @@ export function decodeLocalConfig(q: URLSearchParams): LocalMatchConfig {
     seed: Number.isInteger(seed) && seed > 0 ? seed : DEFAULT_LOCAL.seed,
     itemsEnabled: q.get('items') === null ? DEFAULT_LOCAL.itemsEnabled : q.get('items') === '1',
     look: { red: isPreset(q.get('rl')) ? (q.get('rl') as PresetId) : 'default', blue: isPreset(q.get('bl')) ? (q.get('bl') as PresetId) : 'default' },
+    names: { red: names(q.get('rn')), blue: names(q.get('bn')) },
+    mode: 'team-deathmatch',
   };
 }
 
 export function encodeLocalConfig(c: LocalMatchConfig): string {
   const q = new URLSearchParams({ map: c.mapId, red: c.red.join(','), blue: c.blue.join(','), turn: String(c.turnSeconds), wind: c.wind, ff: String(c.friendlyFire), seed: String(c.seed), items: c.itemsEnabled ? '1' : '0', rl: c.look.red, bl: c.look.blue });
-  return `/match/local?${q.toString()}`;
+  if (c.names.red.some(Boolean)) q.set('rn', c.names.red.join(','));
+  if (c.names.blue.some(Boolean)) q.set('bn', c.names.blue.join(','));
+  return `/hotseat?${q.toString()}`;
 }
 
-/** Hot-seat players get readable names: "Red 1", "Blue 2"… */
-export function seatsFor(c: LocalMatchConfig): SeatInput[] {
-  const seats: SeatInput[] = [];
-  const add = (t: TeamId, list: MachineId[]): void => list.forEach((machine, slot) => seats.push({ playerId: `local-${t}-${slot}`, name: `${t === 'red' ? 'Red' : 'Blue'} ${slot + 1}`, team: t, machine, slot }));
+/** Hot-seat seats, red then blue, with readable names ("Red 1", "Blue 2") and their team's cosmetic preset. */
+export function hotSeatSeats(c: LocalMatchConfig): HotSeatSeat[] {
+  const seats: HotSeatSeat[] = [];
+  const add = (t: TeamId, list: MachineId[]): void => list.forEach((machine, slot) => seats.push({
+    name: cleanSeatName(c.names[t][slot] ?? '') || `${t === 'red' ? 'Red' : 'Blue'} ${slot + 1}`, team: t, machine, cosmetics: equippedFromLoadout(sanitizeLoadout(PRESETS[c.look[t]].loadout, ALL_COSMETIC_IDS)),
+  }));
   add('red', c.red);
   add('blue', c.blue);
   return seats;
@@ -67,10 +81,4 @@ export function seatsFor(c: LocalMatchConfig): SeatInput[] {
 
 export function settingsFor(c: LocalMatchConfig): MatchSettings {
   return { ...DEFAULT_SETTINGS, mapId: c.mapId, turnSeconds: c.turnSeconds, wind: c.wind, friendlyFire: c.friendlyFire, itemsEnabled: c.itemsEnabled, isPrivate: true };
-}
-
-/** Each hot-seat player's cosmetics from their team's preset (local harness: every item allowed). */
-export function cosmeticsFor(c: LocalMatchConfig): Record<string, CosmeticLoadout> {
-  const all = new Set(COSMETICS.map((x) => x.id));
-  return Object.fromEntries(seatsFor(c).map((s) => [s.playerId, sanitizeLoadout(PRESETS[c.look[s.team]].loadout, all)]));
 }

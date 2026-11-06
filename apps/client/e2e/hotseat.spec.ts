@@ -17,7 +17,7 @@ test('desktop: 2v2 hot-seat played to victory, terrain hash equal after every ac
   test.setTimeout(420_000);
   const errors = collect(page);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/match/local?map=cobalt&red=thumper,boomba&blue=cinder,voltaic&wind=calm&turn=45&seed=11');
+  await page.goto('/hotseat?map=cobalt&red=thumper,boomba&blue=cinder,voltaic&wind=calm&turn=45&seed=11');
   await waitForMyTurn(page);
   await page.waitForTimeout(900);
   const first = await page.screenshot();
@@ -73,7 +73,7 @@ const fps8: Record<string, number> = {};
 
 async function layoutShot(page: Page, size: { width: number; height: number }, query: string, name: string, ref: string): Promise<number> {
   await page.setViewportSize(size);
-  await page.goto(`/match/local?${query}`);
+  await page.goto(`/hotseat?${query}`);
   await waitForMyTurn(page);
   await page.waitForTimeout(1800);
   const buf = await page.screenshot();
@@ -97,7 +97,7 @@ test('tablet + phone layouts render (vs 04f / 04g) and Skyreach (vs 04i)', async
 test('Sunscar Dunes: full-power shot is chased across the map, then the camera pans to the next player', async ({ page }) => {
   const errors = collect(page);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/match/local?map=dunes&red=thumper&blue=mollusk&wind=off&seed=2');
+  await page.goto('/hotseat?map=dunes&red=thumper&blue=mollusk&wind=off&seed=2');
   await waitForMyTurn(page);
   await page.waitForTimeout(800);
   for (let i = 0; i < 25; i++) await page.keyboard.press('e');

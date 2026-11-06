@@ -23,7 +23,7 @@ for (const [i, look] of PRESETS.entries()) {
     watchErrors(page, errors);
     await page.setViewportSize({ width: 1440, height: 900 });
     const machines = ['thumper,mollusk', 'sprocket,cinder', 'voltaic,boomba', 'mollusk,thumper', 'boomba,sprocket'][i];
-    await page.goto(`/match/local?map=cobalt&red=${machines}&blue=${machines}&wind=off&turn=45&seed=${3 + i}&rl=${look}&bl=${look}`);
+    await page.goto(`/hotseat?map=cobalt&red=${machines}&blue=${machines}&wind=off&turn=45&seed=${3 + i}&rl=${look}&bl=${look}`);
     expect(await waitForMyTurn(page)).toBe(true);
     await page.keyboard.press('t');
     await expect(page.getByRole('dialog', { name: 'Emotes' })).toBeVisible();
@@ -37,13 +37,13 @@ for (const [i, look] of PRESETS.entries()) {
 
 test('Items On lists all 10 weapons in the Armory; Items Off lists the loadout', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/match/local?map=cobalt&red=thumper&blue=mollusk&wind=off&items=1');
+  await page.goto('/hotseat?map=cobalt&red=thumper&blue=mollusk&wind=off&items=1');
   expect(await waitForMyTurn(page)).toBe(true);
   await page.keyboard.press('w');
   await expect(page.getByText('Items: On — full arsenal this match')).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Armory' }).locator('button[title]')).toHaveCount(10);
   await page.screenshot({ path: `${shotsDir('phase-3')}/armory-items-on.png` });
-  await page.goto('/match/local?map=cobalt&red=thumper&blue=mollusk&wind=off&items=0');
+  await page.goto('/hotseat?map=cobalt&red=thumper&blue=mollusk&wind=off&items=0');
   expect(await waitForMyTurn(page)).toBe(true);
   await page.keyboard.press('w');
   await expect(page.getByText('Items: Off — Thumper loadout')).toBeVisible();
@@ -52,7 +52,7 @@ test('Items On lists all 10 weapons in the Armory; Items Off lists the loadout',
 
 test('sound: unlocks on the first key press, battle music runs, a shot plays fire/whistle/explosion', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/match/local?map=cobalt&red=thumper&blue=mollusk&wind=off&seed=5');
+  await page.goto('/hotseat?map=cobalt&red=thumper&blue=mollusk&wind=off&seed=5');
   expect(await waitForMyTurn(page)).toBe(true);
   const stats = (): Promise<{ state: string; sfx: number; musicSteps: number; track: string }> => page.evaluate(() => (window as unknown as { __lobbersAudio: () => { state: string; sfx: number; musicSteps: number; track: string } }).__lobbersAudio());
   await page.keyboard.press('ArrowUp');

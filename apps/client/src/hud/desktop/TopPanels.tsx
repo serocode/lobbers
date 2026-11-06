@@ -64,6 +64,7 @@ export function TurnPanel(): JSX.Element {
   const local = useMatch((v) => isLocal(v, unitOf(v, v.activeUnitId)));
   const phase = useMatch((v) => v.sync.phase);
   const replaying = useMatch((v) => v.replaying);
+  const paused = useMatch((v) => v.sync.paused);
   const col = act ? TEAM_COLOR[act.team] : '#F45B55', dark = act ? TEAM_DARK[act.team] : '#3A2230';
   const frozen = !!act && act.status.frozenTurns > 0;
   const status = !act ? 'Get ready…'
@@ -77,7 +78,9 @@ export function TurnPanel(): JSX.Element {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
         <span className="mono" style={{ fontSize: 12, color: '#A9B3CC', fontWeight: 700 }}>TURN {turn}</span>
         <span className="fd" style={{ fontSize: 24, lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: col }}>{act ? `${act.name}${online && local ? ' (you)' : ''}` : '—'}</span>
-        <span style={{ fontSize: 12, fontWeight: 600, color: '#C9D1E0' }}>{status}</span>
+        {paused
+          ? <span className={s.wait} style={{ fontSize: 12, fontWeight: 700, color: '#FFD166' }}>Host reconnecting…</span>
+          : <span style={{ fontSize: 12, fontWeight: 600, color: '#C9D1E0' }}>{status}</span>}
       </div>
       <TimerRing seconds={secs} total={total} pulse={mine} />
     </section>

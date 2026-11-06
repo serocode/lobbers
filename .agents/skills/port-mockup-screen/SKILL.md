@@ -22,7 +22,9 @@ description: Convert one design/mockup/*.dc.html screen into React components wi
      `.btn/.panel/.hud/.scrim/.modal/.sw/.fd/.mono`). Keep keyframes verbatim.
    - Inline `style="…"` → keep as inline style objects or move to the CSS module **with identical values**.
 3. **Replace mock data with real data.** Remove every hard-coded list from `renderVals()`; read from stores fed by
-   the server (`state/`), and send intents through `net/`. Buttons that only toggled local state in the mockup must
+   the `PeerClient` (room/match) and the local profile (`persist/`), and send intents through the `PeerClient`.
+   Screens that assumed a backend (Quick Match, public rooms, global leaderboards, online friends) follow
+   DESIGN_SPEC §3.9 (P2P adaptations). Buttons that only toggled local state in the mockup must
    now perform their real action (see DESIGN_SPEC "Wiring").
 4. **Split.** One folder per screen: `index.tsx` (layout), sub-components per panel, `use<Screen>.ts` for derived state.
    Keep files under ~300 lines.

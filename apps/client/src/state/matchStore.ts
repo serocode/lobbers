@@ -3,7 +3,7 @@ import { createStore, type StoreApi } from 'zustand/vanilla';
 import {
   MACHINES, arsenalFor, type UnitCosmetics, type BurnZone, type MachineId, type MapId, type MatchEndedMsg, type MatchSettings, type PropState, type UnitState, type WeaponId,
 } from '@lobbers/shared';
-import type { MatchStateView } from '../net/MatchTransport';
+import { EMPTY_STATE, type MatchStateView } from '../net/MatchTransport';
 
 export interface LogLine { id: number; text: string; color: string }
 export interface FeedItem { id: number; killer: string; killerColor: string; victim: string; victimColor: string }
@@ -52,7 +52,7 @@ export interface MatchView {
 
 export const initialMatchView = (): MatchView => ({
   ready: false, mapId: 'cobalt', settings: null, units: [], props: [], burnZones: [], turnNumber: 0, activeUnitId: null, wind: 0, endsAt: 0,
-  sync: { phase: 'waiting', turnNumber: 0, activeUnitId: null, endsAt: 0, wind: 0, shotsLeft: 0, offline: {} },
+  sync: EMPTY_STATE,
   replaying: false, localPlayerIds: [], aim: {}, remoteAim: {}, lastPower: {}, armed: { special: false, ultimate: false },
   log: [], feed: [], banner: null, elim: null, hurtAt: 0, toast: null, result: null, hash: { checks: 0, mismatches: 0, client: 0, server: 0 }, cosmetics: {}, emotes: [],
 });
@@ -67,7 +67,7 @@ export const isLocal = (v: MatchView, u: UnitState | undefined): boolean => !!u 
 /** The active unit can be controlled from this browser right now. */
 export function canControl(v: MatchView): boolean {
   if (!v.ready || v.result || v.replaying) return false;
-  if (v.sync.phase !== 'acting' || !v.sync.activeUnitId || v.sync.activeUnitId !== v.activeUnitId) return false;
+  if (v.sync.paused || v.sync.phase !== 'acting' || !v.sync.activeUnitId || v.sync.activeUnitId !== v.activeUnitId) return false;
   const u = unitOf(v, v.activeUnitId);
   return !!u && u.alive && isLocal(v, u);
 }

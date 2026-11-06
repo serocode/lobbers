@@ -34,7 +34,8 @@ export function createHudPresenter(store: MatchStore, map: () => MapDef | null):
       const mine = isLocal(s, u);
       const arrow = msg.wind === 0 ? '' : msg.wind > 0 ? ' →' : ' ←';
       const secs = s.settings?.turnSeconds ?? 30;
-      const title = mine && !isHotSeat() ? 'YOUR TURN' : (u?.name ?? '').toUpperCase();
+      // Online: YOUR TURN / {NAME}. Hot seat: hand the device over (DESIGN_SPEC §3.9 "PASS TO {NAME}").
+      const title = isHotSeat() ? `PASS TO ${(u?.name ?? '').toUpperCase()}` : mine ? 'YOUR TURN' : (u?.name ?? '').toUpperCase();
       const color = mine && !isHotSeat() ? '#FFD166' : u ? TEAM_COLOR[u.team] : '#FFD166';
       store.setState({
         turnNumber: msg.turnNumber, activeUnitId: msg.activeUnitId, wind: msg.wind, endsAt: msg.endsAt, burnZones: msg.burnZones,

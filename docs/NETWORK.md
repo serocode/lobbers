@@ -1,51 +1,65 @@
-# Network design (Colyseus 0.16)
+# Network design (WebRTC via PeerJS)
 
-Types: `packages/shared/src/protocol.ts`. Validate every inbound message with zod at the room boundary.
+Types: `packages/shared/src/protocol.ts` (`PROTOCOL_VERSION = 3`). Validation: `packages/shared/src/net/codec.ts`.
+Transport: `apps/client/src/net/p2p/peerjs.ts` (the only file that imports `peerjs`).
 
-## Rooms
-| Room | Created by | Joined by | Purpose |
-|---|---|---|---|
-| `lobby` | Create Room / matchmaker | code (`filterBy(['code'])`), public list, friend join, invite | seats, teams, machines, ready, settings, chat |
-| `match` | `lobby` on start (`matchMaker.createRoom('match', {seats, settings, seed})`, then send each client a seat reservation) | reserved seats only | the game |
-| `presence` | one shared room (or per-user) | every signed-in client | friends online/offline/in-match status, invites |
+## Rooms = PeerJS ids
+| Thing | Value |
+|---|---|
+| Room code | `LOB-XXXX` (`generateRoomCode`, alphabet without ambiguous characters) |
+| Host peer id | `HOST_RULES.peerIdPrefix + code` → `lobbers-v2-LOB-7Q4K` (taken → new code, up to 5 tries) |
+| Guest peer id | random (PeerJS assigns) |
+| Data channel | `peer.connect(hostId, { reliable: true, serialization: 'json' })`, payload = JSON string, ≤ `MAX_PEER_MESSAGE_CHARS` |
+| Invite link | `https://<your-vercel-app>/?join=LOB-7Q4K` → first-run if needed → Join |
 
-Auth: client calls `POST /api/auth/guest` → JWT; pass it in `joinOptions`; rooms verify in `onAuth` and use the user id
-as `playerId` (never trust a client-sent id).
+Signaling: PeerJS cloud server by default (free, no account). For tests / independence run `pnpm exec peerjs --port 9000`
+and set `VITE_PEER_HOST/PORT/PATH/SECURE`. ICE: STUN by default; add TURN in `VITE_ICE_SERVERS` for players on
+networks that block direct connections (often some mobile data / strict NAT). Game traffic is tiny (≈ 1–30 KB per
+shot), so a free TURN allowance goes far.
 
-## Lobby state (`@colyseus/schema`)
-`LobbyState { code, name, isPrivate, hostId, settings: SettingsSchema, players: MapSchema<LobbyPlayerSchema>, chat: ArraySchema<ChatLine>(last 20), phase: 'open'|'starting' }`
-Intents: `setTeam`, `setMachine`, `setReady`, `updateSettings` (host), `kick` (host), `startMatch` (host), `chat`.
-Server checks with `lobby.ts` and responds with `rejected {intent, reason}` on failure.
-On start: `phase='starting'`, broadcast `matchStarting {countdown:3}`, create match room, send reservations, clients
-consume them and navigate to `/match/:id`.
-
-## Match state
-Schema (small, frequently changing): `MatchState { phase, turnNumber, activeUnitId, endsAt, wind, shotsLeft, offline: MapSchema<number> (playerId → reconnect deadline) }`.
-Unit HP/positions are NOT in the schema: they arrive as `actionResolved.units` snapshots so the HUD changes in step with the
-replayed animation (DECISIONS, Phase 2). All server messages use the room message type `s` with a `ServerMessage` body.
-Messages (large or event-like): `matchStarted`, `turnStarted`, `actionResolved`, `aimUpdate`, `matchEnded`, `rejected`,
-`resyncTerrain`.
-Intents (room message type `intent`): `aim` (≤10/s, cosmetic, relayed), `move {dir, ticks≤10}`, `jump`, `selectWeapon`,
-`useAbility {slot}`, `fire {aim}`, `skipTurn`, `forfeit`. The state machine is `MatchFlow` in `packages/shared/src/match/flow.ts`.
-Lobby: intents under `intent`; server notices under `lobby` (`matchStarting`, `matchReady {matchId, reservation}`, `kicked`,
-`rejected`); `ping`/`pong` every 3 s for the slot ping; `time` for clock sync (both rooms). Match rooms are created only by a
-lobby (HMAC key) and accept reserved seats or the same account rejoining.
+## Session flow
+```
+guest                                  host (HostSession)
+  ── open data channel ───────────────►  connect(link)
+  ── hello {v, profile, rejoinToken?} ►  version check → rejoin (token) | lobby.join(profile)
+  ◄─ welcome {playerId, rejoinToken, hostTime, code, protocol}
+  ◄─ lobbyState {LobbyView}              (again after every lobby change)
+  ── ping {clientTime, rtt?} every 2 s ►  (liveness: no message for 8 s → treated as disconnected; rtt → slot ping)
+  ◄─ pong {clientTime, hostTime}         (PeerClient.offset = median of last 5 samples; PeerClient.rtt)
+  ── LobbyIntent … ───────────────────►  HostLobby.handle → lobbyState | rejected {intent, reason}
+  ◄─ matchStarting {countdown, matchId}  (host pressed Start, 3 s)
+  ◄─ matchStarted {terrainRLE, units, props, cosmetics, …}   (cosmetics = each unit's resolved loadout)
+  ── loaded ──────────────────────────►  first turn when everyone loaded (or 10 s)
+  ◄─ matchState {MatchView}              (after every change: turn, phase, connected, paused, reconnectUntil)
+  ◄─ turnStarted {…, burnZones} · actionResolved · aimUpdate · emote {unitId, emoteId}
+  ── MatchIntent (aim/move/jump/selectWeapon/useAbility/fire/skipTurn/forfeit/emote) ► HostMatch.handle
+  ◄─ matchEnded {MatchEndedMsg + mvpHighlight + details}  → peer runs creditMatch on its own profile → room reopens
+                                         (the Results tally is host-computed and survives a host refresh: DECISIONS)
+  ◄─ closed {reason}                     kicked · room full · match in progress · already joined · version mismatch ·
+                                         host closed the room · bad hello
+```
+The host's own UI receives exactly the same messages through the loopback link.
 
 ## Reconnection
-- `onLeave(client, consented)`: if not consented → `unit.connected=false`, broadcast; `await this.allowReconnection(client,
-  CONNECTION_RULES.reconnectWindowSec)`. If it was their turn → end it now.
-- On success: `connected=true`, send `matchStarted` snapshot (terrain RLE + hash + units + settings) and the current
-  `turnStarted`. Client keeps `room.reconnectionToken` in sessionStorage and calls `client.reconnect(token)` on load.
-- On timeout or after `maxSkippedTurnsWhileDisconnected` skipped turns → forfeit (unit eliminated, logged; counts as a
-  loss; no rewards).
-- Lobby: host leaving → `transferHost` (longest-connected); settings are preserved. If the room empties it disposes.
+- **Guest drops** (network, reload): host marks `connected=false`, broadcasts `matchState`, skips their turns
+  (`advanceTurn(…, canAct)`); if it was their turn it ends now. The guest's `joinRoom` retries every 1.5 s; on
+  `hello` with the saved `rejoinToken` (localStorage `lobbers:rejoin:<code>`) the host re-binds the seat and sends a
+  full sync (`matchStarted` with the current terrain, `matchState`, current `turnStarted`). Window =
+  `CONNECTION_RULES.reconnectWindowSec`; after that, or after `maxSkippedTurnsWhileDisconnected` skips → forfeit.
+- **Lobby**: a guest who drops before the match is simply removed; they re-join with the code.
+- **Host refresh (F5)**: `HostSession` has been writing `lobbers:host:<code>` on every change. On load the app sees
+  `lobbers:hostRoom` and calls `resumeHostedRoom(code)` → re-registers the same peer id (retry while the signaling
+  server frees it) → `HostSession.restore` → match `paused` until the previous peers are back (or 15 s), then the same
+  turn continues with at least 10 s on the clock. Guests just keep retrying.
+- **Host leaves for good**: guests retry for the reconnect window, then show "The host closed the room". An explicit
+  Leave by the host sends `closed` immediately.
 - AFK: `maxConsecutiveTimeouts` expired turns → forfeit.
 
 ## Time
-Server sends `serverTime` on join and in `turnStarted`; client computes `offset = serverTime - Date.now()` (median of 3
-pings) and renders `endsAt - (Date.now() + offset)`.
+Host epoch ms is the reference. `endsAt` comes from the host; peers render `endsAt − client.hostNow()`.
 
-## Security checklist
-JWT on every room/API; zod schemas; clamp numbers (`clampAngle`, `clampPower`, move ticks); rate-limit chat (2/s) and
-aim (10/s); max message size; chat length 140 and profanity filter hook; never accept unit ids from clients —
-derive from `playerId`; purchases and mission claims are server-side transactions.
+## Security checklist (friends-only, but no guest can break a match)
+`parsePeerMessage` on every inbound message (shape, enums, clamps, name/chat cleaning, size cap); identity from the
+link binding, never from message fields; host-only lobby actions checked against the bound player; one actor at a
+time; chat 2/s and 140 chars; aim relay ≤ 10/s; move ticks ≤ 10; rejoin tokens are random (crypto) and per room.
+The host itself is trusted (documented limitation).

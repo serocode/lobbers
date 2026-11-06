@@ -73,14 +73,15 @@ small expressive eyes with a 4–5 s blink.
 | Route | Screen | Entry points |
 |---|---|---|
 | `/` | Home | app start, Leave/Home buttons |
-| `/lobby/:code` | Lobby | Play Now (matchmade room), Quick Match "Enter Lobby", Create Room, Join Room, friend "Join" |
+| `/lobby/:code` | Lobby | Play Now / Create Room (you host), Join Room (code), invite link `/?join=LOB-XXXX`, Recent rooms |
 | `/lobby/:code/machine` | Machine Select | Lobby "Change Machine", nav "Machines" (outside a room → `/machines` browse mode, Lock In saves the default machine) |
-| `/match/:matchId` | Battlefield | server `matchStarted` (auto-navigate all players) |
-| `/results/:matchId` | Results | server `matchEnded`, pause menu "Skip to results" is **removed** in production (dev only) |
-| `/profile/:userId?` | Profile | Home profile card, Results "My Profile", Friends profile popover "View full profile" |
+| `/match/:matchId` | Battlefield | host `matchStarted` (auto-navigate all players) · `/hotseat` local pass-and-play (§3.9) |
+| `/results/:matchId` | Results | host `matchEnded`; revisits read the local match history. Pause menu "Skip to results" is dev only |
+| `/profile` | Profile (yours, from localStorage) | Home profile card, Results "My Profile" (other players: popover only, §3.9) |
 | `/inventory` | Inventory | nav "Inventory", Lobby "Customize", Machine Select "Skins for X" (opens Machine Skins tab filtered) |
 | `/friends` | Friends & Social | Home "See all", Lobby "Invite Friends" (modal stays in lobby) |
-Missions, Leaderboards and Settings are modals on Home (keep them as modals).
+Missions, Leaderboards and Settings are modals on Home (keep them as modals). **Vercel**: every route is an SPA route
+(`vercel.json` rewrites to `index.html`) so invite links and refreshes on `/lobby/:code` work.
 
 ---------------------------------------------------------------------------------------------------------------------
 
@@ -94,38 +95,42 @@ legibility panel x 0–740; season chip (36, 56); logo "LOBBERS" (LOB yellow / B
 shell above) and red ribbon "4 v 4 ARTILLERY MAYHEM"; CTA stack at (56, 430) w 470: PLAY NOW + 3 tiles (Quick Match
 blue, Create Room green, Join Room red); featured machine stage at (640, 236) 420×540 with ◀ ▶; bottom nav (24, 800)
 1012×80 six items; right panel (1060, 24) 356×856: profile card, Recent Activity, Friends Online.
-**Data** — `GET /api/me` (name, title, level, xp, xpToNext, rank, coins, gems, avatar machine), `GET /api/me/activity`
-(last 4), friends presence via the social channel (online first, max 5), season info from `GET /api/season`. Featured
-machine list = `MACHINE_LIST`.
-**Actions** — PLAY NOW → join matchmaking queue (ranked 4v4) → on match found navigate to its lobby. Quick Match modal →
-real queue status: players found n/8, elapsed timer, Cancel leaves the queue; "Enter Lobby" when the server reports a
-match. Create Room modal → room name, map (3 thumbnails), mode, private switch → `create LobbyRoom` → navigate.
-Join Room modal → code input (`LOB-XXXX`, uppercase, validated) → join by code; "Open rooms near you" = real public
-rooms (`GET /api/rooms?public=1`), each Join works. Missions modal → `GET /api/missions`, Claim → `POST
-/api/missions/:id/claim` (server adds coins). Leaderboards → `GET /api/leaderboards?scope=global|friends`. Settings →
-persisted (volumes, screen shake, trajectory preview, damage numbers, graphics quality) to profile + localStorage;
-the battlefield reads them. Friend row button: Invite (if you are in a room) / Join (friend in a joinable room) / Watch
-(spectating is out of scope → show disabled with tooltip "Spectating coming soon" and log it). Profile card → Profile.
+**Data** — the local profile (`loadProfile`: name, title, level, xp, `REWARDS.xpForLevel`, rating, coins, gems,
+favourite machine), Recent Activity = last 4 `profile.history` entries, the right-hand friends panel = starred + recent
+players (`profile.recentPlayers`, §3.9), season chip from a static `config/season.ts`. Featured machine list = `MACHINE_LIST`.
+**Actions** — PLAY NOW → opens Create Room prefilled (you host; sub-label "Host a room for your friends"). Quick Match
+tile → **Hot Seat** (§3.9). Create Room modal → room name, map (6 thumbnails), mode → `createRoom()` (PeerJS) →
+navigate to `/lobby/:code`; the private switch is removed (every room is private — joined by code or link).
+Join Room modal → code input (`LOB-XXXX`, uppercase, validated) → `joinRoom(code)`; the "Open rooms near you" list
+becomes **Recent rooms** (last 4 codes you hosted/joined, from localStorage; Join tries them and shows "Room closed"
+if the host is gone). Missions modal → local daily missions (`profile.progress`, reset at local midnight; progress is
+updated by `creditMatch` results), Claim adds coins to the local profile. Leaderboards → Friends tab =
+`localLeaderboard(profile)`; Global tab disabled with tooltip "Needs a server — not in this version". Settings →
+`profile.settings` (volumes, screen shake, trajectory preview, camera follows shots, damage numbers, quality) +
+**Export save / Import save / Reset** (§3.9). Friend row button: Invite = share/copy the room link when you are in a
+room; Join/Watch are removed (no presence without a server). Profile card → Profile.
 **Replace** — mock activity/friends/leaders/missions arrays, fake matchmaking timer.
 
 ### 2.2 Lobby — `Lobby.dc.html` (`02-lobby*.png`)
-**Regions** — header: Leave, room name + "{mode} · {Private|Public} room · Host: {name}", room code + Copy, player
-count n/8, region·ping. Team Red column x 24 / Team Blue x 1016 (w 400): chamfered team band (count, avg level) + 4
+**Regions** — header: Leave, room name + "{mode} · Private room · Host: {name}", room code + Copy, player
+count n/8, "P2P · {ping} ms" (round-trip to the host from `PeerClient` pings; the host shows "You are hosting"). Team Red column x 24 / Team Blue x 1016 (w 400): chamfered team band (count, avg level) + 4
 slots (136 px). Centre (444, 104) w 552: map preview (Scene) with "MAP i / 3", size chip, VS badge, ◀ ▶; map name +
 description; 6 setting buttons (Mode, Turn Timer, Wind, Items, Friendly Fire, Rounds); chat panel. Footer: Change
 Machine, Customize, Invite Friends, Copy Room Code, Switch to {Team}, "{n} not ready", READY UP / READY!, START MATCH.
 **Slot states** — filled (portrait with team stripes + bob, name, YOU chip, host crown, title, machine · role, READY /
 NOT READY pill, LV, ping bars + ms), empty (dashed "Open slot · Click to invite a friend" → opens Invite modal
 pre-targeted), connecting (spinner "Connecting…"), **disconnected** (see §3.4).
-**Data** — Colyseus `LobbyRoom` state: players (id, name, title, level, team, slot, machine, ready, connected, isHost,
-ping), settings, code, chat (last 5 visible).
+**Data** — `PeerClient.lobby` (`LobbyView` from the host): players (id, name, title, level, rating, team, slot, machine,
+ready, connected, isHost, cosmetics), settings, code, chat (last 5 visible), phase.
 **Actions** — all are intents (`protocol.ts LobbyIntent`): setTeam (Switch), setMachine (from Machine Select),
 setReady, updateSettings (host only: map ◀ ▶ and setting buttons cycle `SETTING_OPTIONS`; non-hosts see them
 read-only with tooltip "Only the host can change this"), chat (Enter/Send, quick "gl hf"), kick (host: X on slot hover
 — addition, §3.6), startMatch (host only; enabled when `validateStart` passes, otherwise the reason shows as the
-footer info text). Copy Room Code copies `LOB-XXXX` (and a join link). Leave → leave room → Home. Countdown overlay
-(3-2-1 + DEPLOYING! bar) is driven by the server's `matchStarting` broadcast; all clients navigate together.
-**Validation (server)** — 8 max, 4 per team, 2 min, host-only start, all non-host players ready.
+footer info text). Copy Room Code copies `LOB-XXXX`; Invite Friends opens the share sheet (`navigator.share`) with
+`https://<site>/?join=LOB-XXXX`, falling back to copy. Leave → guests: `leave` → Home; **host: confirm "Close the room
+for everyone?"** → `room.close()`. Countdown overlay (3-2-1 + DEPLOYING! bar) is driven by the host's `matchStarting`
+broadcast; all peers navigate together on `matchStarted`.
+**Validation (host engine)** — 8 max, 4 per team, 2 min, host-only start, all non-host players ready (`HostLobby`).
 
 ### 2.3 Machine Select — `Machines.dc.html` (`03-*.png`)
 **Regions** — header: Lobby back, "CHOOSE YOUR MACHINE", TEAM chip, Random, LOCK-IN ring timer. 4×2 card grid
@@ -134,7 +139,7 @@ footer info text). Copy Room Code copies `LOB-XXXX` (and a join link). Leave →
 bob + flash), role, name, description, 4 stat bars (HEALTH shows max HP), 3 weapon chips, SPECIAL box. Footer: TEAM
 PICKS (teammates' live picks), composition hint, "Skins for X", LOCK IN → BACK TO LOBBY.
 **Data** — `MACHINE_LIST` (stats, derived max HP, loadout first 3 weapons, special) + teammates' machines from the
-lobby room. Lock-in timer = optional lobby setting (default off outside ranked; ranked: 30 s server timer).
+lobby view. Lock-in timer: not used (no ranked queue).
 **Actions** — select (click/keys 1–8), Random, LOCK IN → `setMachine` intent, then back to lobby. Duplicate machines
 on a team are allowed (badge "Picked by X" is informational). Add the **Ultimate** line under SPECIAL in the same box
 style with the purple accent `#B07CF2` (addition, §3.2).
@@ -192,11 +197,12 @@ click equips and closes. The info line reads "Items: On — full arsenal this ma
 On, all 10 weapons are listed (the mockup shows this); with Items Off only the active unit's loadout
 (`MACHINES[kind].loadout`) is listed.
 **Pause menu** — RESUME, Trajectory preview switch, Screen shake switch, Camera follows shots switch, ~~Skip to match results~~ (dev only),
-"Surrender & return home" → confirm dialog → server `forfeit` (unit eliminated, counts as a loss).
+"Surrender & return home" → confirm dialog → `forfeit` intent (unit eliminated, counts as a loss). For the HOST the
+dialog says the room stays open until the match ends (the host's tab keeps running the match while they spectate).
 **Victory/defeat overlay** — "VICTORY!" / "DEFEAT" + winners in victory pose; SEE RESULTS, Play again (host → new
 lobby with the same players; others: "Waiting for host"), Back to lobby.
-**Data** — Colyseus `MatchRoom` state (units, active unit, turn number, phase, endsAt, wind, settings) +
-`actionResolved` / `turnStarted` / `aimUpdate` messages. Other players' live aim (barrel angle, weapon) arrives via
+**Data** — `PeerClient.match` (`MatchView`: units, active unit, turn number, phase, endsAt, wind, connected, paused) +
+`matchStarted` / `actionResolved` / `turnStarted` / `aimUpdate` messages, and a `WorldMirror` for terrain + preview. Other players' live aim (barrel angle, weapon) arrives via
 `aimUpdate` (throttled 10 Hz) so spectators see the barrel move.
 **Actions → intents** — aim (mouse/keys/drag), move (hold ←/→ sends `move` every 100 ms with ticks=6), jump (J or
 button), selectWeapon, useAbility (special / ultimate), fire, skipTurn (not in mockup; Esc menu "End turn" — optional).
@@ -214,16 +220,20 @@ accuracy), defeated team row (wreck pose), Player Rankings table (sortable: DMG,
 highlighted), Your Rewards (XP bar animates from old to new, level-up burst if `applyXp` gains a level, +XP, +coins
 count-up, mission progress), footer: PLAY AGAIN, Return to Lobby, Return Home, My Profile, View Match Details (per-turn
 damage chart, weapon usage cards).
-**Data** — `MatchEndedMsg` (server-computed with `computeResults`) + persisted match record (`GET /api/matches/:id`
-for revisits). The MVP highlight line is generated server-side from the match log (biggest single hit / final blow).
+**Data** — `MatchEndedMsg` (host-computed with `computeResults`). On arrival each peer runs `creditMatch` on its own
+profile (idempotent) and the Rewards panel animates from the returned `xpGained / coinsGained / levelsGained`.
+The MVP highlight line (`mvpHighlight`: biggest single hit / final blow) and Match Details (`details`: team damage per
+turn, weapon usage) are computed by the **host** (`MatchTally`, saved in the host's snapshot so a refresh keeps them)
+and sent in `matchEnded`, so every peer — including one that rejoined mid-match — shows identical numbers. Revisits
+(`/results/:matchId` from history) rebuild the screen from the compact summary `creditMatch` stores in `profile.history`.
 
 ### 2.6 Profile — `Profile.dc.html` (`06-profile.png`)
 Identity card (hex avatar with equipped skin, level badge, rank shield + SR, name, title, member since, XP bar,
 Change title → title picker from owned titles, Customize → Inventory), equipped cosmetics list, career stats (win-rate
 ring, matches, wins, losses, accuracy, favourite machine = most played), match history (All / Wins / Losses tabs,
 paginated 8 per page, row → Results of that match), achievements (12 tiles; locked show progress; click shows detail).
-**Data** — `GET /api/profile/:id`, `GET /api/profile/:id/matches?filter=`, `GET /api/profile/:id/achievements`.
-Viewing someone else's profile hides Change title / Customize and shows Add friend / Invite.
+**Data** — the local profile: `stats`, `history` (last 30, paginated 8), `equipped`, `progress` (achievements).
+Only your own profile exists; other players get the popover card (§3.9).
 
 ### 2.7 Inventory — `Inventory.dc.html` (`07*.png`)
 Category rail (8 categories with owned/total), total collection meter, items grid (preview by type: machine/skin/avatar
@@ -231,10 +241,12 @@ Category rail (8 categories with owned/total), total collection meter, items gri
 emote → speech bubble; title → nameplate), filters All/Owned/Locked, rarity strip, EQUIPPED / lock badges, preview
 pane with description, source/unlock requirement, action button: EQUIP / EQUIPPED / UNLOCK · {price} / NOT ENOUGH
 {currency} / LOCKED.
-**Data** — `GET /api/catalog` (item definitions incl. price/requirement), `GET /api/me/inventory` (owned, equipped).
-**Actions** — `POST /api/me/equip {slot,itemId}`, `POST /api/me/unequip {slot}` (add an "Unequip" secondary button
-for non-default slots — trails, explosions, titles, emotes fall back to defaults), `POST /api/store/purchase {itemId}`
-(server checks balance and requirement). Equipped skins/trails/explosions/titles/emotes appear in matches for everyone.
+**Data** — `config/cosmetics.ts` (catalog: ids, names, rarities, prices, requirements — from Inventory.dc.html) +
+`profile.owned` / `profile.equipped`.
+**Actions** — `equip(profile, slot, itemId)` / `equip(profile, slot, null)` (add an "Unequip" secondary button for
+non-default slots — trails, explosions, titles, emotes fall back to defaults), `purchase(profile, item)` (checks balance;
+requirements checked against `profile.stats`/level). Save with `saveProfile`. Equipped cosmetics travel in your
+`hello` profile, so everyone renders them in matches.
 
 ### 2.8 Friends & Social — `Friends.dc.html` (`08*.png`)
 Header add-friend input + Add; tabs Online / Offline / Requests / Recent players with counts; rows with avatar +
@@ -243,9 +255,8 @@ in a joinable lobby), Invite (you are in a room), Accept/Decline (requests), Add
 (recent), Message (offline — out of scope: disabled with tooltip unless chat is built), profile popover. Right: Your
 Room card (name, mode, map, code, 8 mini slots, pending invites with live status, Invite all online, Copy invite link,
 OPEN LOBBY). When not in a room the card shows "Create a room to invite friends" + Create Room.
-**Data** — `GET /api/friends`, presence + invites over a lightweight Colyseus `SocialRoom` (one per user, or a single
-`PresenceRoom`); `POST /api/friends/requests`, `POST /api/friends/requests/:id/accept|decline`; recent players from
-match history. Invites arrive as a toast + Home friend row "Join" for the invitee.
+**Data** — `profile.recentPlayers` (everyone you've finished a match with: last-known name, level, rating, title,
+matches together, starred). No presence, requests or messages (no server) — see §3.9 for the adapted tabs and actions.
 
 ---------------------------------------------------------------------------------------------------------------------
 
@@ -281,14 +292,38 @@ airborne or fuel < 12.
 Host sees a 28×28 X button on other players' slot hover → confirm → kick. Public/Private toggle in the header subtitle
 (click when host). Room settings show a lock icon for non-hosts.
 
-### 3.7 First-run name & guest account
-On first launch show a modal in the Create Room style: "Pick your lobber name" (3–16 chars, letters/digits/._),
-starter machine pick (the 5 owned starters as small cards), CTA "LET'S LOB". Creates a guest account (device token →
-JWT). Later "Link account" (email magic link) is optional/out of scope.
+### 3.7 First-run name & local profile
+On first launch (no `lobbers:profile`) show a modal in the Create Room style: "Pick your lobber name" (3–16 chars,
+`cleanName`), starter machine pick (the 5 owned starters as small cards), CTA "LET'S LOB", and a small secondary link
+"I have a save code" → Import save. Creates `createProfile(name, crypto.randomUUID(), Date.now())` and saves it.
+If storage is unavailable show a yellow banner on Home: "Progress can't be saved in this browser (private mode?)" and
+keep the profile in memory for the session.
 
 ### 3.8 Errors and connection
-Rejected intents → red toast with the server reason. Lost connection → full-screen scrim card "Reconnecting…" (radar
-sweep from Quick Match) with countdown and "Leave match". Server errors on REST → inline error row in the panel style.
+Rejected intents → red toast with the host's reason. Guest lost the host → full-screen scrim card "Reconnecting…"
+(radar sweep from the Quick Match modal) with the `reconnectWindowSec` countdown and "Leave match".
+Host refreshed (match `paused`) → turn panel status line "Host reconnecting…" (yellow, `.wait` pulse), timer ring
+frozen, controls disabled; no scrim. `closed` reasons → one card in the modal style with a single "Back to Home" button:
+"Room not found" (bad code / host gone before you joined), "Room is full", "This match already started",
+"You're already in this room in another tab", "A newer version is out — refresh the page" (version mismatch),
+"The host closed the room", "You were removed by the host".
+
+### 3.9 Peer-to-peer adaptations (no server) — build exactly like this
+- **Hot Seat** (Home tile that was Quick Match; blue, same size; icon = two overlapping controllers drawn in the
+  mockup's stroke style; label "Hot Seat", sub "Pass & play on one screen"). Opens a modal like Create Room: map,
+  mode, 2–8 local players (name + machine each). Runs a `HostSession` with no network: every seat is a `PeerClient` over
+  `connectLoopback`, and the battle HUD controls whichever seat is active (turn banner "PASS TO {NAME}"). No rewards.
+- **Friends screen** tabs: "Starred" / "Recent players" (Requests and Online/Offline tabs removed). Row: avatar, name,
+  LV, title, "played n× · last {date}"; actions: ☆ Star / ★ Starred (`starPlayer`), Invite (only when you're in a room:
+  share/copy link). The add-friend input becomes "Join by code" (same input style, validates `LOB-XXXX`). Right "Your
+  Room" card unchanged except "Invite all online" → "Share invite link". Profile popover shows what you know (last
+  name, level, rating, matches together) — no "View full profile".
+- **Home right panel** "Friends Online" → "Your Crew" (starred first, then recent; max 5) with the same row style;
+  no presence dots (use the level badge in that spot).
+- **Settings modal** gains a "Save data" group (panel style rows): Export save (shows the `exportProfile` code in a
+  mono text area + Copy), Import save (paste → `importProfile` → confirm "Replace this device's progress?"), Reset
+  progress (red, confirm). Plus "Connection: STUN only / TURN configured" read-only line from env.
+- **Lobby** host leaving = room closes (no host transfer). Kick stays (§3.6).
 
 ---------------------------------------------------------------------------------------------------------------------
 
@@ -301,5 +336,5 @@ sweep from Quick Match) with countdown and "Leave match". Server errors on REST 
 | Specials | same names/effects in config; ultimates added |
 | 6 maps (`MAPS` in Scene/Battle), spawns, props | `config/maps.ts` (same shapes, palettes, spawns, props) |
 | Camera behaviour | `config/camera.ts` |
-| Mock players/levels/currency/history | DB + REST (see `docs/DATA_MODEL.md`) |
-| Mock AI turns | real players; optional server-side bots are out of scope |
+| Mock players/levels/currency/history | localStorage profile (`persist/profile.ts`, see `docs/DATA_MODEL.md`) |
+| Mock AI turns | real players over WebRTC (bots out of scope; Hot Seat for local play) |

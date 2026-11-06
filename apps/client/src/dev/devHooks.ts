@@ -3,6 +3,7 @@
 // BattleControls; the test presses Space to fire. Nothing here touches authoritative state.
 import { MACHINES, WEAPONS, canUseWeapon, predictTrajectory, unitById, type MatchIntent, type WeaponId } from '@lobbers/shared';
 import type { ClientMatch } from '../state/ClientMatch';
+import { lobbyService, useLobby } from '../net/p2p/roomService';
 import type { BattleControls } from '../state/battleControls';
 
 export interface DevSnapshot {
@@ -10,6 +11,8 @@ export interface DevSnapshot {
   hash: { client: number; server: number; checks: number; mismatches: number };
   units: Array<{ id: string; hp: number; alive: boolean; x: number; y: number }>;
   offline: string[];
+  /** Room link: joined / reconnecting / closed… and why it closed. */
+  link: string;
 }
 
 export interface DevApi {
@@ -28,6 +31,7 @@ export function installDevHooks(match: ClientMatch, controls: BattleControls): (
       return {
         turn: st.turnNumber, wind: st.wind, phase: st.sync.phase, active: st.activeUnitId, replaying: match.replay.busy, result: st.result?.winner ?? null,
         mine: controls.enabled, hash: st.hash, offline: Object.keys(st.sync.offline),
+        link: `peer:${lobbyService.client?.match?.phase ?? '-'}/${lobbyService.client?.ended ? 'ended' : 'no-end'}/acts:${lobbyService.client?.actions.length ?? 0}/feedActs:${match.store.getState().hash.checks} ${useLobby.getState().status}${useLobby.getState().closedReason ? `:${useLobby.getState().closedReason}` : ''}`,
         units: st.units.map((u) => ({ id: u.id, hp: u.hp, alive: u.alive, x: Math.round(u.x), y: Math.round(u.y) })),
       };
     },

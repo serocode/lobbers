@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Panel } from '../../components';
 import { mmss } from '../../state/format';
-import type { LinkStatus } from '../../net/online/NetMatchController';
+export type LinkStatus = 'connected' | 'reconnecting' | 'lost';
 
 export function ReconnectScrim({ status, deadline, onLeave }: { status: LinkStatus; deadline: number; onLeave: () => void }): JSX.Element | null {
   const [now, setNow] = useState(Date.now());

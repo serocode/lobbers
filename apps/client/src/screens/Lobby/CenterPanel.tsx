@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { MAP_LIST, MAPS, type LobbyView } from '@lobbers/shared';
 import { SceneBackdrop } from '../../components';
-import { lobbyService } from '../../net/online/lobbyService';
+import { lobbyService } from '../../net/p2p/roomService';
 import { TEAM_COLOR } from '../../state/matchStore';
 import { settingButtons } from './settingsView';
 import s from './lobby.module.css';
@@ -17,7 +17,12 @@ export function CenterPanel({ view, isHost, myId }: { view: LobbyView; isHost: b
   const changeMap = (d: number): void => lobbyService.send({ t: 'updateSettings', patch: { mapId: MAP_LIST[(idx + d + MAP_LIST.length) % MAP_LIST.length].id } });
   const send = (text: string): void => { const t = text.trim(); if (!t) return; lobbyService.send({ t: 'chat', text: t }); setDraft(''); };
   const chat = view.chat.slice(-4);
-  const colOf = (c: LobbyView['chat'][number]): string => (c.team === 'system' ? '#5ACB91' : c.playerId === myId ? '#FFD166' : TEAM_COLOR[c.team]);
+  const colOf = (c: LobbyView['chat'][number]): string => {
+    if (c.from === null) return '#5ACB91';
+    if (c.from === myId) return '#FFD166';
+    const p = view.players.find((x) => x.id === c.from);
+    return p ? TEAM_COLOR[p.team] : '#A9B3CC';
+  };
   return (
     <div style={{ position: 'absolute', left: 444, top: 104, width: 552, display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div className="panel" style={{ position: 'relative', height: 286, overflow: 'hidden', padding: 0 }}>
@@ -48,7 +53,7 @@ export function CenterPanel({ view, isHost, myId }: { view: LobbyView; isHost: b
       </div>
       <div className="panel" style={{ height: 166, display: 'flex', flexDirection: 'column', padding: 10, gap: 8 }}>
         <div aria-live="polite" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 4, overflow: 'hidden', fontSize: 14 }}>
-          {chat.map((c) => <div key={c.id} className={s.msg}><span style={{ fontWeight: 700, color: colOf(c) }}>{c.team === 'system' ? 'SYSTEM' : c.name}:</span> <span style={{ color: '#E6E2D8' }}>{c.text}</span></div>)}
+          {chat.map((c) => <div key={`${c.at}-${c.from}-${c.text}`} className={s.msg}><span style={{ fontWeight: 700, color: colOf(c) }}>{c.from === null ? 'SYSTEM' : c.name}:</span> <span style={{ color: '#E6E2D8' }}>{c.text}</span></div>)}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <label htmlFor="chatIn" style={{ position: 'absolute', left: -9999 }}>Lobby chat message</label>

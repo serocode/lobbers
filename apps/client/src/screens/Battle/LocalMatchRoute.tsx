@@ -1,12 +1,12 @@
-// /match/local?… — hot-seat match: LocalMatchController (the in-browser authority) behind the same
-// MatchTransport the network controller implements in Phase 2.
+// /hotseat?… — Hot Seat (DESIGN_SPEC §3.9): a HostSession with one loopback PeerClient per seat (HotSeat), behind the
+// same MatchTransport online play uses.
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LocalMatchController } from '../../net/local/LocalMatchController';
+import { HotSeat } from '../../net/local/HotSeat';
 import { ClientMatch } from '../../state/ClientMatch';
 import { BattleControls } from '../../state/battleControls';
 import { installDevHooks } from '../../dev/devHooks';
-import { cosmeticsFor, decodeLocalConfig, encodeLocalConfig, seatsFor, settingsFor } from '../../state/localMatchConfig';
+import { decodeLocalConfig, encodeLocalConfig, hotSeatSeats, settingsFor } from '../../state/localMatchConfig';
 import { BattleScreen } from './BattleScreen';
 
 interface Session { match: ClientMatch; controls: BattleControls }
@@ -19,7 +19,7 @@ export default function LocalMatchRoute(): JSX.Element {
 
   // Created inside the effect so StrictMode's mount → unmount → mount never reuses a disposed authority.
   useEffect(() => {
-    const transport = new LocalMatchController({ settings: settingsFor(cfg), seats: seatsFor(cfg), seed: cfg.seed, cosmetics: cosmeticsFor(cfg) });
+    const transport = new HotSeat({ settings: settingsFor(cfg), seats: hotSeatSeats(cfg), seed: cfg.seed });
     const match = new ClientMatch(transport);
     const controls = new BattleControls(match);
     match.start();
@@ -31,13 +31,13 @@ export default function LocalMatchRoute(): JSX.Element {
   const value = useMemo(() => session && ({
     ...session,
     nav: {
-      surrender: () => nav('/dev/kit#hotseat'),
+      surrender: () => nav('/'),
       surrenderNote: 'This hot-seat match ends for everyone at this screen.',
-      resultsReason: 'Hot-seat matches have no online results',
+      resultsReason: 'Hot Seat matches have no results screen (no rewards)',
       playAgain: () => nav(encodeLocalConfig({ ...cfg, seed: cfg.seed + 1 })),
       playAgainLabel: 'Play again',
-      back: () => nav('/dev/kit#hotseat'),
-      backLabel: 'Back to setup',
+      back: () => nav('/'),
+      backLabel: 'Back to home',
     },
   }), [session, nav, cfg]);
 

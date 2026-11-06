@@ -1,6 +1,6 @@
 ---
 name: battlefield-renderer
-description: Build or change the Phaser battlefield (Gunbound camera, parallax maps, terrain texture, props, machines with rotating barrels, projectiles, explosions) so it matches Battle.dc.html and replays server events. Use for any work in apps/client/src/game.
+description: Build or change the Phaser battlefield (Gunbound camera, parallax maps, terrain texture, props, machines with rotating barrels, projectiles, explosions) so it matches Battle.dc.html and replays the host's events. Use for any work in apps/client/src/game.
 ---
 
 # Battlefield renderer (Phaser 3)
