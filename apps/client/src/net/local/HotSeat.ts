@@ -1,14 +1,15 @@
 // Hot Seat (DESIGN_SPEC §3.9): the same HostSession as online play, with no network. Every seat is a
 // PeerClient over connectLoopback; the battle shows seat 0's stream and sends each intent through the seat
 // whose turn it is. The room is set up through real lobby intents (teams, machines, settings, ready, start).
+// Bot seats (DESIGN_SPEC §3.11) are added by the first human with `addBot` and play themselves inside the HostSession.
 import {
-  HOST_RULES, HostSession, PeerClient, connectLoopback, createRng, realClock, type HostClock, type HostMessage, type MatchIntent, type MatchSettings,
+  HOST_RULES, HostSession, PeerClient, connectLoopback, createRng, realClock, type BotDifficulty, type HostClock, type HostMessage, type MatchIntent, type MatchSettings,
   type MachineId, type PeerProfile, type ServerMessage, type TeamId,
 } from '@lobbers/shared';
 import { EMPTY_STATE, type MatchStateView, type MatchTransport, type MatchTransportListener } from '../MatchTransport';
 import { stateFromView } from '../p2p/MatchFeed';
 
-export interface HotSeatSeat { name: string; team: TeamId; machine: MachineId; cosmetics: Record<string, string> }
+export interface HotSeatSeat { name: string; team: TeamId; machine: MachineId; cosmetics: Record<string, string>; /** Played by the computer. */ bot?: BotDifficulty }
 export interface HotSeatOptions { settings: MatchSettings; seats: HotSeatSeat[]; clock?: HostClock; /** Match seed source (reproducible hot-seat links). */ seed?: number }
 
 const FORWARD = new Set<HostMessage['t']>(['matchStarted', 'turnStarted', 'actionResolved', 'aimUpdate', 'emote', 'matchEnded']);
@@ -26,10 +27,17 @@ export class HotSeat implements MatchTransport {
   private disposed = false;
   private readonly clock: HostClock;
   private readonly profiles: PeerProfile[];
+  /** The human seats, in the same order as `profiles` / `clients`. */
+  private readonly humans: HotSeatSeat[];
+  private readonly bots: HotSeatSeat[];
 
   constructor(private readonly opts: HotSeatOptions) {
     this.clock = opts.clock ?? realClock;
-    this.profiles = opts.seats.map((s, i) => ({ id: `seat-${i}`, name: s.name, level: 1, rating: 1000, title: null, avatar: null, favoriteMachine: s.machine, cosmetics: s.cosmetics }));
+    const humans = opts.seats.filter((s) => !s.bot);
+    // Someone has to hold the device: with no human seat, the first seat is played by a person.
+    this.humans = humans.length ? humans : opts.seats.slice(0, 1).map((s) => ({ ...s, bot: undefined }));
+    this.bots = (humans.length ? opts.seats : opts.seats.slice(1)).filter((s) => s.bot);
+    this.profiles = this.humans.map((s, i) => ({ id: `seat-${i}`, name: s.name, level: 1, rating: 1000, title: null, avatar: null, favoriteMachine: s.machine, cosmetics: s.cosmetics }));
     this.localPlayerIds = new Set(this.profiles.map((p) => p.id));
     const rng = createRng(opts.seed ?? Math.floor(Math.random() * 2 ** 31));
     this.session = new HostSession({ code: 'LOB-SEAT', roomName: 'Hot seat', host: this.profiles[0], clock: this.clock, settings: opts.settings, random: () => rng.next() });
@@ -76,13 +84,14 @@ export class HotSeat implements MatchTransport {
     await tick();
     // Teams: move wrong-team seats while the target side has room (a few passes settle any order).
     for (let pass = 0; pass < 3; pass++) {
-      for (const [i, s] of this.opts.seats.entries()) {
+      for (const [i, s] of this.humans.entries()) {
         const p = this.session.lobby.players.find((x) => x.id === this.profiles[i].id);
         if (p && p.team !== s.team) this.clients[i].send({ t: 'setTeam', team: s.team });
       }
       await tick();
     }
-    this.clients.forEach((c, i) => c.send({ t: 'setMachine', machine: this.opts.seats[i].machine }));
+    for (const b of this.bots) this.clients[0].send({ t: 'addBot', team: b.team, difficulty: b.bot ?? 'normal', machine: b.machine });
+    this.clients.forEach((c, i) => c.send({ t: 'setMachine', machine: this.humans[i].machine }));
     this.clients[0].send({ t: 'updateSettings', patch: this.opts.settings });
     await tick();
     this.clients.slice(1).forEach((c) => c.send({ t: 'setReady', ready: true }));

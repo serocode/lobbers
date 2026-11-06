@@ -271,5 +271,37 @@ production build pass; `/profile`, `/inventory`, `/friends` deep links 200.
 - Gems only come from missions; nothing sells gems. Other players' win rates aren't known (Leaderboards show LV).
 - Results doesn't announce newly finished missions/achievements yet (they appear on Home/Profile).
 
+## Bots ✅ (2026-11-06, owner request "allow players to battle with bots")
+**Works**
+- **Online rooms**: the host's open slots have **Add bot** (Normal); a bot slot shows BOT, "Computer player", READY, and a
+  difficulty pill the host clicks to cycle Easy → Normal → Hard; the kick X removes it. Guests see bots but can't add
+  them. Bots are always ready, so a host alone plus bots can start right away.
+- **Hot Seat**: every seat toggles PLAYER → BOT EASY / NORMAL / HARD (`rb`/`bb` in the URL). One person + bots = solo
+  practice with the online "YOUR TURN" HUD; several people + bots = pass & play, and bots take their own turns.
+- **How a bot plays**: a `PeerClient` + `BotDriver` in the host's tab (`host/bots.ts`), so the host validates its intents
+  like anyone else's. It reads its own `WorldMirror`. Per turn: think → maybe use a special/ultimate → walk toward an
+  enemy if there's no shot → swing the barrel (`aim` relays) → fire. The aim is a grid search with the shared
+  `predictTrajectory`, scored by expected damage (kills count extra, self/team harm penalised), then difficulty-based aim
+  error. Bots survive a host refresh and stay seated for Play again. Results tag bots (`bot`), and bots never land in
+  Recent players. Protocol v5.
+
+**How to verify**
+- `pnpm test:core` — 67 (adds `bots.test.ts`: host-only add/re-tune/kick, always ready, team full, codec, `bot-` id
+  refused, planner lands next to an enemy, passive host loses to 2 hard bots, mixed 2v2 humans + bots to the end with 0
+  desyncs, host refresh mid-match → bots re-attached and finish).
+- `pnpm --filter @lobbers/client test` — 25 (bot seats round-trip in the Hot Seat URL; all-bot config keeps one person).
+- e2e `bots.spec.ts` (local PeerServer): online 2v2 (2 humans + 2 bots) to victory, synced on both clients; Hot Seat 1
+  person vs 2 bots from the modal to the end.
+- Manual: Create Room → Add bot on each team → START MATCH. Or Home → Hot Seat → tap PLAYER on the blue seats.
+
+**Evidence** — `docs/screenshots/bots/`: `lobby-host.png`, `lobby-guest.png`, `battle.png`, `results.png`,
+`hotseat-modal.png`, `hotseat-battle.png`, `online-report.json`.
+
+**Known gaps**
+- Bots plan on the host's main thread (~7 / 30 / 55 ms per action for Easy / Normal / Hard) during their thinking pause.
+- The planner treats special weapons (cluster, guided, airstrike, drill) as landing where the ballistic path first hits;
+  it doesn't model bomblets or homing. Bots don't jump, and they don't walk away from danger.
+- Bots in online rooms pay normal rewards (local profiles, same trust model — DECISIONS).
+
 ## Phase 5 — Quality
 _not started_

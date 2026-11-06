@@ -396,7 +396,10 @@ export class HostMatch {
     this.ended = {
       matchId: this.matchId, mapId: this.settings.mapId, mode: this.settings.mode, winner, turns: this.ts.turnNumber,
       durationSec: Math.round((now - this.startedAt) / 1000), endedAt: now,
-      players: computeResults(this.world.units, winner).map((p) => ({ ...p, feats: this.tally.feats(p.unitId) })),
+      players: computeResults(this.world.units, winner).map((p) => {
+        const bot = this.seats.find((s) => s.playerId === p.playerId)?.bot;
+        return { ...p, feats: this.tally.feats(p.unitId), ...(bot ? { bot } : {}) };
+      }),
       mvpHighlight: '', details: this.tally.details(),
     };
     this.ended.mvpHighlight = this.tally.highlight(this.ended.players.find((p) => p.mvp)?.unitId ?? '');

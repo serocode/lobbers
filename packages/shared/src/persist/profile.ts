@@ -206,7 +206,7 @@ export function creditMatch(p: LocalProfile, result: MatchEndedMsg, others: Arra
   };
   const recent = new Map(p.recentPlayers.map((r) => [r.id, r]));
   for (const x of result.players) {
-    if (x.playerId === p.id) continue;
+    if (x.playerId === p.id || x.bot) continue;   // bots aren't people you played with
     const info = others.find((o) => o.id === x.playerId);
     const prev = recent.get(x.playerId);
     recent.set(x.playerId, {

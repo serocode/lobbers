@@ -3,6 +3,7 @@ import { MACHINES } from '../config/machines.ts';
 import { WEAPONS, arsenalFor } from '../config/weapons.ts';
 import { MAPS } from '../config/maps.ts';
 import { Terrain } from './terrain.ts';
+import type { BotDifficulty } from '../config/bots.ts';
 
 export interface World {
   map: MapDef;
@@ -20,7 +21,7 @@ export interface World {
   recentDamage: Record<string, Record<string, number>>;
 }
 
-export interface SeatInput { playerId: string; name: string; team: TeamId; machine: MachineId; slot: number }
+export interface SeatInput { playerId: string; name: string; team: TeamId; machine: MachineId; slot: number; /** Bot seat (results are tagged). */ bot?: BotDifficulty }
 
 export function createUnit(seat: SeatInput, x: number, y: number, itemsEnabled = false): UnitState {
   const m = MACHINES[seat.machine];

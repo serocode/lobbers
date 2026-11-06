@@ -1,7 +1,8 @@
-// A team column (Lobby.dc.html): chamfered team band + 4 slots (filled / open / reconnecting).
+// A team column (Lobby.dc.html): chamfered team band + 4 slots (filled / bot / open / reconnecting).
 import { MACHINES, type LobbyPlayer, type TeamId } from '@lobbers/shared';
 import { CloseIcon, MachineArt } from '../../components';
 import { TEAM_COLOR, TEAM_DARK } from '../../state/matchStore';
+import { BotTag, DifficultyPill, OpenSlot } from './BotParts';
 import s from './lobby.module.css';
 
 const BAND = {
@@ -20,7 +21,8 @@ interface Props { team: TeamId; slots: Array<LobbyPlayer | null>; myId: string; 
 export function TeamColumn({ team, slots, myId, isHost, onInvite, onKick }: Props): JSX.Element {
   const b = BAND[team], col = TEAM_COLOR[team], dark = TEAM_DARK[team];
   const ps = slots.filter((p): p is LobbyPlayer => !!p);
-  const avg = ps.length ? Math.round(ps.reduce((a, p) => a + (p.level ?? 1), 0) / ps.length) : 0;
+  const people = ps.filter((p) => !p.bot);   // bots have no level
+  const avg = people.length ? Math.round(people.reduce((a, p) => a + (p.level ?? 1), 0) / people.length) : 0;
   return (
     <section aria-label={`Team ${team === 'red' ? 'Red' : 'Blue'}`} style={{ position: 'absolute', left: b.x, top: 104, width: 400, display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div className={s.stripes} style={{ height: 60, backgroundColor: col, border: '3px solid #0B0F1A', boxShadow: '0 5px 0 #0B0F1A', clipPath: b.clip, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 26px', color: '#101522' }}>
@@ -29,25 +31,18 @@ export function TeamColumn({ team, slots, myId, isHost, onInvite, onKick }: Prop
       </div>
       {slots.map((p, i) => (
         <div key={p?.id ?? `empty-${i}`} style={{ height: 136 }}>
-          {p ? <Slot p={p} you={p.id === myId} col={col} dark={dark} flip={b.flip} canKick={isHost && p.id !== myId} onKick={() => onKick(p)} /> : (
-            <button type="button" className={s.dash} onClick={onInvite} style={{ width: '100%', height: 136, borderRadius: 12, cursor: 'pointer', color: '#A9B3CC', fontFamily: 'Fredoka,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <span style={{ width: 56, height: 56, borderRadius: '50%', border: '3px dashed #5B6378', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFD166" strokeWidth="3.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg></span>
-                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}><span className="fd" style={{ fontSize: 20, color: '#F5F1E8' }}>Open slot</span><span style={{ fontSize: 14 }}>Click to invite a friend</span></span>
-              </span>
-            </button>
-          )}
+          {p ? <Slot p={p} you={p.id === myId} col={col} dark={dark} flip={b.flip} isHost={isHost} canKick={isHost && p.id !== myId} onKick={() => onKick(p)} /> : <OpenSlot team={team} isHost={isHost} onInvite={onInvite} />}
         </div>
       ))}
     </section>
   );
 }
 
-function Slot({ p, you, col, dark, flip, canKick, onKick }: { p: LobbyPlayer; you: boolean; col: string; dark: string; flip: boolean; canKick: boolean; onKick: () => void }): JSX.Element {
+function Slot({ p, you, col, dark, flip, isHost, canKick, onKick }: { p: LobbyPlayer; you: boolean; col: string; dark: string; flip: boolean; isHost: boolean; canKick: boolean; onKick: () => void }): JSX.Element {
   const m = MACHINES[p.machine];
   const ping = p.ping ?? 0;
   const [b1, b2, b3] = bars(ping);
-  const off = !p.connected;
+  const off = !p.connected && !p.bot;
   return (
     <div className={`panel ${s.slot} ${s.join}`} style={{ height: 136, display: 'flex', gap: 14, padding: 10, alignItems: 'center', borderColor: you ? '#FFD166' : '#0B0F1A' }}>
       {canKick && <button type="button" className={`btn ${s.kick}`} aria-label={`Remove ${p.name}`} title={`Remove ${p.name}`} onClick={onKick}><CloseIcon size={12} /></button>}
@@ -59,15 +54,18 @@ function Slot({ p, you, col, dark, flip, canKick, onKick }: { p: LobbyPlayer; yo
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className="fd" style={{ fontSize: 23, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>
           {you && <span className="fd" style={{ fontSize: 13, background: '#FFD166', color: '#101522', border: '2px solid #0B0F1A', borderRadius: 6, padding: '0 6px' }}>YOU</span>}
+          {p.bot && <BotTag />}
         </div>
-        <span style={{ fontSize: 13, color: '#FFD166', fontWeight: 600 }}>“{p.title ?? 'Rookie'}”</span>
+        <span style={{ fontSize: 13, color: '#FFD166', fontWeight: 600 }}>{p.bot ? 'Computer player' : `“${p.title ?? 'Rookie'}”`}</span>
         <span style={{ fontSize: 13, color: '#A9B3CC' }}>{m.name} · {m.role}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
           {p.ready
             ? <span className={`${s.readyOn} fd`} style={{ fontSize: 14, background: '#5ACB91', color: '#101522', border: '2px solid #0B0F1A', borderRadius: 6, padding: '2px 8px', display: 'flex', alignItems: 'center', gap: 4 }}><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#101522" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12l5 5L20 6" /></svg>READY</span>
             : <span className={`${s.wait} fd`} style={{ fontSize: 14, background: '#2A3045', color: '#C9D1E0', border: '2px solid #0B0F1A', borderRadius: 6, padding: '2px 8px' }}>NOT READY</span>}
-          <span className="fd" style={{ fontSize: 13, background: '#0E1320', border: '2px solid #0B0F1A', borderRadius: 6, padding: '2px 6px' }}>LV {p.level ?? 1}</span>
-          {off ? (
+          {p.bot ? <DifficultyPill p={p} isHost={isHost} /> : <span className="fd" style={{ fontSize: 13, background: '#0E1320', border: '2px solid #0B0F1A', borderRadius: 6, padding: '2px 6px' }}>LV {p.level ?? 1}</span>}
+          {p.bot ? (
+            <span className="mono" style={{ marginLeft: 'auto', fontSize: 12, color: '#A9B3CC' }}>bot</span>
+          ) : off ? (
             <span className={`${s.wait} mono`} style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, background: '#2A3045', color: '#C9D1E0', border: '2px solid #0B0F1A', borderRadius: 6, padding: '2px 6px' }}>RECONNECTING</span>
           ) : (
             <>

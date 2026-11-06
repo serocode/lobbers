@@ -44,13 +44,14 @@ export const useActiveUnit = (): UnitState | undefined => useMatch((v) => unitOf
 
 /**
  * The machine the controls deck shows: online → your own unit; hot-seat → the active unit
- * (whoever holds the device), falling back to the first local unit.
+ * (whoever holds the device), falling back to the first local unit (e.g. while a bot plays).
  */
 export function useDeckUnit(): UnitState | undefined {
   return useMatch((v) => {
     if (v.localPlayerIds.length === 1) return v.units.find((u) => u.playerId === v.localPlayerIds[0]);
     const a = unitOf(v, v.activeUnitId);
-    return a ?? v.units[0];
+    if (a && v.localPlayerIds.includes(a.playerId)) return a;
+    return v.units.find((u) => v.localPlayerIds.includes(u.playerId)) ?? a ?? v.units[0];
   });
 }
 

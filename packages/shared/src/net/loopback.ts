@@ -6,9 +6,10 @@ import type { ClientLink, PeerClient } from './client.ts';
  * asynchronously (microtasks), exactly like a data channel. Uses:
  *  - the HOST's own UI (`local: true` binds it to the host seat),
  *  - hot-seat / offline play (Phase 1's LocalMatchController becomes HostSession + loopback),
+ *  - bot seats (`bot: playerId` binds the link to that bot seat, played in the host's tab),
  *  - unit tests (many peers in one process).
  */
-export function connectLoopback(session: HostSession, client: PeerClient, opts: { local?: boolean } = {}): { drop(): void } {
+export function connectLoopback(session: HostSession, client: PeerClient, opts: { local?: boolean; bot?: string } = {}): { drop(): void } {
   let open = true;
   let closing = false;
   const hostSide: PeerLink = {
@@ -26,7 +27,9 @@ export function connectLoopback(session: HostSession, client: PeerClient, opts: 
     session.disconnect(hostSide);
     client.detach();
   };
-  if (opts.local) session.connectLocal(hostSide); else session.connect(hostSide);
+  if (opts.bot) session.connectBot(hostSide, opts.bot);
+  else if (opts.local) session.connectLocal(hostSide);
+  else session.connect(hostSide);
   client.attach(clientSide);
   return { drop };
 }

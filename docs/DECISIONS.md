@@ -286,3 +286,17 @@ The kit's decisions above apply. Our additions and deviations:
   rate (we don't know other players' win rates). Global disabled: "Needs a server — not in this version". · Home
 - 2026-11-06 · **Hosted room saved at creation** (bug found by the Friends e2e): `HostSession` only wrote its snapshot on
   lobby changes, so a host F5 before anyone joined lost the room. It now persists once when created. · host/session
+- 2026-11-06 · **Bots** (supersedes "server bots are out of scope"). A bot is a lobby seat the HOST adds (`addBot` /
+  `setBot`, host only; removed with `kick`). Each bot is a real `PeerClient` + `BotDriver` running in the host's tab over
+  an in-memory link (`connectLoopback(…, { bot })` → `HostSession.connectBot`), so it plays only through intents and the
+  host validates it like anyone else — no new authority path. It reads the battlefield from its own `WorldMirror` and
+  aims with the shared `predictTrajectory` (the "preview only" rule is about outcomes; a bot only *chooses* an intent).
+  Difficulty (Easy / Normal / Hard) = search resolution, aim error, wind awareness, weapon choice, ability use and walking
+  toward an enemy when there is no shot (`config/bots.ts`). Bots are always ready, survive a host refresh (re-attached
+  from the snapshot) and stay seated for Play again. Humans can't claim the `bot-` id prefix (`bad hello`). Protocol v5. ·
+  Owner request "allow players to battle with bots" · config/bots, bot/, host/, Lobby, Hot Seat
+- 2026-11-06 · **Bot rewards**: online rooms with bots pay normal XP/coins/rating (profiles are local and editable anyway —
+  same trust model); bots are tagged in results (`bot`) and never added to Recent players. Hot Seat with bots stays "no
+  rewards". · persist/profile, protocol
+- 2026-11-06 · **Bot planning cost**: one grid search per bot action on the host's main thread (~7 / 30 / 55 ms for
+  Easy / Normal / Hard on an 8-unit map with Items On), during the bot's "thinking" pause. · config/bots

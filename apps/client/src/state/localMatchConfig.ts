@@ -1,10 +1,11 @@
-// Hot Seat setup (DESIGN_SPEC §3.9), encoded in the URL (/hotseat?map=…&red=…&blue=…&rn=…&bn=…) so a local
-// match is linkable and reproducible (seed). Names are optional ("Red 1", "Blue 2" by default).
+// Hot Seat setup (DESIGN_SPEC §3.9), encoded in the URL (/hotseat?map=…&red=…&blue=…&rn=…&bn=…&rb=…&bb=…) so a local
+// match is linkable and reproducible (seed). Names are optional ("Red 1", "Blue 2" by default). rb/bb mark bot seats
+// (comma list per seat: '' = human, else a difficulty) — DESIGN_SPEC §3.11.
 import { PRESETS, isPreset, type PresetId } from './cosmeticPresets';
 import type { HotSeatSeat } from '../net/local/HotSeat';
 import {
-  ALL_COSMETIC_IDS, DEFAULT_SETTINGS, MACHINES, MAPS, ROOM_LIMITS, SETTING_OPTIONS, equippedFromLoadout, sanitizeLoadout,
-  type MachineId, type MapId, type MatchSettings, type TeamId, type WindSetting,
+  ALL_COSMETIC_IDS, BOT_DIFFICULTIES, DEFAULT_SETTINGS, MACHINES, MAPS, ROOM_LIMITS, SETTING_OPTIONS, equippedFromLoadout, sanitizeLoadout,
+  type BotDifficulty, type MachineId, type MapId, type MatchSettings, type TeamId, type WindSetting,
 } from '@lobbers/shared';
 
 export interface LocalMatchConfig {
@@ -20,18 +21,22 @@ export interface LocalMatchConfig {
   look: Record<TeamId, PresetId>;
   /** Player names per team, in seat order ('' = default "Red 1"…). */
   names: Record<TeamId, string[]>;
+  /** Bot difficulty per seat, in seat order (null = a person at this screen). */
+  bots: Record<TeamId, Array<BotDifficulty | null>>;
   mode: MatchSettings['mode'];
 }
 
 export const DEFAULT_LOCAL: LocalMatchConfig = {
   mapId: 'cobalt', red: ['thumper', 'voltaic'], blue: ['frostbite', 'mollusk'],
   turnSeconds: DEFAULT_SETTINGS.turnSeconds, wind: DEFAULT_SETTINGS.wind, friendlyFire: DEFAULT_SETTINGS.friendlyFire, seed: 1,
-  itemsEnabled: DEFAULT_SETTINGS.itemsEnabled, look: { red: 'default', blue: 'default' }, names: { red: [], blue: [] }, mode: 'team-deathmatch',
+  itemsEnabled: DEFAULT_SETTINGS.itemsEnabled, look: { red: 'default', blue: 'default' }, names: { red: [], blue: [] }, bots: { red: [], blue: [] }, mode: 'team-deathmatch',
 };
 
 /** Same rule as profile names (3–16 visible characters). */
 const cleanSeatName = (n: string): string => { const s = n.replace(/[\u0000-\u001f\u007f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16); return s.length >= 3 ? s : ''; };
 const names = (raw: string | null): string[] => (raw ? raw.split(',').map(cleanSeatName).slice(0, ROOM_LIMITS.maxPerTeam) : []);
+
+const bots = (raw: string | null): Array<BotDifficulty | null> => (raw ? raw.split(',').slice(0, ROOM_LIMITS.maxPerTeam).map((d) => ((BOT_DIFFICULTIES as readonly string[]).includes(d) ? (d as BotDifficulty) : null)) : []);
 
 const isMachine = (v: string): v is MachineId => v in MACHINES;
 const isMap = (v: string): v is MapId => v in MAPS;
@@ -43,10 +48,16 @@ function team(raw: string | null, fallback: MachineId[]): MachineId[] {
   return list.length ? list : fallback;
 }
 
+/** Hot seat needs at least one person: if every seat is a bot, the first red seat becomes human. */
+function withHuman(c: LocalMatchConfig): LocalMatchConfig {
+  const humans = c.red.filter((_, i) => !c.bots.red[i]).length + c.blue.filter((_, i) => !c.bots.blue[i]).length;
+  return humans > 0 ? c : { ...c, bots: { ...c.bots, red: [null, ...c.bots.red.slice(1)] } };
+}
+
 export function decodeLocalConfig(q: URLSearchParams): LocalMatchConfig {
   const map = q.get('map') ?? '';
   const seed = Number(q.get('seed'));
-  return {
+  return withHuman({
     mapId: isMap(map) ? map : DEFAULT_LOCAL.mapId,
     red: team(q.get('red'), DEFAULT_LOCAL.red),
     blue: team(q.get('blue'), DEFAULT_LOCAL.blue),
@@ -57,22 +68,26 @@ export function decodeLocalConfig(q: URLSearchParams): LocalMatchConfig {
     itemsEnabled: q.get('items') === null ? DEFAULT_LOCAL.itemsEnabled : q.get('items') === '1',
     look: { red: isPreset(q.get('rl')) ? (q.get('rl') as PresetId) : 'default', blue: isPreset(q.get('bl')) ? (q.get('bl') as PresetId) : 'default' },
     names: { red: names(q.get('rn')), blue: names(q.get('bn')) },
+    bots: { red: bots(q.get('rb')), blue: bots(q.get('bb')) },
     mode: 'team-deathmatch',
-  };
+  });
 }
 
 export function encodeLocalConfig(c: LocalMatchConfig): string {
   const q = new URLSearchParams({ map: c.mapId, red: c.red.join(','), blue: c.blue.join(','), turn: String(c.turnSeconds), wind: c.wind, ff: String(c.friendlyFire), seed: String(c.seed), items: c.itemsEnabled ? '1' : '0', rl: c.look.red, bl: c.look.blue });
   if (c.names.red.some(Boolean)) q.set('rn', c.names.red.join(','));
   if (c.names.blue.some(Boolean)) q.set('bn', c.names.blue.join(','));
+  if (c.bots.red.some(Boolean)) q.set('rb', c.bots.red.map((d) => d ?? '').join(','));
+  if (c.bots.blue.some(Boolean)) q.set('bb', c.bots.blue.map((d) => d ?? '').join(','));
   return `/hotseat?${q.toString()}`;
 }
 
-/** Hot-seat seats, red then blue, with readable names ("Red 1", "Blue 2") and their team's cosmetic preset. */
+/** Hot-seat seats, red then blue, with readable names ("Red 1", "Blue 2") and their team's cosmetic preset. Bot seats are named by the host. */
 export function hotSeatSeats(c: LocalMatchConfig): HotSeatSeat[] {
   const seats: HotSeatSeat[] = [];
   const add = (t: TeamId, list: MachineId[]): void => list.forEach((machine, slot) => seats.push({
     name: cleanSeatName(c.names[t][slot] ?? '') || `${t === 'red' ? 'Red' : 'Blue'} ${slot + 1}`, team: t, machine, cosmetics: equippedFromLoadout(sanitizeLoadout(PRESETS[c.look[t]].loadout, ALL_COSMETIC_IDS)),
+    ...(c.bots[t][slot] ? { bot: c.bots[t][slot]! } : {}),
   }));
   add('red', c.red);
   add('blue', c.blue);

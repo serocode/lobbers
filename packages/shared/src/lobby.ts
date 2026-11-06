@@ -1,6 +1,7 @@
 import type { MachineId, TeamId } from './types.ts';
 import { ROOM_LIMITS } from './config/match.ts';
 import type { Rng } from './sim/rng.ts';
+import type { BotDifficulty } from './config/bots.ts';
 
 export interface LobbyPlayer {
   id: string;
@@ -19,6 +20,8 @@ export interface LobbyPlayer {
   cosmetics?: Record<string, string>;
   /** Last round trip to the host reported by the peer (ms), for the slot's ping bars. */
   ping?: number;
+  /** Set for bot seats: played by the host's tab at this difficulty. Always ready. */
+  bot?: BotDifficulty;
 }
 
 type Result = { ok: true } | { ok: false; reason: string };

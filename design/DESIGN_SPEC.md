@@ -341,6 +341,21 @@ frozen, controls disabled; no scrim. `closed` reasons → one card in the modal 
   room" (disabled outside a room) and ☆ Star / ★ Starred.
 - **Leaderboards**: last column = "LV n" (mono, muted) instead of win rate.
 
+### 3.11 Bots — build exactly like this
+- **Lobby open slot (host only)**: the dashed slot keeps its plus circle + "Open slot", sub-line becomes "Invite a friend
+  or add a bot"; the left part still opens Invite. Right side: an "Add bot" `btn` (40 px tall, Fredoka 16, chip-head stroke
+  icon) that seats a Normal bot on that team. Guests see the unchanged slot ("Click to invite a friend").
+- **Bot slot**: normal filled slot. Name "Bot {Name}" + a "BOT" tag in the YOU-tag style (`#A9B3CC` ground); quote line →
+  "Computer player" (yellow); READY pill always; the LV pill is replaced by the difficulty pill (EASY / NORMAL / HARD, same
+  pill style — a `btn` for the host that cycles the difficulty); ping bars → muted mono "bot". Host removes it with the
+  existing kick X. Team "avg Lv" counts people only.
+- **Hot Seat modal**: each seat row gains a 62×36 toggle left of the name: "PLAYER" (default button) → "BOT / EASY" →
+  "BOT / NORMAL" → "BOT / HARD" (two lines, `#A9B3CC` ground). Bot seats grey out the name input (placeholder "Bot").
+  At least one seat must be a player ("At least one seat has to be a player"). Subtitle: "Pass & play on one screen, or
+  practise against bots — no rewards".
+- **Battle**: nothing new — a bot's turn looks like any other player's (name banner, barrel sweep, shot). In Hot Seat the
+  banner only says "PASS TO {NAME}" for human seats; with one human the HUD is the online "YOUR TURN" style.
+
 ---------------------------------------------------------------------------------------------------------------------
 
 ## 4. Content mapping mockup → shared config
@@ -353,4 +368,4 @@ frozen, controls disabled; no scrim. `closed` reasons → one card in the modal 
 | 6 maps (`MAPS` in Scene/Battle), spawns, props | `config/maps.ts` (same shapes, palettes, spawns, props) |
 | Camera behaviour | `config/camera.ts` |
 | Mock players/levels/currency/history | localStorage profile (`persist/profile.ts`, see `docs/DATA_MODEL.md`) |
-| Mock AI turns | real players over WebRTC (bots out of scope; Hot Seat for local play) |
+| Mock AI turns | real players over WebRTC, plus host-run bots (§3.11; Hot Seat seats can be bots for solo play) |

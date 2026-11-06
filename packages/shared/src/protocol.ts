@@ -3,6 +3,7 @@ import type { ShotResult, SimEvent } from './sim/events.ts';
 import type { LobbyPlayer } from './lobby.ts';
 import type { TurnPhase } from './rules.ts';
 import type { UnitCosmetics } from './config/cosmetics.ts';
+import type { BotDifficulty } from './config/bots.ts';
 
 // Wire protocol (peer-to-peer). Every player's browser — including the host's own UI — is a PEER that sends
 // INTENTS. The HOST's browser runs `HostSession` (packages/shared/src/host), validates, simulates and sends OUTCOMES.
@@ -12,8 +13,9 @@ import type { UnitCosmetics } from './config/cosmetics.ts';
  * Bump when a message shape changes; the host refuses peers on another version ("Update the page").
  * v3: emotes, resolved cosmetics on matchStarted, burn zones on turnStarted, reconnect deadlines on matchState,
  * MVP line + match details on matchEnded, peer RTT on ping. v4: per-player feats on matchEnded results, `setCosmetics`.
+ * v5: bots — `addBot` / `setBot`, `bot` on lobby players and match results.
  */
-export const PROTOCOL_VERSION = 4;
+export const PROTOCOL_VERSION = 5;
 /** Hard cap on one inbound message (JSON chars). Larger messages are dropped. */
 export const MAX_PEER_MESSAGE_CHARS = 16_000;
 
@@ -50,7 +52,11 @@ export type LobbyIntent =
   | { t: 'startMatch' }                                              // host only
   | { t: 'chat'; text: string }
   /** Your equipped loadout changed in the Inventory while in a lobby (v4). Same shape as PeerProfile.cosmetics/title. */
-  | { t: 'setCosmetics'; cosmetics: Record<string, string>; title: string | null };
+  | { t: 'setCosmetics'; cosmetics: Record<string, string>; title: string | null }
+  /** Host only (v5): fill an open slot on `team` with a bot (machine random unless given). */
+  | { t: 'addBot'; team: TeamId; difficulty: BotDifficulty; machine?: MachineId }
+  /** Host only (v5): change a bot's difficulty. Remove a bot with `kick`. */
+  | { t: 'setBot'; playerId: string; difficulty: BotDifficulty };
 
 export type MatchIntent =
   | { t: 'aim'; angle: number; power: number; weaponId: WeaponId }  // cosmetic sync only, throttled ≤10/s
@@ -147,6 +153,8 @@ export interface PlayerResult {
   xp: number; coins: number; mvp: boolean; survived: boolean;
   /** Absent in matches recorded before protocol v4 (old history entries). */
   feats?: PlayerFeats;
+  /** Set for bot seats (v5). Bots are never added to Recent players. */
+  bot?: BotDifficulty;
 }
 
 /** Per-turn team damage and per-weapon usage for the Results "Match details" modal (host-computed). */

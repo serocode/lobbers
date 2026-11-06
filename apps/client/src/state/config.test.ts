@@ -18,6 +18,15 @@ describe('hot-seat config', () => {
     expect(c.wind).toBe(DEFAULT_LOCAL.wind);
     expect(c.seed).toBe(DEFAULT_LOCAL.seed);
   });
+  it('round-trips bot seats and always keeps one person at the screen', () => {
+    const c = { ...DEFAULT_LOCAL, red: ['thumper' as const, 'cinder' as const], blue: ['mollusk' as const], bots: { red: [null, 'hard' as const], blue: ['easy' as const] } };
+    const back = decodeLocalConfig(new URLSearchParams(encodeLocalConfig(c).split('?')[1]));
+    expect(back.bots).toEqual(c.bots);
+    expect(hotSeatSeats(back).map((s) => s.bot ?? 'human')).toEqual(['human', 'hard', 'easy']);
+    const allBots = decodeLocalConfig(new URLSearchParams('red=thumper&blue=mollusk&rb=hard&bb=normal'));
+    expect(allBots.bots).toEqual({ red: [null], blue: ['normal'] });
+    expect(decodeLocalConfig(new URLSearchParams('red=thumper,cinder&rb=,godlike')).bots.red).toEqual([null, null]);
+  });
   it('lists hot-seat seats red then blue with readable names and their team preset', () => {
     const seats = hotSeatSeats({ ...DEFAULT_LOCAL, red: ['thumper', 'voltaic'], blue: ['mollusk'], look: { red: 'embers', blue: 'default' } });
     expect(seats.map((s) => `${s.team}:${s.name}:${s.machine}`)).toEqual(['red:Red 1:thumper', 'red:Red 2:voltaic', 'blue:Blue 1:mollusk']);

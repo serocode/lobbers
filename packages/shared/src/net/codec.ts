@@ -4,6 +4,7 @@ import { WEAPONS } from '../config/weapons.ts';
 import { MAPS } from '../config/maps.ts';
 import { ROOM_LIMITS, SETTING_OPTIONS } from '../config/match.ts';
 import { EMOTE_SLOTS } from '../config/cosmetics.ts';
+import { BOT_DIFFICULTIES, type BotDifficulty } from '../config/bots.ts';
 import { MAX_PEER_MESSAGE_CHARS, type PeerMessage, type PeerProfile } from '../protocol.ts';
 
 // Shape validation for everything a peer sends. The host calls `parsePeerMessage` on every inbound message and
@@ -17,6 +18,7 @@ const str = (v: unknown, max: number): v is string => typeof v === 'string' && v
 const team = (v: unknown): v is TeamId => v === 'red' || v === 'blue';
 const machine = (v: unknown): v is MachineId => typeof v === 'string' && v in MACHINES;
 const weapon = (v: unknown): v is WeaponId => typeof v === 'string' && v in WEAPONS;
+const difficulty = (v: unknown): v is BotDifficulty => (BOT_DIFFICULTIES as readonly unknown[]).includes(v);
 const clamp = (v: number, a: number, b: number): number => Math.max(a, Math.min(b, v));
 
 /** Display names: 3–16 visible characters, no control characters, trimmed. */
@@ -95,6 +97,8 @@ export function parsePeerMessage(raw: unknown): PeerMessage | null {
     case 'setReady': return typeof m.ready === 'boolean' ? { t: 'setReady', ready: m.ready } : null;
     case 'updateSettings': { const patch = parseSettingsPatch(m.patch); return patch ? { t: 'updateSettings', patch } : null; }
     case 'kick': return str(m.playerId, 64) ? { t: 'kick', playerId: m.playerId as string } : null;
+    case 'addBot': return team(m.team) && difficulty(m.difficulty) ? { t: 'addBot', team: m.team, difficulty: m.difficulty, ...(machine(m.machine) ? { machine: m.machine } : {}) } : null;
+    case 'setBot': return str(m.playerId, 64) && difficulty(m.difficulty) ? { t: 'setBot', playerId: m.playerId as string, difficulty: m.difficulty } : null;
     case 'chat': { const text = cleanChat(m.text); return text ? { t: 'chat', text } : null; }
     case 'setCosmetics': return isObj(m.cosmetics) ? { t: 'setCosmetics', cosmetics: parseCosmetics(m.cosmetics), title: str(m.title, 40) ? (m.title as string) : null } : null;
     case 'aim': return num(m.angle) && num(m.power) && weapon(m.weaponId) ? { t: 'aim', angle: clamp(m.angle, 0, 180), power: clamp(m.power, 0, 100), weaponId: m.weaponId } : null;

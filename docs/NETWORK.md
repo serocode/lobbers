@@ -40,6 +40,12 @@ guest                                  host (HostSession)
 ```
 The host's own UI receives exactly the same messages through the loopback link.
 
+**Bots (v5).** Host-only `addBot {team, difficulty, machine?}` seats a bot (`bot-<n>`, always ready) and `setBot {playerId,
+difficulty}` re-tunes it; `kick` removes it. The host's tab then runs a `PeerClient` + `BotDriver` for that seat over an
+in-memory link bound with `connectBot` (no hello/token), so the bot receives the same messages as everyone and sends
+ordinary MatchIntents. Lobby players and match results carry `bot`. Bots are re-attached when the host restores a
+snapshot. A remote hello with a `bot-` id is closed with `bad hello`.
+
 ## Reconnection
 - **Guest drops** (network, reload): host marks `connected=false`, broadcasts `matchState`, skips their turns
   (`advanceTurn(…, canAct)`); if it was their turn it ends now. The guest's `joinRoom` retries every 1.5 s; on
@@ -61,5 +67,5 @@ Host epoch ms is the reference. `endsAt` comes from the host; peers render `ends
 ## Security checklist (friends-only, but no guest can break a match)
 `parsePeerMessage` on every inbound message (shape, enums, clamps, name/chat cleaning, size cap); identity from the
 link binding, never from message fields; host-only lobby actions checked against the bound player; one actor at a
-time; chat 2/s and 140 chars; aim relay ≤ 10/s; move ticks ≤ 10; rejoin tokens are random (crypto) and per room.
+time; chat 2/s and 140 chars; aim relay ≤ 10/s; move ticks ≤ 10; rejoin tokens are random (crypto) and per room; bot seats can only be bound from inside the host's tab.
 The host itself is trusted (documented limitation).

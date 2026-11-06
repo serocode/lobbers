@@ -1,63 +1,63 @@
 [
   {
-    "x": 75,
-    "y": 31,
+    "x": 51,
+    "y": 40,
     "zoom": 1,
     "mode": "follow",
     "fit": false
   },
   {
-    "x": 622,
+    "x": 567,
     "y": 1,
     "zoom": 1,
     "mode": "follow",
     "fit": false
   },
   {
-    "x": 1210,
+    "x": 1136,
     "y": 0,
     "zoom": 1,
     "mode": "follow",
     "fit": false
   },
   {
-    "x": 1550,
-    "y": 99,
+    "x": 1541,
+    "y": 46,
     "zoom": 1,
     "mode": "follow",
     "fit": false
   },
   {
     "x": 1558,
-    "y": 214,
+    "y": 209,
     "zoom": 1,
     "mode": "hold",
     "fit": false
   },
   {
     "x": 1558,
-    "y": 214,
+    "y": 209,
     "zoom": 1,
     "mode": "hold",
     "fit": false
   },
   {
     "x": 1558,
-    "y": 214,
+    "y": 209,
     "zoom": 1,
     "mode": "hold",
     "fit": false
   },
   {
     "x": 1558,
-    "y": 219,
+    "y": 209,
     "zoom": 1,
     "mode": "focus",
     "fit": false
   },
   {
     "x": 1560,
-    "y": 250,
+    "y": 246,
     "zoom": 1,
     "mode": "focus",
     "fit": false
