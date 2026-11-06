@@ -12,5 +12,5 @@ pnpm test:core          # physics, rules, host engine (whole matches, reconnects
 pnpm smoke:p2p          # 4 real browsers play a match over WebRTC (needs Playwright's Chromium)
 pnpm dev:client         # Vite on :5173 (uses the free PeerJS cloud signaling server)
 pnpm peer:local         # optional local signaling server on :9000 (see .env.example)
-pnpm build              # static build → apps/client/dist (Vercel uses vercel.json)
+pnpm build              # static build → dist/ at the repo root (what Vercel serves)
 ```

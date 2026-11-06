@@ -18,7 +18,7 @@ updated · deviations in `docs/DECISIONS.md`.
   `design/tokens/*.css`. Shared components: Button (+ link), PlayButton, FireButton, Panel, HudPanel, Modal, Toast,
   Switch, Segmented, Meter, TimerRing, and the art components MachineArt / WeaponIcon / SceneBackdrop ported from the
   three component mockups.
-- No server. `vercel.json` at the root; `pnpm --filter @lobbers/client build` produces the deployable `apps/client/dist`.
+- No server. `vercel.json` at the root; `pnpm --filter @lobbers/client build` produces the deployable `dist/` at the repo root.
 - Check: a Storybook-like `/dev/kit` route showing every component and all 8 machines in both tints + 3 backdrops,
   screenshot compared with `screenshots/c1..c3` and the mockup screens.
 

@@ -17,5 +17,7 @@ export default defineConfig({
   optimizeDeps: { include: ['react', 'react-dom', 'react-dom/client', 'react-router-dom', 'zustand', 'zustand/vanilla', 'phaser'] },
   server: { port: 5173, strictPort: true },
   preview: { port: 4173, strictPort: true },
-  build: { chunkSizeWarningLimit: 1600 },
+  // Output at the repo root (`dist/`): that is where Vercel looks by default for a repo-root project, so the deploy works
+  // with or without vercel.json / dashboard overrides (DECISIONS, deploy).
+  build: { outDir: here('../../dist'), emptyOutDir: true, chunkSizeWarningLimit: 1600 },
 });

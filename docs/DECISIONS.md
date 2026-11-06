@@ -235,3 +235,6 @@ The kit's decisions above apply. Our additions and deviations:
   is client-only (`VITE_ICE_SERVERS`, `VITE_PEER_*`). · all
 - 2026-11-06 · **Vercel caching**: only top-level `/assets/*` files (Vite's content-hashed bundles) are `immutable`; the
   hand-exported art under `/assets/machines|maps|weapons/` has no hashes, so it keeps default caching. · vercel.json
+- 2026-11-06 · **Build output at the repo root `dist/`** (`build.outDir` in `apps/client/vite.config.ts`; `vercel.json`
+  `outputDirectory: "dist"`). The first Vercel deploys ignored `vercel.json#outputDirectory` and looked for `dist` at the
+  root; writing the build there works with Vercel's defaults, `vercel.json` and dashboard overrides alike. · deploy
